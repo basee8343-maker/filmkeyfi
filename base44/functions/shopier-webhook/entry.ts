@@ -149,7 +149,17 @@ export default async function (req) {
       return Response.json({ error: 'ödeme kaydı bulunamadı' }, { status: 404 });
     }
 
-    // --- İDEMPOTENCY: zaten işlendi ---
+    // --- EK İDEMPOTENCY: aynı Shopier sipariş numarasıyla zaten işlenmiş ödeme var mı? ---
+    if (shopierOrderId) {
+      const alreadyCompleted = await base44.asServiceRole.entities.Payment.filter({ shopier_order_id: shopierOrderId, status: 'completed' }).catch(() => []);
+      if (alreadyCompleted.length > 0) {
+        log('idempotent_by_order', { shopierOrderId, existing_payment_id: alreadyCompleted[0].id, message: 'A completed payment with this Shopier order ID already exists — skipping to prevent duplicate subscription' });
+        if (isBrowser) return Response.redirect(cfg.successUrl + '?order=' + shopierOrderId, 302);
+        return Response.json({ ok: true, already: true });
+      }
+    }
+
+    // --- İDEMPOTENCY: eşleşen ödeme zaten işlendi ---
     if (payment.status === 'completed') {
       log('idempotent', { payment_id: payment.id, order_id: shopierOrderId, message: 'Payment already completed, skipping — no duplicate subscription' });
       if (isBrowser) return Response.redirect(cfg.successUrl + '?order=' + (shopierOrderId || payment.shopier_order_id), 302);
@@ -258,7 +268,20 @@ export default async function (req) {
       subscription_plan: planName,
     });
 
-    // Kullanıcıya bildirim gönder
+    // --- MEVCUT "ONAYLA" İŞLEMİYLE AYNI BİLDİRİM (AdminUsers.jsx approve fonksiyonu) ---
+    const wasPending = userRecord?.membership_status === 'pending';
+    if (wasPending) {
+      log('auto_approve', { user_id: payment.user_id, previous_status: 'pending', message: 'User was pending — auto-approving (same as admin Onayla button)' });
+      await base44.asServiceRole.entities.Notification.create({
+        user_id: payment.user_id,
+        title: 'Üyeliğiniz onaylandı',
+        body: 'Premium içeriklere erişebilirsiniz.',
+        type: 'info',
+      }).catch(() => {});
+      log('notification_sent', { user_id: payment.user_id, title: 'Üyeliğiniz onaylandı' });
+    }
+
+    // Ödeme onayı bildirimi
     await base44.asServiceRole.entities.Notification.create({
       user_id: payment.user_id,
       title: 'Ödeme onaylandı! Aboneliğiniz aktif edildi.',
@@ -267,8 +290,18 @@ export default async function (req) {
     }).catch(() => {});
     log('notification_sent', { user_id: payment.user_id, title: 'Ödeme onaylandı! Aboneliğiniz aktif edildi.' });
 
+    // --- AdminLog: mevcut "Onayla" butonunun yaptığı kayıt (otomatik) ---
+    await base44.asServiceRole.entities.AdminLog.create({
+      admin_id: 'system',
+      admin_name: 'Shopier Webhook (Otomatik)',
+      action: wasPending ? 'Üyelik onaylandı (Otomatik - Shopier ödeme)' : 'Abonelik aktif edildi (Otomatik - Shopier ödeme)',
+      target: buyerEmail || payment.user_id,
+      details: `Sipariş: ${shopierOrderId}, Ürün: ${planName}, Süre: ${durationDays} gün, Bitiş: ${endDate.toISOString()}`,
+    }).catch(() => {});
+    log('admin_log_created', { action: wasPending ? 'Üyelik onaylandı (Otomatik)' : 'Abonelik aktif edildi (Otomatik)', target: buyerEmail });
+
     await logSecurity(base44, 'shopier_payment_success', { id: payment.user_id, email: buyerEmail }, shopierOrderId, 'info').catch(() => {});
-    log('completed', { message: 'Subscription activated successfully', user_id: payment.user_id, end_date: endDate.toISOString() });
+    log('completed', { message: 'Subscription activated and user auto-approved successfully', user_id: payment.user_id, was_pending: wasPending, end_date: endDate.toISOString() });
 
     if (isBrowser) return Response.redirect(cfg.successUrl + '?order=' + (shopierOrderId || payment.shopier_order_id), 302);
     return Response.json({ ok: true, activated: true, user_id: payment.user_id, end_date: endDate.toISOString() });
