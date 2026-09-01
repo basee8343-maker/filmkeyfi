@@ -132,14 +132,8 @@ export default function AdminShopier() {
       </form>
 
       <div className="max-w-xl mt-6 bg-card border border-border rounded-xl p-6">
-        <div className="flex items-center gap-2 mb-3"><CreditCard className="w-5 h-5 text-primary" /><h3 className="font-bold">Abonelik Paketi</h3></div>
-        <div className="flex items-center justify-between p-4 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/30">
-          <div>
-            <p className="font-bold text-lg">1 Aylık Abonelik</p>
-            <p className="text-sm text-muted-foreground">30 Gün · Tüm içeriklere erişim</p>
-          </div>
-          <p className="text-3xl font-extrabold text-gradient">50 ₺</p>
-        </div>
+        <div className="flex items-center gap-2 mb-2"><CreditCard className="w-5 h-5 text-primary" /><h3 className="font-bold">Abonelik Ürünleri</h3></div>
+        <p className="text-sm text-muted-foreground">Abonelik paketlerini ve Shopier ödeme linklerini <span className="text-primary font-semibold">Abonelik Ürünleri</span> bölümünden yönetin. Her ürün için fiyat, süre ve Shopier ödeme linki tanımlayabilirsiniz.</p>
       </div>
     </div>
   );

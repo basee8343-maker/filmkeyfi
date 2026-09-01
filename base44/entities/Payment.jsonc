@@ -8,6 +8,12 @@
     "user_name": {
       "type": "string"
     },
+    "user_email": {
+      "type": "string"
+    },
+    "product_id": {
+      "type": "string"
+    },
     "package_name": {
       "type": "string"
     },
@@ -19,7 +25,8 @@
       "enum": [
         "pending",
         "completed",
-        "failed"
+        "failed",
+        "cancelled"
       ],
       "default": "pending"
     },
@@ -36,6 +43,10 @@
     "currency": {
       "type": "string",
       "default": "TRY"
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [

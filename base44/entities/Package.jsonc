@@ -5,6 +5,9 @@
     "name": {
       "type": "string"
     },
+    "description": {
+      "type": "string"
+    },
     "price": {
       "type": "number"
     },
@@ -39,6 +42,9 @@
     "duration_days": {
       "type": "integer",
       "default": 30
+    },
+    "shopier_payment_url": {
+      "type": "string"
     }
   },
   "required": [

@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import { LayoutDashboard, UserCheck, Users, Film, FolderTree, DoorOpen, MessageSquare, LifeBuoy, CreditCard, RefreshCw, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, Crown, ChevronDown } from 'lucide-react';
+import { LayoutDashboard, UserCheck, Users, Film, FolderTree, DoorOpen, MessageSquare, LifeBuoy, CreditCard, RefreshCw, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, Crown, ChevronDown, Package as PackageIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAdminNotifications, requestNotificationPermission } from '@/hooks/useAdminNotifications';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -17,6 +17,7 @@ const nav = [
   { to: '/admin/oda-mesajlari', label: 'Oda Mesajları', icon: MessageSquare },
   { to: '/admin/destek', label: 'Destek Mesajları', icon: LifeBuoy },
   { group: 'Ödemeler', items: [
+    { to: '/admin/paketler', label: 'Abonelik Ürünleri', icon: PackageIcon },
     { to: '/admin/odemeler', label: 'Ödeme Geçmişi', icon: CreditCard },
     { to: '/admin/abonelikler', label: 'Abonelikler', icon: Crown },
     { to: '/admin/shopier', label: 'Shopier Ayarları', icon: Settings },
