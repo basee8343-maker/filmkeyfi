@@ -1,15 +1,19 @@
 import { useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 import { useAuth } from '@/lib/AuthContext';
 import Navbar from '@/components/layout/Navbar';
 import BottomNav from '@/components/layout/BottomNav';
 import MaintenanceMode from '@/pages/MaintenanceMode';
 
+// Abonelik gerektirmeyen sayfalar
+const EXEMPT_PATHS = ['/abonelik', '/profil', '/destek', '/bildirimler', '/odeme', '/güvenlik-protokolü', '/bakim'];
+
 export default function AppLayout() {
   const { pathname } = useLocation();
-  const { user } = useCurrentUser();
+  const navigate = useNavigate();
+  const { user, loading } = useCurrentUser();
   const { publicSettings } = useAuth();
   const isRoom = pathname.startsWith('/oda/');
 
@@ -19,6 +23,16 @@ export default function AppLayout() {
   useEffect(() => {
     if (isMaintenance) window.location.href = '/bakim';
   }, [isMaintenance]);
+
+  // Abonelik kontrolü: ödemesi olmayan kullanıcılar içerik sayfalarına gidemez
+  useEffect(() => {
+    if (loading || !user || isRoom) return;
+    if (membershipActive(user)) return;
+    const isExempt = EXEMPT_PATHS.some((p) => pathname.startsWith(p)) || pathname.startsWith('/admin') || pathname.startsWith('/kullanici');
+    if (!isExempt && pathname !== '/abonelik') {
+      navigate('/abonelik', { replace: true });
+    }
+  }, [loading, user, pathname, isRoom]);
 
   // Gerçek zamanlı askıya alma tespiti
   useEffect(() => {
