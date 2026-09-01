@@ -38,6 +38,15 @@ export default function Register() {
     if (!acceptTerms) { setError("Kullanım koşullarını kabul etmelisiniz"); return; }
     if (password !== confirmPassword) { setError("Şifreler eşleşmiyor"); return; }
     if (password.length < 6) { setError("Şifre en az 6 karakter olmalı"); return; }
+    // Yeni kayıt izni kontrolü
+    try {
+      const ps = await base44.functions.invoke('public-settings', {});
+      const settings = ps.data || ps;
+      if (settings.registration_open === false) {
+        setError("Yeni kayıtlar şu anda kapalı. Lütfen daha sonra tekrar deneyin.");
+        return;
+      }
+    } catch { /* devam et */ }
     setLoading(true);
     try {
       await base44.auth.register({ email, password });
@@ -64,8 +73,8 @@ export default function Register() {
           await base44.functions.invoke('ensure-member-id').catch(() => {});
         } catch {}
       }
-      toast({ title: "Kayıt tamamlandı", description: "Hesabınız admin onayı bekliyor." });
-      window.location.href = "/onay-bekleniyor";
+      toast({ title: "Kayıt tamamlandı", description: "Aboneliğinizi aktif etmek için ödeme yapın." });
+      window.location.href = "/abonelik";
     } catch (err) {
       setError(err.message || "Geçersiz doğrulama kodu");
     } finally {

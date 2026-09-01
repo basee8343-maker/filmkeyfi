@@ -5,6 +5,7 @@ import VideoPlayer from '@/components/player/VideoPlayer';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 import { Users, MessageSquare, Lock, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import SubscriptionPrompt from '@/components/SubscriptionPrompt';
 
 export default function Watch() {
   const { id } = useParams();
@@ -17,6 +18,7 @@ export default function Watch() {
   const [episode, setEpisode] = useState(null);
   const [src, setSrc] = useState('');
   const [videoError, setVideoError] = useState('');
+  const [expired, setExpired] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +34,8 @@ export default function Watch() {
         const res = await base44.functions.invoke('authorize-video', { movie_id: id, episode_id: ep?.id });
         setSrc(res.data.url);
       } catch (e) {
-        setVideoError(e.response?.data?.error || 'Video yüklenemedi');
+        if (e.response?.data?.expired) setExpired(true);
+        else setVideoError(e.response?.data?.error || 'Video yüklenemedi');
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -48,13 +51,7 @@ export default function Watch() {
   if (ul || loading) return <div className="h-[60vh] flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   if (!membershipActive(user)) {
-    return (
-      <div className="px-4 py-20 text-center">
-        <h2 className="text-2xl font-bold mb-2">Üyeliğiniz aktif değil</h2>
-        <p className="text-muted-foreground mb-6">İçerikleri izlemek için aktif bir üyeliğiniz olmalı.</p>
-        <Link to="/profil" className="inline-flex bg-primary text-primary-foreground px-6 py-3 rounded-lg font-semibold">Üyeliğimi Yönet</Link>
-      </div>
-    );
+    return <SubscriptionPrompt />;
   }
 
   if (!movie) return <p className="p-6">İçerik bulunamadı.</p>;

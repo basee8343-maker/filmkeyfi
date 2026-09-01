@@ -2,13 +2,23 @@ import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useAuth } from '@/lib/AuthContext';
 import Navbar from '@/components/layout/Navbar';
 import BottomNav from '@/components/layout/BottomNav';
+import MaintenanceMode from '@/pages/MaintenanceMode';
 
 export default function AppLayout() {
   const { pathname } = useLocation();
   const { user } = useCurrentUser();
+  const { publicSettings } = useAuth();
   const isRoom = pathname.startsWith('/oda/');
+
+  // Bakım modu: admin olmayan kullanıcılar bakım ekranı görür
+  const isAdmin = user?.role === 'admin';
+  const isMaintenance = publicSettings?.maintenance_mode && !isAdmin && pathname !== '/bakim';
+  useEffect(() => {
+    if (isMaintenance) window.location.href = '/bakim';
+  }, [isMaintenance]);
 
   // Gerçek zamanlı askıya alma tespiti
   useEffect(() => {

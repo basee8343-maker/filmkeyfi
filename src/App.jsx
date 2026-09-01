@@ -33,7 +33,15 @@ import AdminNotifications from '@/pages/admin/AdminNotifications';
 import AdminCategories from '@/pages/admin/AdminCategories';
 import OpenRooms from '@/pages/OpenRooms';
 import AdminReports from '@/pages/admin/AdminReports';
+import AdminShopier from '@/pages/admin/AdminShopier';
+import AdminPaymentHistory from '@/pages/admin/AdminPaymentHistory';
+import AdminSubscriptions from '@/pages/admin/AdminSubscriptions';
+import AdminSettings from '@/pages/admin/AdminSettings';
 import AdminSecurity from '@/pages/admin/AdminSecurity';
+import Subscription from '@/pages/Subscription';
+import PaymentResult from '@/pages/PaymentResult';
+import MaintenanceMode from '@/pages/MaintenanceMode';
+import { ThemeProvider } from '@/lib/ThemeContext';
 import UserProfile from '@/pages/UserProfile';
 import { Navigate } from 'react-router-dom';
 import Login from '@/pages/Login';
@@ -91,6 +99,10 @@ const AuthenticatedApp = () => {
           <Route path="/profil" element={<Profile />} />
           <Route path="/kullanici/:id" element={<UserProfile />} />
           <Route path="/güvenlik-protokolü" element={<SecurityProtocol />} />
+          <Route path="/abonelik" element={<Subscription />} />
+          <Route path="/odeme/basarili" element={<PaymentResult />} />
+          <Route path="/odeme/basarisiz" element={<PaymentResult />} />
+          <Route path="/bakim" element={<MaintenanceMode />} />
         </Route>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
@@ -103,12 +115,14 @@ const AuthenticatedApp = () => {
           <Route path="oda-mesajlari" element={<AdminRoomMessages />} />
           <Route path="destek" element={<AdminSupport />} />
           <Route path="paketler" element={<AdminPackages />} />
-          <Route path="odemeler" element={<AdminReports />} />
+          <Route path="odemeler" element={<AdminPaymentHistory />} />
+          <Route path="abonelikler" element={<AdminSubscriptions />} />
+          <Route path="shopier" element={<AdminShopier />} />
           <Route path="yenilemeler" element={<AdminRenewals />} />
           <Route path="bildirimler" element={<AdminNotifications />} />
-          <Route path="raporlar" element={<AdminReports />} />
           <Route path="guvenlik" element={<AdminSecurity />} />
-          <Route path="ayalar" element={<AdminDashboard />} />
+          <Route path="ayarlar" element={<AdminSettings />} />
+          <Route path="ayalar" element={<AdminSettings />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
@@ -122,11 +136,13 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <ScrollToTop />
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
+        <ThemeProvider>
+          <Router>
+            <ScrollToTop />
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </ThemeProvider>
       </QueryClientProvider>
     </AuthProvider>
   )

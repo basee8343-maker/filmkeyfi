@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import { LayoutDashboard, UserCheck, Users, Film, FolderTree, DoorOpen, MessageSquare, LifeBuoy, Package, CreditCard, RefreshCw, Bell, BarChart3, Settings, LogOut, Menu, X, ShieldAlert, KeyRound } from 'lucide-react';
+import { LayoutDashboard, UserCheck, Users, Film, FolderTree, DoorOpen, MessageSquare, LifeBuoy, CreditCard, RefreshCw, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, Crown, ChevronDown } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAdminNotifications, requestNotificationPermission } from '@/hooks/useAdminNotifications';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const nav = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -15,13 +16,15 @@ const nav = [
   { to: '/admin/odalar', label: 'Odalar', icon: DoorOpen },
   { to: '/admin/oda-mesajlari', label: 'Oda Mesajları', icon: MessageSquare },
   { to: '/admin/destek', label: 'Destek Mesajları', icon: LifeBuoy },
-  { to: '/admin/paketler', label: 'Paketler', icon: Package },
-  { to: '/admin/odemeler', label: 'Ödemeler', icon: CreditCard },
+  { group: 'Ödemeler', items: [
+    { to: '/admin/odemeler', label: 'Ödeme Geçmişi', icon: CreditCard },
+    { to: '/admin/abonelikler', label: 'Abonelikler', icon: Crown },
+    { to: '/admin/shopier', label: 'Shopier Ayarları', icon: Settings },
+  ]},
   { to: '/admin/yenilemeler', label: 'Yenileme Talepleri', icon: RefreshCw },
   { to: '/admin/bildirimler', label: 'Bildirimler', icon: Bell },
   { to: '/admin/guvenlik', label: 'Güvenlik', icon: ShieldAlert },
-  { to: '/admin/raporlar', label: 'Raporlar', icon: BarChart3 },
-  { to: '/admin/ayalar', label: 'Ayarlar', icon: Settings },
+  { to: '/admin/ayarlar', label: 'Ayarlar', icon: Settings },
 ];
 
 export default function AdminLayout() {
@@ -34,6 +37,7 @@ export default function AdminLayout() {
   const [twofaErr, setTwofaErr] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [notifGranted, setNotifGranted] = useState(() => typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted');
+  const [payOpen, setPayOpen] = useState(true);
   useAdminNotifications();
   const handleNotif = async () => { const r = await requestNotificationPermission(); setNotifGranted(r === 'granted'); };
 
@@ -71,6 +75,13 @@ export default function AdminLayout() {
 
   const logout = () => { sessionStorage.removeItem('admin2fa'); base44.auth.logout('/login'); };
 
+  const renderItem = (n) => (
+    <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setOpen(false)}
+      className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium ${isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground neon-glow-primary' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}>
+      <n.icon className="w-4 h-4" /> {n.label}
+    </NavLink>
+  );
+
   return (
     <div className="min-h-screen bg-background flex">
       <aside className={`fixed lg:sticky top-0 z-40 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
@@ -79,14 +90,17 @@ export default function AdminLayout() {
           <button onClick={() => setOpen(false)} className="lg:hidden p-1"><X className="w-5 h-5" /></button>
         </div>
         <nav className="flex-1 overflow-y-auto px-2 space-y-0.5">
-          {nav.map((n) => (
-            <NavLink key={n.to} to={n.to} end={n.end} onClick={() => setOpen(false)}
-              className={({ isActive }) => `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium ${isActive ? 'bg-sidebar-primary text-sidebar-primary-foreground' : 'text-sidebar-foreground hover:bg-sidebar-accent'}`}>
-              <n.icon className="w-4 h-4" /> {n.label}
-            </NavLink>
-          ))}
+          {nav.map((n) => n.group ? (
+            <div key={n.group}>
+              <button onClick={() => setPayOpen(!payOpen)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-muted-foreground uppercase tracking-wide hover:bg-sidebar-accent">
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${payOpen ? '' : '-rotate-90'}`} /> {n.group}
+              </button>
+              {payOpen && <div className="ml-3 space-y-0.5 mb-1">{n.items.map(renderItem)}</div>}
+            </div>
+          ) : renderItem(n))}
         </nav>
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="p-3 border-t border-sidebar-border space-y-1">
+          <ThemeToggle className="w-full justify-center" />
           <Link to="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent">Siteye Dön</Link>
           <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-sidebar-accent"><LogOut className="w-4 h-4" /> Çıkış</button>
         </div>
@@ -98,10 +112,13 @@ export default function AdminLayout() {
           onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); if (Math.abs(dx) > 55) setOpen((v) => !v); }}>
           <button onClick={() => setOpen(true)}><Menu className="w-6 h-6" /></button>
           <span className="ml-3 font-bold">Admin Panel</span>
-          <button onClick={handleNotif} className="ml-auto p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimleri Aç">
-            <Bell className="w-5 h-5" />
-            {notifGranted && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
-          </button>
+          <div className="ml-auto flex items-center gap-2">
+            <ThemeToggle />
+            <button onClick={handleNotif} className="p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimleri Aç">
+              <Bell className="w-5 h-5" />
+              {notifGranted && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
+            </button>
+          </div>
         </header>
         <div className="p-4 sm:p-6">
           <Outlet />

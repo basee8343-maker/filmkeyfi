@@ -13,6 +13,7 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings, setAppPublicSettings] = useState(null); // Contains only { id, public_settings }
+  const [publicSettings, setPublicSettings] = useState({ maintenance_mode: false, registration_open: true, app_theme: 'auto' });
 
   useEffect(() => {
     checkAppState();
@@ -37,7 +38,13 @@ export const AuthProvider = ({ children }) => {
       try {
         const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
         setAppPublicSettings(publicSettings);
-        
+
+        // Uygulama seviyesi ayarları yükle (bakım modu, kayıt izni, tema)
+        try {
+          const ps = await base44.functions.invoke('public-settings', {});
+          setPublicSettings(ps.data || ps);
+        } catch {}
+
         // If we got the app public settings successfully, check if user is authenticated
         if (appParams.token) {
           await checkUserAuth();
@@ -145,6 +152,7 @@ export const AuthProvider = ({ children }) => {
       isLoadingPublicSettings,
       authError,
       appPublicSettings,
+      publicSettings,
       authChecked,
       logout,
       navigateToLogin,

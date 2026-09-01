@@ -48,6 +48,40 @@
     "twofa_enabled": {
       "type": "boolean",
       "default": false
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "ACTIVE",
+        "EXPIRED",
+        "PENDING",
+        "CANCELLED"
+      ],
+      "default": "PENDING"
+    },
+    "subscription_start_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "subscription_end_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "subscription_plan": {
+      "type": "string"
+    },
+    "subscription_price": {
+      "type": "number"
+    },
+    "payment_provider": {
+      "type": "string"
+    },
+    "payment_id": {
+      "type": "string"
+    },
+    "last_payment_date": {
+      "type": "string",
+      "format": "date-time"
     }
   }
 }
