@@ -10,6 +10,7 @@ export default function AdminShopier() {
   const [cfg, setCfg] = useState({});
   const [showKey, setShowKey] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+  const [showToken, setShowToken] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -21,6 +22,8 @@ export default function AdminShopier() {
       shopier_secret: get('shopier_secret'),
       shopier_website_index: get('shopier_website_index', '1'),
       shopier_mode: get('shopier_mode', 'live'),
+      shopier_webhook_url: get('shopier_webhook_url', WEBHOOK_URL),
+      shopier_webhook_token: get('shopier_webhook_token'),
       shopier_success_url: get('shopier_success_url', '/odeme/basarili'),
       shopier_fail_url: get('shopier_fail_url', '/odeme/basarisiz'),
     });
@@ -42,7 +45,7 @@ export default function AdminShopier() {
     setSaving(false);
   };
 
-  const copyWebhook = () => { navigator.clipboard.writeText(WEBHOOK_URL); setCopied(true); setTimeout(() => setCopied(false), 2000); toast({ title: 'Webhook URL kopyalandı' }); };
+  const copyWebhook = () => { navigator.clipboard.writeText(cfg.shopier_webhook_url || WEBHOOK_URL); setCopied(true); setTimeout(() => setCopied(false), 2000); toast({ title: 'Webhook URL kopyalandı' }); };
 
   const field = 'w-full bg-secondary/60 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring border border-border';
   const label = 'block text-xs font-semibold text-muted-foreground mb-1.5';
@@ -92,13 +95,25 @@ export default function AdminShopier() {
           </div>
         </div>
 
-        <div>
-          <label className={label}>Webhook / Ödeme Bildirim Adresi</label>
-          <div className="flex items-center gap-2">
-            <input readOnly className={field + ' pr-10 font-mono text-xs'} value={WEBHOOK_URL} />
-            <button type="button" onClick={copyWebhook} className="p-2.5 rounded-lg bg-secondary shrink-0" title="Kopyala">{copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}</button>
+        <div className="border-t border-border pt-5">
+          <h3 className="font-bold text-sm mb-4">Webhook Ayarları</h3>
+
+          <div className="space-y-4">
+            <div>
+              <label className={label}>Webhook / Ödeme Bildirim Adresi</label>
+              <div className="flex items-center gap-2">
+                <input className={field + ' font-mono text-xs'} value={cfg.shopier_webhook_url || ''} onChange={(e) => setCfg({ ...cfg, shopier_webhook_url: e.target.value })} placeholder={WEBHOOK_URL} />
+                <button type="button" onClick={copyWebhook} className="p-2.5 rounded-lg bg-secondary shrink-0" title="Kopyala">{copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}</button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Bu adresi Shopier panelindeki bildirim URL'sine yapıştırın. Varsayılan: {WEBHOOK_URL}</p>
+            </div>
+
+            <div>
+              <label className={label}>Webhook Doğrulama Token'ı</label>
+              <input type={showToken ? 'text' : 'password'} className={field} placeholder="Webhook imza token" value={cfg.shopier_webhook_token || ''} onChange={(e) => setCfg({ ...cfg, shopier_webhook_token: e.target.value })} />
+              <p className="text-xs text-muted-foreground mt-1">Shopier webhook aboneliği oluşturunca dönen token. İmza doğrulaması (HMAC-SHA256) için zorunludur.</p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">Bu adresi Shopier panelindeki bildirim URL'sine yapıştırın.</p>
         </div>
 
         <div>
