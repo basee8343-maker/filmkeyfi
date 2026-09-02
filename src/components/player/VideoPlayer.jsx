@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Settings, Rewind, FastForward } from 'lucide-react';
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onSeek, syncState, isOwner, subtitles, fullscreenRef, watermark, controlsRaised = false }) {
+export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onSeek, onEnded, syncState, isOwner, subtitles, fullscreenRef, watermark, controlsRaised = false }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [playing, setPlaying] = useState(false);
@@ -144,7 +144,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
       style={{ touchAction: isOwner ? 'manipulation' : 'none' }}>
       <video ref={videoRef} src={src} className="w-full h-full object-contain"
         onLoadedMetadata={onLoaded} onTimeUpdate={onTime} onPlay={handlePlay} onPause={handlePause}
-        onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)}
+        onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onEnded={onEnded}
         crossOrigin="anonymous" playsInline controls={false} disablePictureInPicture={!isOwner} />
 
       {buffering && <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}
@@ -161,7 +161,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
         <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-black/70 text-white text-sm px-3 py-1 rounded pointer-events-none">{subtitles}</div>
       )}
 
-      <div className={`absolute inset-x-0 p-3 sm:p-4 bg-gradient-to-t from-black/90 to-transparent transition-opacity ${controlsRaised ? 'bottom-20' : 'bottom-0'} ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+      <div className={`absolute inset-x-0 p-3 sm:p-4 bg-gradient-to-t from-black/90 to-transparent transition-opacity ${controlsRaised ? 'bottom-24' : 'bottom-0'} ${showControls ? 'opacity-100' : 'opacity-0'}`} style={{ paddingBottom: controlsRaised ? undefined : 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
         {isOwner && (
           <div className="flex items-center gap-2 mb-2 text-white text-xs">
             <span>{fmt(current)}</span>
@@ -177,7 +177,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
           {isOwner && <button onClick={() => skip(-10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn geri"><Rewind className="w-5 h-5" /></button>}
           {isOwner && <button onClick={() => skip(10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn ileri"><FastForward className="w-5 h-5" /></button>}
           <button onClick={() => { const v = videoRef.current; v.muted = !v.muted; setMuted(v.muted); }} className="p-2 hover:bg-white/10 rounded-lg">{muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}</button>
-          <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={(e) => { const v = videoRef.current; v.volume = e.target.value; setVolume(e.target.value); v.muted = false; setMuted(false); }} className="w-16 sm:w-24 accent-primary hidden sm:block" />
+          <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={(e) => { const v = videoRef.current; v.volume = e.target.value; setVolume(e.target.value); v.muted = false; setMuted(false); }} className="w-14 sm:w-24 accent-primary" />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             {isOwner && (
               <div className="relative">

@@ -133,6 +133,18 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       }
     })();
 
+    // Tarayıcılar kullanıcı etkileşimi olmadan ses otomatik oynatmayı engeller.
+    // İlk dokunma/tıkta sesi otomatik başlat — hoparlör butonuna basmaya gerek kalmasın.
+    const startAudioOnInteraction = () => {
+      roomRef.current?.startAudio().then(() => {
+        audioElementsRef.current.forEach((element) => element.play().catch(() => {}));
+        setAudioBlocked(false);
+        setError('');
+      }).catch(() => {});
+    };
+    document.addEventListener('touchstart', startAudioOnInteraction, { once: true });
+    document.addEventListener('click', startAudioOnInteraction, { once: true });
+
     return () => {
       cancelled = true;
       room.removeAllListeners();
@@ -141,6 +153,8 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       room.localParticipant.setMicrophoneEnabled(false).catch(() => {});
       room.disconnect();
       if (roomRef.current === room) roomRef.current = null;
+      document.removeEventListener('touchstart', startAudioOnInteraction);
+      document.removeEventListener('click', startAudioOnInteraction);
       setActive(false);
       setSpeakingIds([]);
       setParticipantMicStates({});

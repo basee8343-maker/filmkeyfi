@@ -92,6 +92,10 @@ export default function AdminLayout() {
           <button onClick={() => setOpen(false)} className="lg:hidden p-1"><X className="w-5 h-5" /></button>
         </div>
         <nav className="flex-1 overflow-y-auto px-2 space-y-0.5">
+          <NavLink to="/" end onClick={() => setOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-sidebar-foreground hover:bg-sidebar-accent mb-1">
+            <Home className="w-4 h-4" /> Ana Sayfa
+          </NavLink>
           {nav.map((n) => n.group ? (
             <div key={n.group}>
               <button onClick={() => setPayOpen(!payOpen)} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-bold text-muted-foreground uppercase tracking-wide hover:bg-sidebar-accent">
@@ -107,13 +111,14 @@ export default function AdminLayout() {
         </div>
       </aside>
       {open && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setOpen(false)} />}
-      <div className="flex-1 min-w-0">
-        <header className="lg:hidden sticky top-0 z-20 glass border-b border-border min-h-14 flex items-center px-4 pb-2 pt-[max(env(safe-area-inset-top),0.75rem)]"
+      <div className="flex-1 min-w-0 overflow-x-hidden"
+        onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); if (dx > 55) setOpen(true); else if (dx < -55) setOpen(false); }}>
+          <header className="lg:hidden sticky top-0 z-20 glass border-b border-border min-h-14 flex items-center px-4 pb-2 pt-[max(env(safe-area-inset-top),0.75rem)]"
           style={{ touchAction: 'pan-y' }}
           onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
           onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); if (dx > 55) setOpen(true); else if (dx < -55) setOpen(false); }}>
           <button onClick={() => setOpen(true)}><Menu className="w-6 h-6" /></button>
-          <Link to="/" className="ml-2 p-1.5 rounded-lg hover:bg-secondary" title="Ana Sayfa"><Home className="w-5 h-5" /></Link>
           <span className="ml-1 hidden min-[390px]:block font-bold whitespace-nowrap">Admin Panel</span>
           <div className="ml-auto flex min-w-0 items-center gap-1">
             <ThemeToggle />
