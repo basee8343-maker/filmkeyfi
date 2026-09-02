@@ -1,21 +1,25 @@
 {
-  "id": "/",
   "name": "FILMKEYFİ",
   "short_name": "FILMKEYFİ",
-  "description": "Film ve dizileri arkadaşlarınla izle.",
-  "lang": "tr",
-  "start_url": "/login?source=pwa",
+  "description": "Film ve dizi izleme platformu",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "any",
   "background_color": "#09090b",
   "theme_color": "#09090b",
+  "lang": "tr",
   "icons": [
     {
-      "src": "/film-keyfi-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "https://media.base44.com/images/public/6a77d66e4da6de214628ee62/2df01fc1d_4954A193-C5FA-4AC9-97FE-94EE609A6679.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://media.base44.com/images/public/6a77d66e4da6de214628ee62/2df01fc1d_4954A193-C5FA-4AC9-97FE-94EE609A6679.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
