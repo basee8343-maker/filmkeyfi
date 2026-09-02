@@ -13,6 +13,7 @@ import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
 import PartyControlBar from '@/components/player/PartyControlBar';
 import LiveKitDebugPanel from '@/components/player/LiveKitDebugPanel';
 import RoomDirectMessages from '@/components/player/RoomDirectMessages';
+import RoomNotifications from '@/components/player/RoomNotifications';
 import useSocialBadges from '@/hooks/useSocialBadges';
 
 export default function WatchParty() {
@@ -269,6 +270,7 @@ export default function WatchParty() {
     <div className="fixed inset-x-0 top-0 h-screen h-[100dvh] bg-black flex flex-col overflow-hidden" style={{ touchAction: 'pan-y', overscrollBehavior: 'none' }}>
       {/* Tam ekran video + alt kontrol alanı */}
       <div ref={playerWrapRef} className="flex-1 flex min-h-0 relative" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+        <RoomNotifications participants={room?.participants || []} currentUserId={user?.id} />
         <div className={`flex items-center justify-center bg-black ${chatOpen ? 'flex-1 min-w-0' : 'flex-1 min-w-0'}`}>
           {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} fullscreenRef={playerWrapRef} watermark={user} controlsRaised /> :
             <div className="text-muted-foreground text-sm p-6 text-center">Video kaynağı yok</div>}

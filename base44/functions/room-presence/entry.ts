@@ -7,6 +7,11 @@ async function sha256Hex(salt, pw) {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+async function updatePresenceRoom(base44, userId, roomId) {
+  const records = await base44.asServiceRole.entities.UserPresence.filter({ user_id: userId }, '-created_date', 1).catch(() => []);
+  if (records[0]) await base44.asServiceRole.entities.UserPresence.update(records[0].id, { current_room_id: roomId || '' }).catch(() => {});
+}
+
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -75,6 +80,7 @@ export default async function(req) {
           text: `${name} odaya katıldı.`, type: 'system'
         });
       }
+      await updatePresenceRoom(base44, user.id, room_id);
       return Response.json({ ok: true });
     }
 
@@ -142,6 +148,7 @@ export default async function(req) {
 
     // leave
     if (ghost) return Response.json({ ok: true });
+    await updatePresenceRoom(base44, user.id, '');
     const participants = (room.participants || []).filter((p) => p.user_id !== user.id);
     if (participants.length === 0) {
       await base44.asServiceRole.entities.Room.update(room_id, { participants });

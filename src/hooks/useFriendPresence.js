@@ -21,5 +21,6 @@ export default function useFriendPresence(user, maintain = false) {
     return () => { clearInterval(heartbeat); off(); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('online', visibility); window.removeEventListener('offline', visibility); update(false).catch(() => {}); };
   }, [user?.id, load, maintain]);
   const isOnline = (userId) => { const record = presence.find((item) => item.user_id === userId); return Boolean(record?.online && now - new Date(record.last_seen).getTime() < 60000); };
-  return { isOnline };
+  const getRoomId = (userId) => presence.find((item) => item.user_id === userId)?.current_room_id || '';
+  return { isOnline, getRoomId };
 }

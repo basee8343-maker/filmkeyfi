@@ -12,6 +12,9 @@
     "last_seen": {
       "type": "string",
       "format": "date-time"
+    },
+    "current_room_id": {
+      "type": "string"
     }
   },
   "required": [

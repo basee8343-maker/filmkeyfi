@@ -126,4 +126,19 @@
     50% { box-shadow: 0 0 0 5px rgba(74, 222, 128, 0.35), 0 0 22px 8px rgba(74, 222, 128, 0.7); }
   }
   .speaking-glow { animation: speaking-ring 1s ease-in-out infinite; }
+  @keyframes room-notif-in {
+    from { transform: translateY(-20px) scale(0.9); opacity: 0; }
+    to { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes room-notif-out-left {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(-150%); opacity: 0; }
+  }
+  @keyframes room-notif-out-right {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(150%); opacity: 0; }
+  }
+  .room-notif-in { animation: room-notif-in 0.3s ease-out forwards; }
+  .room-notif-out-left { animation: room-notif-out-left 0.4s ease-in forwards; }
+  .room-notif-out-right { animation: room-notif-out-right 0.4s ease-in forwards; }
 }
