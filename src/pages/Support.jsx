@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
-import { MessageCircle, Send, Paperclip, Headset } from 'lucide-react';
+import { MessageCircle, Send, Image as ImageIcon, Headset, X } from 'lucide-react';
+import { Image } from '@/components/ui/image';
 
 const CATS = ['Genel', 'Teknik Sorun', 'Üyelik', 'Ödeme', 'İçerik Talebi', 'Diğer'];
 
@@ -15,6 +16,8 @@ export default function Support() {
   const [text, setText] = useState('');
   const [showNew, setShowNew] = useState(false);
   const [form, setForm] = useState({ subject: '', category: 'Genel', message: '' });
+  const [uploading, setUploading] = useState(false);
+  const [lightbox, setLightbox] = useState(null);
   const endRef = useRef(null);
 
   const load = () => {
@@ -79,8 +82,13 @@ export default function Support() {
 
   const onFile = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
-    try { const { file_url } = await base44.integrations.Core.UploadFile({ file: f }); await base44.entities.SupportMessage.create({ ticket_id: active.id, owner_id: user.id, user_id: user.id, sender: 'user', text: 'Dosya paylaştı', file_url }); }
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(f.type)) { toast({ title: 'Sadece JPG, PNG, WEBP', variant: 'destructive' }); e.target.value = ''; return; }
+    if (f.size > 10 * 1024 * 1024) { toast({ title: 'Maksimum 10 MB', variant: 'destructive' }); e.target.value = ''; return; }
+    setUploading(true);
+    try { const { file_url } = await base44.integrations.Core.UploadFile({ file: f }); await base44.entities.SupportMessage.create({ ticket_id: active.id, owner_id: user.id, user_id: user.id, sender: 'user', text: '', file_url }); }
     catch { toast({ title: 'Yükleme hatası', variant: 'destructive' }); }
+    finally { setUploading(false); e.target.value = ''; }
   };
 
   return (
@@ -119,18 +127,20 @@ export default function Support() {
                 {messages.map((m) => (
                   <div key={m.id} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm overflow-hidden ${m.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
-                      {m.file_url && <img src={m.file_url} alt="foto" className="rounded-lg max-w-full max-h-48 object-cover mb-1" />}
-                      {m.text && m.text !== 'Dosya paylaştı' && m.text !== '📷 Fotoğraf' && <p>{m.text}</p>}
+                      {m.file_url && <Image src={m.file_url} alt="foto" className="rounded-lg max-w-full max-h-48 object-cover mb-1 cursor-pointer" fittingType="fit" onClick={() => setLightbox(m.file_url)} />}
+                      {m.text && <p>{m.text}</p>}
                     </div>
                   </div>
                 ))}
                 <div ref={endRef} />
               </div>
               <form onSubmit={send} className="p-3 border-t border-border flex items-center gap-2">
-                <label className="p-2 rounded-lg hover:bg-secondary cursor-pointer"><Paperclip className="w-5 h-5" /><input type="file" className="hidden" onChange={onFile} /></label>
+                <label className="p-2 rounded-lg hover:bg-secondary cursor-pointer"><ImageIcon className="w-5 h-5" /><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onFile} disabled={uploading} /></label>
                 <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Mesaj yazın..." className="flex-1 bg-secondary/60 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" />
-                <button type="submit" className="p-2.5 rounded-full bg-primary text-primary-foreground"><Send className="w-4 h-4" /></button>
+                <button type="submit" disabled={uploading} className="p-2.5 rounded-full bg-primary text-primary-foreground disabled:opacity-50"><Send className="w-4 h-4" /></button>
+                {uploading && <span className="text-xs text-muted-foreground animate-pulse">Gönderiliyor...</span>}
               </form>
+              {lightbox && <div onClick={() => setLightbox(null)} className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"><button className="absolute top-4 right-4 text-white p-2"><X className="w-6 h-6" /></button><Image src={lightbox} className="max-w-full max-h-full rounded-lg" fittingType="fit" /></div>}
             </>
           ) : <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm"><MessageCircle className="w-8 h-8 mb-2" /><p>Bir konuşma seçin veya yeni talep oluşturun.</p></div>}
         </div>

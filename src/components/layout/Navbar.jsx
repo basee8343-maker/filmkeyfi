@@ -83,7 +83,7 @@ export default function Navbar() {
             {unread > 0 && <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary text-[10px] font-bold flex items-center justify-center text-primary-foreground">{unread}</span>}
           </Link>
           {isActive && (
-          <Link to="/profil?tab=settings" className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full p-1 pr-1 transition-colors hover:bg-secondary sm:pr-3" aria-label="Profil ayarları">
+          <Link to="/profil" className="flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-full p-1 pr-1 transition-colors hover:bg-secondary sm:pr-3" aria-label="Bilgilerim">
             {user?.avatar ? <Image src={user.avatar} className="w-9 h-9 rounded-full" fittingType="fill" /> : <span className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">{(user?.username || user?.full_name || 'K')[0]}</span>}
             <span className="hidden sm:block max-w-28 truncate text-sm font-semibold">{user?.username || user?.full_name || 'Profil'}</span>
           </Link>

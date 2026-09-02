@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
 import { Image } from '@/components/ui/image';
 import ChatUserMenu from '@/components/player/ChatUserMenu';
+import ReportDialog from '@/components/ReportDialog';
 import useMessageProfiles from '@/hooks/useMessageProfiles';
 import { mergeMessages, upsertMessage } from '@/lib/realtimeMessages';
 
@@ -19,6 +20,8 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   const [showEmoji, setShowEmoji] = useState(false);
   const [loading, setLoading] = useState(true);
   const [modTarget, setModTarget] = useState(null); // { userId, userName, userAvatar }
+  const [userMenu, setUserMenu] = useState(null);
+  const [reportTarget, setReportTarget] = useState(null);
   const scrollRef = useRef(null);
   const profiles = useMessageProfiles(messages.map((message) => message.user_id));
 
@@ -74,9 +77,12 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   };
 
   const handleUserClick = (e, m) => {
-    if (isAdmin && m.user_id !== user?.id) {
-      e.preventDefault();
+    if (m.user_id === user?.id) return;
+    e.preventDefault();
+    if (isAdmin) {
       setModTarget({ userId: m.user_id, userName: m.user_name, userAvatar: m.user_avatar });
+    } else {
+      setUserMenu({ userId: m.user_id, userName: m.user_name });
     }
   };
 
@@ -145,6 +151,16 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
           onClose={() => setModTarget(null)}
         />
       )}
+      {userMenu && (
+        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={() => setUserMenu(null)}>
+          <div className="bg-card border border-border rounded-xl p-3 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
+            <p className="font-semibold mb-2">{userMenu.userName}</p>
+            <Link to={`/kullanici/${userMenu.userId}`} onClick={() => setUserMenu(null)} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm">Profili Gör</Link>
+            <button onClick={() => { setReportTarget(userMenu); setUserMenu(null); }} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-destructive/10 text-destructive text-sm font-semibold">Şikayet Et</button>
+          </div>
+        </div>
+      )}
+      {reportTarget && <ReportDialog targetId={reportTarget.userId} targetName={reportTarget.userName} context="room" contextId={roomId} onClose={() => setReportTarget(null)} />}
     </div>
   );
 }

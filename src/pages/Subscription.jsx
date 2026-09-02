@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
-import { CreditCard, Loader2, Check, Shield, Calendar } from 'lucide-react';
+import { CreditCard, Loader2, Check, Shield, Calendar, Landmark, Copy } from 'lucide-react';
 
 export default function Subscription() {
   const { user, loading: ul } = useCurrentUser();
@@ -14,6 +14,7 @@ export default function Subscription() {
   const [manualMessage, setManualMessage] = useState('');
   const [shopierEnabled, setShopierEnabled] = useState(true);
   const [paymentMethods, setPaymentMethods] = useState([]);
+  const [ibanCopied, setIbanCopied] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -86,6 +87,28 @@ export default function Subscription() {
     }
   };
 
+  const sendIban = async (product) => {
+    setPaying(product.id);
+    setError('');
+    try {
+      await base44.entities.Payment.create({
+        user_id: user.id, user_name: user.username || user.full_name, user_email: user.email,
+        product_id: product.id, package_name: product.name, amount: product.price,
+        status: 'pending', provider: 'iban', currency: 'TRY',
+      });
+      setManualMessage('Ödeme bildiriminiz alındı. Yönetici onayından sonra üyeliğiniz aktifleştirilecek.');
+      setPaying(null);
+    } catch (e) {
+      setError(e.response?.data?.error || e.message || 'Bildirim gönderilemedi');
+      setPaying(null);
+    }
+  };
+
+  const ibanMethod = paymentMethods.find((m) => m.provider === 'iban');
+  let ibanData = {};
+  try { ibanData = JSON.parse(ibanMethod?.description || '{}'); } catch {}
+  const copyIban = () => { navigator.clipboard?.writeText(ibanData.iban || ''); setIbanCopied(true); setTimeout(() => setIbanCopied(false), 2000); };
+
   if (ul || loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   const isActive = membershipActive(user);
@@ -109,6 +132,18 @@ export default function Subscription() {
 
         {error && <p className="text-sm text-destructive mb-4 text-center">{error}</p>}
         {manualMessage && <div className="mb-4 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-center text-sm font-semibold text-green-500">{manualMessage}</div>}
+
+        {ibanMethod && (
+          <div className="mb-6 bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+            <h3 className="font-bold mb-2 flex items-center gap-2"><Landmark className="w-5 h-5 text-blue-500" /> IBAN ile Ödeme</h3>
+            <div className="text-sm space-y-1">
+              <p><b>Banka:</b> {ibanData.bank_name}</p>
+              <p className="flex items-center gap-2"><b>IBAN:</b> <span className="font-mono">{ibanData.iban}</span> <button onClick={copyIban} className="text-blue-500"><Copy className="w-3.5 h-3.5" /></button> {ibanCopied && <span className="text-xs text-green-500">Kopyalandı</span>}</p>
+              <p><b>Hesap Sahibi:</b> {ibanData.account_holder}</p>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">Paket seçip parayı IBAN'a gönderdikten sonra "Parayı Gönderdim" butonuna basın.</p>
+          </div>
+        )}
 
         {paymentMethods.length === 0 && (
           <div className="mb-6 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-center text-sm font-semibold text-yellow-500">
@@ -142,6 +177,7 @@ export default function Subscription() {
                   <button onClick={() => buy(p)} disabled={paying === p.id} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50">
                     {paying === p.id ? <><Loader2 className="w-5 h-5 animate-spin" /> İşleniyor...</> : <><CreditCard className="w-5 h-5" /> {paymentMethods.some((m) => m.provider === 'shopier') ? 'Satın Al' : 'Manuel Ödeme Kaydı Oluştur'}</>}
                   </button>
+                  {ibanMethod && <button onClick={() => sendIban(p)} disabled={paying === p.id} className="w-full mt-2 bg-blue-500/20 text-blue-300 border border-blue-500/30 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 text-sm disabled:opacity-50">{paying === p.id ? 'Gönderiliyor...' : 'Parayı Gönderdim'}</button>}
                 </div>
               </div>
             ))}

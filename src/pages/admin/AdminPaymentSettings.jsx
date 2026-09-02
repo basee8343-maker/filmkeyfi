@@ -8,6 +8,7 @@ import CurrencySettingsTab from '@/components/admin/payment/CurrencySettingsTab'
 import TaxSettingsTab from '@/components/admin/payment/TaxSettingsTab';
 import InvoiceSettingsTab from '@/components/admin/payment/InvoiceSettingsTab';
 import RefundSettingsTab from '@/components/admin/payment/RefundSettingsTab';
+import IbanTransferTab from '@/components/admin/payment/IbanTransferTab';
 import { Plus, Info, ShieldCheck, FileText, ExternalLink, Settings, LifeBuoy } from 'lucide-react';
 
 const PROVIDERS = [
@@ -26,7 +27,7 @@ const PROVIDERS = [
   { id: 'other', name: 'Diğer / Özel Sanal POS', logo: '++', color: 'from-gray-500 to-gray-600' },
 ];
 
-const TABS = ['Genel Ayarlar', 'Sanal POS Ayarları', 'Para Birimleri', 'Vergi Ayarları', 'Fatura Ayarları', 'İade Ayarları'];
+const TABS = ['Genel Ayarlar', 'Sanal POS Ayarları', 'IBAN Transfer', 'Para Birimleri', 'Vergi Ayarları', 'Fatura Ayarları', 'İade Ayarları'];
 const SECURITY_TIPS = ['Gizli anahtarlarınızı kimseyle paylaşmayın', 'Test modunda gerçek ödeme alınmaz', '3D Secure kullanımını zorunlu kılın', 'Webhook URL\'nizi HTTPS üzerinden sunun', 'Düzenli olarak API loglarını kontrol edin'];
 const DOCS = ['PayTR Entegrasyon Kılavuzu', 'iyzico API Dokümantasyonu', 'Stripe Kurulum Rehberi', 'Güvenlik Best Practices'];
 
@@ -77,6 +78,7 @@ export default function AdminPaymentSettings() {
     if (tab === 'Vergi Ayarları') return <TaxSettingsTab {...props('tax')} />;
     if (tab === 'Fatura Ayarları') return <InvoiceSettingsTab {...props('invoice')} />;
     if (tab === 'İade Ayarları') return <RefundSettingsTab {...props('refund')} />;
+    if (tab === 'IBAN Transfer') return <IbanTransferTab />;
     return null;
   };
 

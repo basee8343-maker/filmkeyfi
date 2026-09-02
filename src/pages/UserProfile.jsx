@@ -3,7 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 import { Image } from '@/components/ui/image';
-import { ArrowLeft, Crown, Hash, MessageCircle, UserPlus, Copy } from 'lucide-react';
+import { ArrowLeft, Crown, Hash, MessageCircle, UserPlus, Copy, Flag } from 'lucide-react';
+import ReportDialog from '@/components/ReportDialog';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function UserProfile() {
@@ -14,6 +15,7 @@ export default function UserProfile() {
   const [profile, setProfile] = useState(null);
   const [relation, setRelation] = useState(null);
   const [requesting, setRequesting] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
 
@@ -66,8 +68,10 @@ export default function UserProfile() {
           {!isSelf && relation?.status === 'pending' && <p className="mt-5 text-sm font-semibold text-amber-400">Arkadaşlık isteği bekliyor</p>}
           {!isSelf && relation?.status === 'accepted' && <div className="mt-5 flex flex-col items-center gap-3"><p className="text-sm font-semibold text-green-400">Arkadaşsınız</p><Link to={`/arkadaslar?view=chats&chat=${relation.id}`} className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold"><MessageCircle className="w-4 h-4" /> Mesaj Yaz</Link></div>}
           {isSelf && <Link to="/profil" className="mt-5 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold">Profili Düzenle</Link>}
+          {!isSelf && <button onClick={() => setReportOpen(true)} className="mt-3 inline-flex items-center gap-2 bg-destructive/10 text-destructive border border-destructive/20 px-4 py-2 rounded-lg text-sm font-semibold"><Flag className="w-4 h-4" /> Şikayet Et</button>}
         </div>
       )}
+      {reportOpen && <ReportDialog targetId={id} targetName={profile?.username || profile?.full_name} context="profile" onClose={() => setReportOpen(false)} />}
     </div>
   );
 }

@@ -32,7 +32,7 @@ export default function Hero({ movie }) {
   };
 
   return (
-    <div className="relative min-h-[620px] h-[calc(100svh-4rem)] sm:h-[78vh] sm:min-h-0 w-full overflow-hidden bg-black">
+    <div className="relative h-[42vh] min-h-[320px] sm:h-[78vh] w-full overflow-hidden bg-black">
       <Image src={movie.poster || movie.backdrop} alt={movie.title} className="absolute inset-0 w-full h-full sm:hidden" fittingType="fit" />
       <Image src={movie.backdrop || movie.poster} alt={movie.title} className="absolute inset-0 hidden w-full h-full sm:block" fittingType="fill" />
       <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" />
