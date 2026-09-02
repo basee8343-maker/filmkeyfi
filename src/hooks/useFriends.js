@@ -20,7 +20,13 @@ export default function useFriends() {
   useEffect(() => {
     reload();
     if (!user) return;
-    const offFriends = base44.entities.Friendship.subscribe(reload);
+    const offFriends = base44.entities.Friendship.subscribe((event) => {
+      setRelations((current) => {
+        if (event.type === 'create') return current.some((relation) => relation.id === event.id) ? current : [event.data, ...current];
+        if (event.type === 'update') return current.map((relation) => relation.id === event.id ? { ...relation, ...event.data } : relation);
+        return current.filter((relation) => relation.id !== event.id);
+      });
+    });
     const offMessages = base44.entities.DirectMessage.subscribe((event) => {
       setMessages((current) => {
         if (event.type === 'create') return current.some((message) => message.id === event.id) ? current : [...current, event.data];

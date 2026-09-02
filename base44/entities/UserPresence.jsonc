@@ -1,0 +1,34 @@
+{
+  "name": "UserPresence",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "online": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_seen": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "online",
+    "last_seen"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

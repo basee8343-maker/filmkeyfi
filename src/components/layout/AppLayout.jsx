@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 import Navbar from '@/components/layout/Navbar';
 import BottomNav from '@/components/layout/BottomNav';
 import MaintenanceMode from '@/pages/MaintenanceMode';
+import useFriendPresence from '@/hooks/useFriendPresence';
 
 // Abonelik gerektirmeyen sayfalar
 const EXEMPT_PATHS = ['/abonelik', '/destek', '/bildirimler', '/odeme', '/güvenlik-protokolü', '/bakim'];
@@ -14,6 +15,7 @@ export default function AppLayout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { user, loading } = useCurrentUser();
+  useFriendPresence(user, true);
   const { publicSettings } = useAuth();
   const isRoom = pathname.startsWith('/oda/');
 
