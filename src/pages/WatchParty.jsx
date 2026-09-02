@@ -6,7 +6,7 @@ import ChatOverlay from '@/components/player/ChatOverlay';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
-import { Mic, MicOff, Crown, X, Eye, ArrowLeft, Film } from 'lucide-react';
+import { Mic, MicOff, Crown, X, Eye, ArrowLeft } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
@@ -51,6 +51,14 @@ export default function WatchParty() {
   const seenRoomMessagesRef = useRef(new Set());
   const voice = useVoiceChat({ roomId: id, user, participants: room?.participants, voiceEnabled: !!room?.voice_enabled && voiceReady });
   const { messages: directUnread } = useSocialBadges(user?.id);
+  const [partyBarVisible, setPartyBarVisible] = useState(true);
+  const partyBarTimer = useRef(null);
+  const showPartyBar = () => {
+    setPartyBarVisible(true);
+    clearTimeout(partyBarTimer.current);
+    partyBarTimer.current = setTimeout(() => setPartyBarVisible(false), 4000);
+  };
+  useEffect(() => { showPartyBar(); return () => clearTimeout(partyBarTimer.current); }, []);
 
   useEffect(() => {
   base44.entities.Room.get(id).then(async (r) => {
@@ -200,6 +208,7 @@ export default function WatchParty() {
   const changeMovie = async (newMovie) => {
     try {
       await base44.functions.invoke('room-presence', { action: 'change-movie', room_id: id, movie_id: newMovie.id, movie_title: newMovie.title });
+      await base44.entities.Room.update(id, { is_playing: true, current_time: 0, last_sync: new Date().toISOString() });
       toast({ title: 'Film değiştirildi', description: newMovie.title });
     } catch (e) {
       toast({ title: 'Değiştirilemedi', description: e.response?.data?.error || e.message, variant: 'destructive' });
@@ -252,13 +261,17 @@ export default function WatchParty() {
     const t = e.changedTouches[0];
     const dx = t.clientX - touchStart.current.x;
     const dy = t.clientY - touchStart.current.y;
-    if (dy < -80 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+    if (dy > 80 && Math.abs(dy) > Math.abs(dx) * 1.5) {
       setMoviePickerOpen(true);
       return;
     }
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx < 0) setChatOpen(true);
+      if (dx < 0) { setChatOpen(true); showPartyBar(); }
       else setChatOpen(false);
+      return;
+    }
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+      showPartyBar();
     }
   };
 
@@ -344,7 +357,7 @@ export default function WatchParty() {
       </div>
 
       <LiveKitDebugPanel voice={voice} />
-      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} unread={unread} directUnread={directUnread} settingsOpen={showSettings} chatOpen={chatOpen} directOpen={directOpen} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => { const next = !chatOpen; setChatOpen(next); if (next) setUnread(0); setDirectOpen(false); setShowViewers(false); setShowSettings(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} />
+      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} visible={partyBarVisible} unread={unread} directUnread={directUnread} settingsOpen={showSettings} chatOpen={chatOpen} directOpen={directOpen} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); showPartyBar(); }} onChat={() => { const next = !chatOpen; setChatOpen(next); if (next) setUnread(0); setDirectOpen(false); setShowViewers(false); setShowSettings(false); showPartyBar(); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); showPartyBar(); }} />
 
       <ConfirmDialog
         open={showPwRemoveConfirm}

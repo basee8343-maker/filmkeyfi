@@ -18,6 +18,12 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
   const hideTimer = useRef(null);
   const lastSyncRef = useRef(0);
 
+  // Ses değişikliklerini anında uygula — state değiştikçe video elementine yaz
+  useEffect(() => {
+    const v = videoRef.current;
+    if (v) { v.volume = volume; v.muted = muted; }
+  }, [volume, muted]);
+
   const fmt = (s) => {
     if (!isFinite(s)) return '0:00';
     const m = Math.floor(s / 60); const sec = Math.floor(s % 60);
@@ -88,6 +94,8 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     const v = videoRef.current; if (!v) return;
     setDuration(v.duration);
     v.playbackRate = speed;
+    v.volume = volume;
+    v.muted = muted;
     // initial sync for participants
     if (!isOwner && syncState) {
       const target = syncState.current_time || 0;

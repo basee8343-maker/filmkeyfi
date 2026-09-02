@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Image } from '@/components/ui/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Film, Loader2 } from 'lucide-react';
+import { ChevronUp, Film, Loader2 } from 'lucide-react';
 
 export default function MoviePickerSheet({ open, onClose, onSelect, currentMovieId }) {
   const [movies, setMovies] = useState([]);
@@ -10,6 +10,7 @@ export default function MoviePickerSheet({ open, onClose, onSelect, currentMovie
 
   useEffect(() => {
     if (!open) return;
+    setLoading(true);
     base44.entities.Movie.filter({ published: true }, '-views', 100)
       .then(setMovies).catch(() => {}).finally(() => setLoading(false));
   }, [open]);
@@ -27,23 +28,23 @@ export default function MoviePickerSheet({ open, onClose, onSelect, currentMovie
             onClick={onClose}
           />
           <motion.div
-            initial={{ y: '100%' }}
+            initial={{ y: '-100%' }}
             animate={{ y: 0 }}
-            exit={{ y: '100%' }}
+            exit={{ y: '-100%' }}
             transition={{ type: 'spring', damping: 32, stiffness: 320 }}
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={0.15}
-            onDragEnd={(_, info) => { if (info.offset.y > 100 || info.velocity.y > 500) onClose(); }}
-            className="fixed bottom-0 inset-x-0 z-[85] bg-card/95 backdrop-blur-xl border-t border-border rounded-t-2xl flex flex-col"
+            onDragEnd={(_, info) => { if (info.offset.y < -100 || info.velocity.y < -500) onClose(); }}
+            className="fixed top-0 inset-x-0 z-[85] bg-card/95 backdrop-blur-xl border-b border-border rounded-b-2xl flex flex-col pt-[max(env(safe-area-inset-top),0.5rem)]"
             style={{ height: '42vh' }}
           >
-            <div className="flex items-center justify-center pt-2 pb-1 shrink-0">
+            <div className="flex items-center justify-center pt-1.5 pb-1 shrink-0">
               <div className="w-10 h-1 bg-muted-foreground/40 rounded-full" />
             </div>
             <div className="flex items-center justify-between px-4 py-1.5 shrink-0">
               <h3 className="font-bold text-white flex items-center gap-2"><Film className="w-4 h-4 text-primary" /> Film Değiştir</h3>
-              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary"><ChevronDown className="w-5 h-5" /></button>
+              <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary"><ChevronUp className="w-5 h-5" /></button>
             </div>
             <div className="flex-1 min-h-0 overflow-x-auto no-scrollbar px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
               {loading ? <div className="flex items-center justify-center h-full"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div> :
