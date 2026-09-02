@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import { LayoutDashboard, UserCheck, Users, Film, FolderTree, DoorOpen, MessageSquare, LifeBuoy, CreditCard, RefreshCw, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, Crown, ChevronDown, Package as PackageIcon } from 'lucide-react';
+import { LayoutDashboard, UserCheck, Users, Film, FolderTree, DoorOpen, MessageSquare, LifeBuoy, CreditCard, RefreshCw, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, Crown, ChevronDown, Package as PackageIcon, Home } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAdminNotifications, requestNotificationPermission } from '@/hooks/useAdminNotifications';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -20,7 +20,7 @@ const nav = [
     { to: '/admin/paketler', label: 'Abonelik Ürünleri', icon: PackageIcon },
     { to: '/admin/odemeler', label: 'Ödeme Geçmişi', icon: CreditCard },
     { to: '/admin/abonelikler', label: 'Abonelikler', icon: Crown },
-    { to: '/admin/shopier', label: 'Shopier Ayarları', icon: Settings },
+    { to: '/admin/odeme-ayarlari', label: 'Ödeme Ayarları', icon: Settings },
   ]},
   { to: '/admin/bildirimler', label: 'Bildirimler', icon: Bell },
   { to: '/admin/guvenlik', label: 'Güvenlik', icon: ShieldAlert },
@@ -101,7 +101,6 @@ export default function AdminLayout() {
         </nav>
         <div className="p-3 border-t border-sidebar-border space-y-1">
           <ThemeToggle className="w-full justify-center" />
-          <Link to="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent">Siteye Dön</Link>
           <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive hover:bg-sidebar-accent"><LogOut className="w-4 h-4" /> Çıkış</button>
         </div>
       </aside>
@@ -110,42 +109,47 @@ export default function AdminLayout() {
         <header className="lg:hidden sticky top-0 z-20 glass border-b border-border h-14 flex items-center px-4"
           style={{ touchAction: 'pan-y' }}
           onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
-          onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); if (dx > 55) setOpen(false); else if (dx < -55) setOpen(true); }}>
+          onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); if (dx > 55) setOpen(true); else if (dx < -55) setOpen(false); }}>
           <button onClick={() => setOpen(true)}><Menu className="w-6 h-6" /></button>
-          <span className="ml-3 font-bold">Admin Panel</span>
+          <Link to="/" className="ml-2 p-1.5 rounded-lg hover:bg-secondary" title="Ana Sayfa"><Home className="w-5 h-5" /></Link>
+          <span className="ml-1 font-bold">Admin Panel</span>
           <div className="ml-auto flex items-center gap-2">
-            <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/60">
-              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-                {(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}
-              </div>
-              <div>
-                <p className="text-xs font-semibold leading-tight max-w-[80px] truncate">{user.username || user.full_name || 'Admin'}</p>
-                <p className="text-[10px] text-muted-foreground leading-tight">Yönetici</p>
-              </div>
-            </div>
             <ThemeToggle />
             <button onClick={handleNotif} className="p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimleri Aç">
               <Bell className="w-5 h-5" />
               {notifGranted && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
             </button>
+            <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/60">
+              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                {(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}
+              </div>
+              <div>
+                <p className="text-xs font-semibold leading-tight">Yönetici</p>
+                <p className="text-[10px] text-muted-foreground leading-tight max-w-[90px] truncate">{user.email}</p>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
           </div>
         </header>
         <header className="hidden lg:flex sticky top-0 z-20 glass border-b border-border h-14 items-center px-6">
-          <span className="font-bold">Admin Panel</span>
+          <Link to="/" className="p-2 rounded-lg hover:bg-secondary" title="Ana Sayfa"><Home className="w-5 h-5" /></Link>
+          <span className="ml-2 font-bold">Admin Panel</span>
           <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle />
+            <button onClick={handleNotif} className="p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimleri Aç">
+              <Bell className="w-5 h-5" />
+              {notifGranted && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
+            </button>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/60">
               <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
                 {(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}
               </div>
               <div>
-                <p className="text-sm font-semibold leading-tight">{user.username || user.full_name || 'Admin'}</p>
-                <p className="text-xs text-muted-foreground leading-tight">Yönetici</p>
+                <p className="text-sm font-semibold leading-tight">Yönetici</p>
+                <p className="text-xs text-muted-foreground leading-tight max-w-[160px] truncate">{user.email}</p>
               </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
             </div>
-            <button onClick={handleNotif} className="p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimleri Aç">
-              <Bell className="w-5 h-5" />
-              {notifGranted && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
-            </button>
           </div>
         </header>
         <div className="p-4 sm:p-6">
