@@ -65,6 +65,13 @@ export default async function(req) {
       return Response.json({ friendship: updated });
     }
 
+    if (action === 'typing') {
+      const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
+      if (!friendship || friendship.status !== 'accepted' || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
+      await base44.asServiceRole.entities.Friendship.update(friendship.id, { typing_user_id: body.typing ? user.id : '', typing_updated_at: new Date().toISOString() });
+      return Response.json({ ok: true });
+    }
+
     if (action === 'mark_read') {
       const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
       if (!friendship || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });

@@ -54,6 +54,13 @@
       },
       "default": []
     },
+    "typing_user_id": {
+      "type": "string"
+    },
+    "typing_updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "status": {
       "type": "string",
       "enum": [

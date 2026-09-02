@@ -11,10 +11,14 @@ export default function Subscription() {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(null);
   const [error, setError] = useState('');
+  const [manualMessage, setManualMessage] = useState('');
+  const [shopierEnabled, setShopierEnabled] = useState(true);
 
   useEffect(() => {
-    base44.entities.Package.filter({ active: true }, '-created_date', 50)
-      .then(setProducts)
+    Promise.all([
+      base44.entities.Package.filter({ active: true }, '-created_date', 50),
+      base44.functions.invoke('public-settings', {}).catch(() => ({ data: { shopier_enabled: true } })),
+    ]).then(([items, settings]) => { setProducts(items); setShopierEnabled((settings.data || settings).shopier_enabled !== false); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
@@ -32,6 +36,12 @@ export default function Subscription() {
     try {
       const res = await base44.functions.invoke('shopier-payment', { product_id: product.id });
       const data = res.data || res;
+      if (data.manual) {
+        setError('');
+        setManualMessage(data.message || 'Manuel ödeme kaydınız yönetici onayına gönderildi.');
+        setPaying(null);
+        return;
+      }
       // Yöntem 1: Ödeme linki — doğrudan yönlendir
       if (data.redirect_url) {
         window.location.href = data.redirect_url;
@@ -82,6 +92,7 @@ export default function Subscription() {
         )}
 
         {error && <p className="text-sm text-destructive mb-4 text-center">{error}</p>}
+        {manualMessage && <div className="mb-4 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-center text-sm font-semibold text-green-500">{manualMessage}</div>}
 
         {products.length === 0 ? (
           <p className="text-center text-muted-foreground">Henüz abonelik paketi bulunmuyor.</p>
@@ -107,7 +118,7 @@ export default function Subscription() {
                     {p.voice_chat && <li className="flex items-center gap-2 text-sm"><Check className="w-4 h-4 text-green-500" /> Sesli Sohbet</li>}
                   </ul>
                   <button onClick={() => buy(p)} disabled={paying === p.id} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50">
-                    {paying === p.id ? <><Loader2 className="w-5 h-5 animate-spin" /> Yönlendiriliyor...</> : <><CreditCard className="w-5 h-5" /> Satın Al</>}
+                    {paying === p.id ? <><Loader2 className="w-5 h-5 animate-spin" /> İşleniyor...</> : <><CreditCard className="w-5 h-5" /> {shopierEnabled ? 'Satın Al' : 'Manuel Ödeme Kaydı Oluştur'}</>}
                   </button>
                 </div>
               </div>
@@ -117,7 +128,7 @@ export default function Subscription() {
 
         <div className="mt-6 text-center">
           <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-            <Shield className="w-3.5 h-3.5" /> Güvenli ödeme Shopier tarafından sağlanır
+            <Shield className="w-3.5 h-3.5" /> {shopierEnabled ? 'Güvenli ödeme Shopier tarafından sağlanır' : 'Ödeme kaydınız yönetici onayından sonra aktifleşir'}
           </p>
           <button onClick={() => navigate('/')} className="mt-4 text-sm text-muted-foreground py-2">Ana Sayfaya Dön</button>
         </div>

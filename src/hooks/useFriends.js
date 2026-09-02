@@ -40,7 +40,7 @@ export default function useFriends() {
     try {
       const res = await base44.functions.invoke('friend-service', payload);
       if (payload.action === 'send' && res.data.message) setMessages((current) => current.some((message) => message.id === res.data.message.id) ? current : [...current, res.data.message]);
-      else await reload();
+      else if (payload.action !== 'typing') await reload();
       window.dispatchEvent(new Event('social-badges-refresh'));
       return res.data;
     } catch (error) { toast({ title: 'İşlem başarısız', description: error.response?.data?.error || error.message, variant: 'destructive' }); throw error; }

@@ -12,7 +12,9 @@ export default async function (req) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { user_id, package_id } = body;
+    const { payment_id, package_id } = body;
+    let pendingPayment = payment_id ? await base44.asServiceRole.entities.Payment.get(payment_id).catch(() => null) : null;
+    const user_id = body.user_id || pendingPayment?.user_id;
     if (!user_id) return Response.json({ error: 'user_id gerekli' }, { status: 400 });
 
     const user = await base44.asServiceRole.entities.User.get(user_id).catch(() => null);
@@ -20,8 +22,8 @@ export default async function (req) {
 
     // Paket bul
     let product = null;
-    if (package_id) {
-      product = await base44.asServiceRole.entities.Package.get(package_id).catch(() => null);
+    if (package_id || pendingPayment?.product_id) {
+      product = await base44.asServiceRole.entities.Package.get(package_id || pendingPayment.product_id).catch(() => null);
     }
     if (!product) {
       const products = await base44.asServiceRole.entities.Package.filter({ active: true }).catch(() => []);
@@ -34,20 +36,14 @@ export default async function (req) {
     const orderId = 'TEST' + Date.now() + Math.floor(Math.random() * 1000);
     const now = new Date();
 
-    // Tamamlanmış ödeme kaydı oluştur (test)
-    const payment = await base44.asServiceRole.entities.Payment.create({
-      user_id: user.id,
-      user_name: user.username || user.full_name || user.email,
-      user_email: user.email,
-      product_id: product?.id || '',
-      package_name: planName,
-      amount: amount,
-      status: 'completed',
-      provider: 'shopier_test',
-      shopier_order_id: orderId,
-      currency: 'TRY',
-      paid_at: now.toISOString(),
-    });
+    // Manuel kayıt varsa tamamla; test akışında yeni kayıt oluştur
+    const payment = pendingPayment
+      ? await base44.asServiceRole.entities.Payment.update(pendingPayment.id, { status: 'completed', provider: 'manual', paid_at: now.toISOString() })
+      : await base44.asServiceRole.entities.Payment.create({
+          user_id: user.id, user_name: user.username || user.full_name || user.email, user_email: user.email,
+          product_id: product?.id || '', package_name: planName, amount, status: 'completed', provider: 'shopier_test',
+          shopier_order_id: orderId, currency: 'TRY', paid_at: now.toISOString(),
+        });
 
     // Abonelik tarihlerini hesapla (mevcut aktif abonelik varsa üzerine ekle)
     let startDate = now;
@@ -71,7 +67,7 @@ export default async function (req) {
       subscription_plan: planName,
       subscription_price: amount,
       package_id: product?.id || '',
-      payment_provider: 'shopier_test',
+      payment_provider: pendingPayment ? 'manual' : 'shopier_test',
       payment_id: payment.id,
       last_payment_date: now.toISOString(),
     });

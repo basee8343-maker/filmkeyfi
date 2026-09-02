@@ -107,7 +107,7 @@ export default function AdminLayout() {
       </aside>
       {open && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setOpen(false)} />}
       <div className="flex-1 min-w-0">
-        <header className="lg:hidden sticky top-0 z-20 glass border-b border-border h-14 flex items-center px-4"
+        <header className="lg:hidden sticky top-0 z-20 glass border-b border-border min-h-14 flex items-center px-4 pb-2 pt-[max(env(safe-area-inset-top),0.75rem)]"
           style={{ touchAction: 'pan-y' }}
           onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
           onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); if (dx > 55) setOpen(true); else if (dx < -55) setOpen(false); }}>

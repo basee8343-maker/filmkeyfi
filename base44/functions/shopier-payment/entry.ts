@@ -37,8 +37,17 @@ export default async function (req) {
       return Response.json({ error: 'yetkili kullanıcılar ödeme yapamaz' }, { status: 403 });
     }
 
+    const appConfigs = await base44.asServiceRole.entities.AppConfig.list(100).catch(() => []);
+    let shopierSettings = {};
+    try { shopierSettings = JSON.parse(appConfigs.find((item) => item.key === 'payment_shopier')?.value || '{}'); } catch {}
+
     // Benzersiz sipariş ID
-    const orderId = 'FK' + Date.now() + Math.floor(Math.random() * 1000);
+    const shopierActive = shopierSettings.active === true;
+    const orderId = (shopierActive ? 'FK' : 'MANUEL') + Date.now() + Math.floor(Math.random() * 1000);
+    if (!shopierActive) {
+      const existingManual = await base44.asServiceRole.entities.Payment.filter({ user_id: user.id, product_id: productId, status: 'pending', provider: 'manual' }, '-created_date', 1);
+      if (existingManual.length) return Response.json({ manual: true, payment_id: existingManual[0].id, message: 'Manuel ödeme kaydınız zaten yönetici onayını bekliyor.' });
+    }
 
     // Pending ödeme kaydı oluştur
     const payment = await base44.asServiceRole.entities.Payment.create({
@@ -49,12 +58,14 @@ export default async function (req) {
       package_name: product.name,
       amount: product.price,
       status: 'pending',
-      provider: 'shopier',
+      provider: shopierActive ? 'shopier' : 'manual',
       shopier_order_id: orderId,
       currency: 'TRY',
     });
 
-    await logSecurity(base44, 'shopier_payment_init', user, orderId, 'info');
+    await logSecurity(base44, shopierActive ? 'shopier_payment_init' : 'manual_payment_request', user, orderId, 'info');
+
+    if (!shopierActive) return Response.json({ manual: true, payment_id: payment.id, message: 'Manuel ödeme kaydınız yönetici onayına gönderildi.' });
 
     // YÖNTEM 1: Shopier ödeme linki — doğrudan yönlendirme
     if (product.shopier_payment_url) {

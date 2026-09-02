@@ -34,6 +34,13 @@ export default function AdminPaymentHistory() {
     return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-500"><Clock className="w-3 h-3" /> İşlenmedi</span>;
   };
 
+  const approvePayment = async (payment) => {
+    try {
+      await base44.functions.invoke('shopier-test-activate', { payment_id: payment.id });
+      toast({ title: 'Ödeme onaylandı ve üyelik aktif edildi' });
+    } catch (e) { toast({ title: 'Onaylanamadı', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+
   const deleteOne = async () => {
     if (!confirmOne) return;
     setDeleting(true);
@@ -104,6 +111,7 @@ export default function AdminPaymentHistory() {
                   <td className="py-2.5 px-3">{processedBadge(p.status)}</td>
                   <td className="py-2.5 px-3 font-mono text-xs text-muted-foreground">{p.shopier_order_id || '—'}</td>
                   <td className="py-2.5 px-3">
+                    {p.status === 'pending' && <button onClick={() => approvePayment(p)} className="mr-2 text-xs bg-green-500/15 text-green-500 border border-green-500/30 px-2.5 py-1 rounded font-semibold">ÖDEMEYİ ONAYLA</button>}
                     <button onClick={() => setConfirmOne(p)} className="text-xs bg-destructive/10 text-destructive border border-destructive/30 px-2.5 py-1 rounded font-semibold hover:bg-destructive/20">Sil</button>
                   </td>
                 </tr>
@@ -126,7 +134,7 @@ export default function AdminPaymentHistory() {
                   {processedBadge(p.status)}
                 </div>
                 <p className="text-xs text-muted-foreground font-mono mt-1">{p.shopier_order_id || '—'}</p>
-                <button onClick={() => setConfirmOne(p)} className="mt-2 text-xs bg-destructive/10 text-destructive border border-destructive/30 px-2.5 py-1 rounded font-semibold hover:bg-destructive/20">Sil</button>
+                <div className="mt-3 flex gap-2">{p.status === 'pending' && <button onClick={() => approvePayment(p)} className="text-xs bg-green-500/15 text-green-500 border border-green-500/30 px-2.5 py-1 rounded font-semibold">ÖDEMEYİ ONAYLA</button>}<button onClick={() => setConfirmOne(p)} className="text-xs bg-destructive/10 text-destructive border border-destructive/30 px-2.5 py-1 rounded font-semibold hover:bg-destructive/20">Sil</button></div>
               </div>
             ))}
           </div>

@@ -12,6 +12,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
 import PartyControlBar from '@/components/player/PartyControlBar';
 import LiveKitDebugPanel from '@/components/player/LiveKitDebugPanel';
+import RoomDirectMessages from '@/components/player/RoomDirectMessages';
+import useSocialBadges from '@/hooks/useSocialBadges';
 
 export default function WatchParty() {
   const { id } = useParams();
@@ -22,6 +24,7 @@ export default function WatchParty() {
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
+  const [directOpen, setDirectOpen] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [needPassword, setNeedPassword] = useState(false);
@@ -42,6 +45,7 @@ export default function WatchParty() {
   const playerWrapRef = useRef(null);
   const touchStart = useRef({ x: 0, y: 0 });
   const voice = useVoiceChat({ roomId: id, user, participants: room?.participants, voiceEnabled: !!room?.voice_enabled && voiceReady });
+  const { messages: directUnread } = useSocialBadges(user?.id);
 
   useEffect(() => {
     base44.entities.Room.get(id).then(async (r) => {
@@ -254,10 +258,12 @@ export default function WatchParty() {
         </div>
 
         {chatOpen && (
-          <div className="absolute inset-y-0 right-0 z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pb-20 shadow-2xl backdrop-blur-xl">
+          <div className="absolute inset-y-0 right-0 z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pb-20 pt-[max(env(safe-area-inset-top),0.75rem)] shadow-2xl backdrop-blur-xl">
             <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} />
           </div>
         )}
+
+        {directOpen && <div className="absolute inset-0 z-[70] pb-20"><RoomDirectMessages onClose={() => setDirectOpen(false)} /></div>}
 
         {showViewers && (
           <div className="absolute bottom-24 right-3 bg-card/95 border border-border rounded-xl p-3 z-[60] w-56 max-h-[65%] overflow-y-auto shadow-2xl backdrop-blur-xl">
@@ -295,7 +301,7 @@ export default function WatchParty() {
       </div>
 
       <LiveKitDebugPanel voice={voice} />
-      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} viewerCount={visibleParticipants.length} unread={unread} settingsOpen={showSettings} chatOpen={chatOpen} onBack={handleBack} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => setChatOpen(!chatOpen)} />
+      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} viewerCount={visibleParticipants.length} unread={unread} directUnread={directUnread} settingsOpen={showSettings} chatOpen={chatOpen} directOpen={directOpen} onBack={handleBack} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => { setChatOpen(!chatOpen); setDirectOpen(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} />
 
       <ConfirmDialog
         open={showPwRemoveConfirm}
