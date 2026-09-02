@@ -30,7 +30,7 @@ export default function FriendsPanel({ relations, userId, invoke, onChat, isOnli
       const friendRoom = getFriendRoom(friendId);
       return <div key={r.id} className="border-b last:border-0 border-border p-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => onChat(r)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+          <button onClick={() => navigate(`/kullanici/${friendId}`)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
             <div className="relative shrink-0">{avatar ? <Image src={avatar} className="w-11 h-11 rounded-full" fittingType="fill" /> : <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center font-bold">{name?.[0]}</div>}<span className={`absolute right-0 bottom-0 w-3 h-3 rounded-full border-2 border-card ${online ? 'bg-green-500' : 'bg-muted-foreground'}`} /></div>
             <div className="flex-1 min-w-0"><p className="font-semibold truncate">{name}</p><p className="text-xs text-muted-foreground truncate">{friendRoom?.isPublic ? <span className="text-red-500 font-semibold">{friendRoom.room.owner_name}'in odasında</span> : online ? <span className="text-green-500">Çevrim içi</span> : 'Çevrim dışı'}{member ? ` · ${member}` : ''}</p></div>
           </button>

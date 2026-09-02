@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 import { Image } from '@/components/ui/image';
-import { ArrowLeft, Crown, Hash, MessageCircle, UserPlus } from 'lucide-react';
+import { ArrowLeft, Crown, Hash, MessageCircle, UserPlus, Copy } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function UserProfile() {
@@ -55,9 +55,10 @@ export default function UserProfile() {
           <h1 className="text-2xl font-extrabold mt-4 flex items-center gap-2">{profile.title || profile.username || profile.full_name || 'Kullanıcı'} {(profile.role === 'admin' || profile.role === 'moderator') && <Crown className="w-5 h-5 text-amber-400" />}</h1>
           {profile.title && <p className="text-base font-semibold text-gradient mt-1">{profile.title}</p>}
           {profile.username && profile.username !== profile.title && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
-          <div className="mt-4 inline-flex items-center gap-2 bg-secondary/60 rounded-full px-4 py-2">
+          <div className="mt-4 inline-flex items-center gap-2 bg-secondary/60 rounded-full pl-4 pr-1.5 py-1.5">
             <Hash className="w-4 h-4 text-primary" />
             <span className="font-mono text-lg font-bold tracking-wider">{profile.member_id}</span>
+            <button onClick={() => { navigator.clipboard?.writeText(profile.member_id || ''); toast({ title: 'Üye No kopyalandı' }); }} className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 active:scale-95 transition"><Copy className="w-4 h-4" /></button>
           </div>
           <p className="text-xs text-muted-foreground mt-1">Üye No</p>
           {profile.created_date && <p className="text-xs text-muted-foreground mt-3">Katılım: {new Date(profile.created_date).toLocaleDateString('tr-TR')}</p>}

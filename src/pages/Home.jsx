@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import Hero from '@/components/movie/Hero';
 import ContentRow from '@/components/movie/ContentRow';
+import ActiveRooms from '@/components/movie/ActiveRooms';
 import { SkeletonRow } from '@/components/movie/EmptyState';
 
 
@@ -36,6 +37,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-catalog text-white">
       <Hero movie={featured} />
+      <ActiveRooms />
       <div className="mt-6">
         {loading ? <><SkeletonRow /><SkeletonRow /><SkeletonRow /></> : (
           <>
