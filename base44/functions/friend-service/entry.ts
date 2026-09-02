@@ -1,0 +1,80 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+
+const cleanUser = (user) => ({
+  id: user.id,
+  name: user.username || user.full_name || 'Kullanıcı',
+  member_id: user.member_id || '',
+  avatar: user.avatar || ''
+});
+
+export default async function(req) {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Oturum gerekli' }, { status: 401 });
+    const body = await req.json();
+    const action = body.action;
+
+    if (action === 'search') {
+      const memberId = String(body.member_id || '').trim();
+      if (!/^\d{8}$/.test(memberId)) return Response.json({ error: '8 haneli üye numarası girin' }, { status: 400 });
+      const matches = await base44.asServiceRole.entities.User.filter({ member_id: memberId }, '-created_date', 2);
+      const target = matches.find((item) => item.id !== user.id);
+      return Response.json({ user: target ? cleanUser(target) : null });
+    }
+
+    if (action === 'request') {
+      const targetId = String(body.user_id || '');
+      if (!targetId || targetId === user.id) return Response.json({ error: 'Geçersiz kullanıcı' }, { status: 400 });
+      const target = await base44.asServiceRole.entities.User.get(targetId);
+      if (!target) return Response.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 });
+      const existing = await base44.asServiceRole.entities.Friendship.filter({
+        $or: [
+          { requester_id: user.id, recipient_id: targetId },
+          { requester_id: targetId, recipient_id: user.id }
+        ]
+      }, '-created_date', 20);
+      if (existing.some((item) => item.status === 'pending' || item.status === 'accepted')) {
+        return Response.json({ error: 'Arkadaşlık isteği zaten mevcut' }, { status: 409 });
+      }
+      const me = cleanUser(user); const other = cleanUser(target);
+      const friendship = await base44.asServiceRole.entities.Friendship.create({
+        requester_id: me.id, requester_name: me.name, requester_member_id: me.member_id, requester_avatar: me.avatar,
+        recipient_id: other.id, recipient_name: other.name, recipient_member_id: other.member_id, recipient_avatar: other.avatar,
+        members: [me.id, other.id], status: 'pending'
+      });
+      await base44.asServiceRole.entities.Notification.create({ user_id: other.id, title: 'Yeni arkadaşlık isteği', body: `${me.name} size arkadaşlık isteği gönderdi.`, type: 'friend_request', link: '/arkadaslar' });
+      return Response.json({ friendship });
+    }
+
+    if (action === 'respond') {
+      const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
+      if (!friendship || friendship.recipient_id !== user.id || friendship.status !== 'pending') {
+        return Response.json({ error: 'Bu istek işlenemiyor' }, { status: 403 });
+      }
+      const status = body.accept ? 'accepted' : 'rejected';
+      const updated = await base44.asServiceRole.entities.Friendship.update(friendship.id, { status });
+      if (status === 'accepted') await base44.asServiceRole.entities.Notification.create({ user_id: friendship.requester_id, title: 'Arkadaşlık isteği kabul edildi', body: `${friendship.recipient_name} artık arkadaşınız.`, type: 'friend_accepted', link: '/arkadaslar' });
+      return Response.json({ friendship: updated });
+    }
+
+    if (action === 'send') {
+      const text = String(body.text || '').trim();
+      if (!text || text.length > 2000) return Response.json({ error: 'Mesaj 1-2000 karakter olmalıdır' }, { status: 400 });
+      const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
+      if (!friendship || friendship.status !== 'accepted' || !friendship.members.includes(user.id)) {
+        return Response.json({ error: 'Yalnızca arkadaşlarınıza mesaj gönderebilirsiniz' }, { status: 403 });
+      }
+      const recipientId = friendship.requester_id === user.id ? friendship.recipient_id : friendship.requester_id;
+      const senderName = friendship.requester_id === user.id ? friendship.requester_name : friendship.recipient_name;
+      const recipientName = friendship.requester_id === user.id ? friendship.recipient_name : friendship.requester_name;
+      const message = await base44.asServiceRole.entities.DirectMessage.create({ friendship_id: friendship.id, sender_id: user.id, sender_name: senderName, recipient_id: recipientId, recipient_name: recipientName, participants: friendship.members, text });
+      await base44.asServiceRole.entities.Notification.create({ user_id: recipientId, title: `Yeni mesaj: ${senderName}`, body: text.slice(0, 120), type: 'direct_message', link: '/arkadaslar' });
+      return Response.json({ message });
+    }
+
+    return Response.json({ error: 'Geçersiz işlem' }, { status: 400 });
+  } catch (error) {
+    return Response.json({ error: error.message || 'İşlem başarısız' }, { status: 500 });
+  }
+}

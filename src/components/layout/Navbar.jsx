@@ -11,6 +11,7 @@ const links = [
   { label: 'Açık Odalar', path: '/acik-odalar' },
   { label: 'Kategoriler', path: '/kategoriler' },
   { label: 'Listem', path: '/listem' },
+  { label: 'Arkadaşlar', path: '/arkadaslar' },
 ];
 
 export default function Navbar() {

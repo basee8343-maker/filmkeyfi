@@ -50,6 +50,8 @@ import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import PendingApproval from '@/pages/PendingApproval';
 import SecurityProtocol from '@/pages/SecurityProtocol';
+import Friends from '@/pages/Friends';
+import AdminFriendMessages from '@/pages/admin/AdminFriendMessages';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -95,6 +97,7 @@ const AuthenticatedApp = () => {
           <Route path="/listem" element={<MyList />} />
           <Route path="/ara" element={<Search />} />
           <Route path="/destek" element={<Support />} />
+          <Route path="/arkadaslar" element={<Friends />} />
           <Route path="/bildirimler" element={<Notifications />} />
           <Route path="/profil" element={<Profile />} />
           <Route path="/kullanici/:id" element={<UserProfile />} />
@@ -113,6 +116,7 @@ const AuthenticatedApp = () => {
           <Route path="kategoriler" element={<AdminCategories />} />
           <Route path="odalar" element={<AdminRooms />} />
           <Route path="oda-mesajlari" element={<AdminRoomMessages />} />
+          <Route path="arkadas-mesajlari" element={<AdminFriendMessages />} />
           <Route path="destek" element={<AdminSupport />} />
           <Route path="paketler" element={<AdminPackages />} />
           <Route path="odemeler" element={<AdminPaymentHistory />} />

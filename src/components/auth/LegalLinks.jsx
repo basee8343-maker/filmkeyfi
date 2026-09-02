@@ -25,7 +25,7 @@ const documents = {
     ['Kontrol','Tarayıcı ayarlarınızdan çerezleri silebilir veya engelleyebilirsiniz. Zorunlu çerezlerin engellenmesi giriş ve abonelik işlevlerini bozabilir.'] ] },
   contact: { title: 'İletişim Bilgileri', sections: [
     ['Marka ve Yetkili','Marka: Film Keyfi\nYetkili: Ali Tor'],
-    ['E-posta ve Telefon','E-posta: filmkeyfi74@gmail.com\nTelefon: 0551 825 05 48'],
+    ['E-posta ve Telefon','E-posta: filmkeyfi74@gmail.com\nTelefon: 0551 827 05 48'],
     ['Adres','Bartın Merkez, Kemer Köprü Mahallesi, 150. Cadde'],
     ['Destek','Hesap, abonelik, ödeme veya kişisel verilerle ilgili talepleriniz için yukarıdaki iletişim kanallarından bize ulaşabilirsiniz. Güvenliğiniz için e-posta veya telefon üzerinden kart şifresi, CVV/CVC kodu ya da doğrulama kodu talep etmeyiz.'] ] },
 };

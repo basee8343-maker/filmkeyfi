@@ -1,47 +1,23 @@
-import { useState } from 'react';
-import { Smartphone, Apple } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Download, Smartphone, Check } from 'lucide-react';
 import DownloadGuide from '@/components/DownloadGuide';
 
 export default function DownloadButtons({ variant = 'light' }) {
-  const [showGuide, setShowGuide] = useState(null); // 'android' | 'ios' | null
-
-  const isLight = variant === 'light';
-  const subText = isLight ? 'text-white/70' : 'text-muted-foreground';
-  const cardBg = isLight ? 'bg-white/5 border-white/10' : 'bg-card border-border';
-
-  return (
-    <>
-      <div className="flex flex-col sm:flex-row gap-3">
-        <button
-          onClick={() => setShowGuide('android')}
-          className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-all hover:scale-[1.02] ${cardBg}`}
-        >
-          <div className="w-10 h-10 rounded-lg bg-green-600 flex items-center justify-center shrink-0">
-            <Smartphone className="w-5 h-5 text-white" />
-          </div>
-          <div className="text-left">
-            <p className={`text-sm font-bold ${isLight ? 'text-white' : 'text-foreground'}`}>Android İndir</p>
-            <p className={`text-xs ${subText}`}>Telefona kurulum rehberi</p>
-          </div>
-        </button>
-
-        <button
-          onClick={() => setShowGuide('ios')}
-          className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-all hover:scale-[1.02] ${cardBg}`}
-        >
-          <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center shrink-0">
-            <Apple className="w-5 h-5 text-white" />
-          </div>
-          <div className="text-left">
-            <p className={`text-sm font-bold ${isLight ? 'text-white' : 'text-foreground'}`}>iPhone İndir</p>
-            <p className={`text-xs ${subText}`}>Telefona kurulum rehberi</p>
-          </div>
-        </button>
-      </div>
-
-      {showGuide && (
-        <DownloadGuide platform={showGuide} variant={variant} onClose={() => setShowGuide(null)} />
-      )}
-    </>
-  );
+  const [prompt, setPrompt] = useState(null); const [guide, setGuide] = useState(null); const [installed, setInstalled] = useState(false);
+  const ua = typeof navigator === 'undefined' ? '' : navigator.userAgent;
+  const ios = /iPad|iPhone|iPod/.test(ua); const android = /Android/.test(ua);
+  useEffect(() => {
+    setInstalled(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true);
+    const ready = (e) => { e.preventDefault(); setPrompt(e); }; const done = () => { setInstalled(true); setPrompt(null); };
+    window.addEventListener('beforeinstallprompt', ready); window.addEventListener('appinstalled', done);
+    return () => { window.removeEventListener('beforeinstallprompt', ready); window.removeEventListener('appinstalled', done); };
+  }, []);
+  const install = async () => {
+    if (prompt) { await prompt.prompt(); await prompt.userChoice; setPrompt(null); return; }
+    setGuide(ios ? 'ios' : 'android');
+  };
+  const light = variant === 'light';
+  if (installed) return <div className={`flex items-center justify-center gap-2 rounded-xl border p-3 text-sm font-semibold ${light ? 'bg-white/5 border-white/10 text-white' : 'bg-card border-border'}`}><Check className="w-4 h-4 text-green-500" /> Uygulama yüklü</div>;
+  const label = ios ? 'Ana Ekrana Ekle' : android ? 'Hemen Yükle' : 'Uygulamayı Yükle';
+  return <><button onClick={install} className={`w-full flex items-center justify-center gap-3 px-4 py-3 rounded-xl border font-semibold ${light ? 'bg-white/5 border-white/10 text-white' : 'bg-card border-border text-foreground'}`}>{ios ? <Smartphone className="w-5 h-5" /> : <Download className="w-5 h-5" />}{label}</button>{guide && <DownloadGuide platform={guide} variant={variant} onClose={() => setGuide(null)} />}</>;
 }
