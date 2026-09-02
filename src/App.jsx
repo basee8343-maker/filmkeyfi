@@ -28,7 +28,6 @@ import AdminRooms from '@/pages/admin/AdminRooms';
 import AdminRoomMessages from '@/pages/admin/AdminRoomMessages';
 import AdminSupport from '@/pages/admin/AdminSupport';
 import AdminPackages from '@/pages/admin/AdminPackages';
-import AdminRenewals from '@/pages/admin/AdminRenewals';
 import AdminNotifications from '@/pages/admin/AdminNotifications';
 import AdminCategories from '@/pages/admin/AdminCategories';
 import OpenRooms from '@/pages/OpenRooms';
@@ -118,7 +117,6 @@ const AuthenticatedApp = () => {
           <Route path="odemeler" element={<AdminPaymentHistory />} />
           <Route path="abonelikler" element={<AdminSubscriptions />} />
           <Route path="shopier" element={<AdminShopier />} />
-          <Route path="yenilemeler" element={<AdminRenewals />} />
           <Route path="bildirimler" element={<AdminNotifications />} />
           <Route path="guvenlik" element={<AdminSecurity />} />
           <Route path="ayarlar" element={<AdminSettings />} />

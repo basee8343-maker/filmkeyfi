@@ -22,7 +22,6 @@ const nav = [
     { to: '/admin/abonelikler', label: 'Abonelikler', icon: Crown },
     { to: '/admin/shopier', label: 'Shopier Ayarları', icon: Settings },
   ]},
-  { to: '/admin/yenilemeler', label: 'Yenileme Talepleri', icon: RefreshCw },
   { to: '/admin/bildirimler', label: 'Bildirimler', icon: Bell },
   { to: '/admin/guvenlik', label: 'Güvenlik', icon: ShieldAlert },
   { to: '/admin/ayarlar', label: 'Ayarlar', icon: Settings },
