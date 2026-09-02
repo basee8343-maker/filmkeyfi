@@ -54,7 +54,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="pt-16 pb-20 lg:pb-8 max-w-[1600px] mx-auto">
+      <main className="pt-[calc(4rem+max(env(safe-area-inset-top),1.5rem))] pb-20 lg:pt-16 lg:pb-8 max-w-[1600px] mx-auto">
         <Outlet />
       </main>
       <BottomNav />
