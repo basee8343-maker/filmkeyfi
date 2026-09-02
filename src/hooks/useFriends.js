@@ -30,8 +30,9 @@ export default function useFriends() {
     });
     const offMessages = base44.entities.DirectMessage.subscribe((event) => {
       const message = event.data;
-      if (message?.sender_id !== user.id && message?.recipient_id !== user.id) return;
-      setMessages((current) => event.type === 'delete' ? current.filter((item) => item.id !== event.id) : upsertMessage(current, message));
+      if (event.type === 'delete') { setMessages((current) => current.filter((item) => item.id !== event.id)); return; }
+      if (event.type === 'create' && message?.sender_id !== user.id && message?.recipient_id !== user.id) return;
+      setMessages((current) => upsertMessage(current, message));
     });
     const reconnect = () => reload();
     const resume = () => { if (document.visibilityState === 'visible') reload(); };
