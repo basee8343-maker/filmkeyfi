@@ -12,8 +12,8 @@ export default function useFriends() {
   const reload = useCallback(async () => {
     if (!user) return;
     const [friendships, directMessages] = await Promise.all([
-      base44.entities.Friendship.list('-updated_date', 200),
-      base44.entities.DirectMessage.list('created_date', 500)
+      base44.entities.Friendship.filter({ members: user.id }, '-updated_date', 200),
+      base44.entities.DirectMessage.filter({ participants: user.id }, 'created_date', 500)
     ]);
     setRelations(friendships); setMessages(directMessages); setLoading(false);
   }, [user?.id]);
