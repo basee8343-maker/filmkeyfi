@@ -42,12 +42,24 @@ const hasLiveTrack = (stream) => stream?.getAudioTracks().some((track) => track.
 export async function requestMicrophoneStream() {
   if (hasLiveTrack(currentStream)) return currentStream;
   if (pendingRequest) return pendingRequest;
-  if (!navigator.mediaDevices?.getUserMedia) throw new Error('Mikrofon bu tarayıcıda desteklenmiyor.');
 
-  pendingRequest = navigator.mediaDevices.getUserMedia({
-    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-    video: false,
-  }).then((stream) => {
+  // Modern API
+  if (navigator.mediaDevices?.getUserMedia) {
+    pendingRequest = navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: false,
+    });
+  } else if (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia) {
+    // Eski tarayıcı desteği (iOS 10-11, eski Android)
+    const legacyGetUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    pendingRequest = new Promise((resolve, reject) => {
+      legacyGetUserMedia.call(navigator, { audio: true, video: false }, resolve, reject);
+    });
+  } else {
+    throw new Error('Mikrofon bu tarayıcıda desteklenmiyor.');
+  }
+
+  pendingRequest = pendingRequest.then((stream) => {
     currentStream = stream;
     rememberGranted();
     publish('granted');

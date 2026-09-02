@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { checkMicrophonePermission, microphoneErrorMessage, requestMicrophoneStream, stopMicrophoneStream, subscribeToMicrophonePermission, wasMicrophoneGrantedBefore } from '@/lib/microphonePermissionManager';
+import { setMediaStream } from '@/lib/mediaCompat';
 
 const ICE_SERVERS = {
   iceServers: [
@@ -10,6 +11,10 @@ const ICE_SERVERS = {
     { urls: 'stun:stun3.l.google.com:19302' }
   ]
 };
+
+// Eski tarayıcı uyumluluğu: RTCPeerConnection ve AudioContext için fallback
+const RTCPeerConnectionClass = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+const AudioContextClass = window.AudioContext || window.webkitAudioContext || window.mozAudioContext;
 
 /**
  * Gerçek zamanlı WebRTC sesli sohbet (mesh network).
@@ -70,7 +75,8 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
 
   const createPeer = useCallback((otherId) => {
     if (peersRef.current[otherId]) return peersRef.current[otherId];
-    const pc = new RTCPeerConnection(ICE_SERVERS);
+    if (!RTCPeerConnectionClass) { setError('Tarayıcınız WebRTC desteklemiyor.'); return null; }
+    const pc = new RTCPeerConnectionClass(ICE_SERVERS);
     peersRef.current[otherId] = pc;
     pendingIceRef.current[otherId] = [];
 
@@ -88,11 +94,9 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     // ICE bağlantı durumu izleme — koparsa yeniden bağlan
     pc.oniceconnectionstatechange = () => {
       if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-        // Kısa bekleme sonra yeniden dene
         setTimeout(() => {
           if (peersRef.current[otherId] === pc && pc.iceConnectionState !== 'connected') {
             try { pc.restartIce(); } catch {}
-            // Tekrar offer gönder
             if (userRef.current.id < otherId) {
               initiateOffer(otherId);
             }
@@ -101,6 +105,19 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       }
     };
 
+    // Eski tarayıcı desteği: onaddstream (eski Android/iOS sürümleri)
+    pc.onaddstream = (e) => {
+      let audio = pc._audioEl;
+      if (!audio) {
+        audio = new Audio();
+        audio.autoplay = true;
+        audio.setAttribute('playsinline', 'true');
+        pc._audioEl = audio;
+      }
+      setMediaStream(audio, e.stream);
+      audio.muted = deafenedRef.current;
+      audio.play().catch(() => {});
+    };
     pc.ontrack = (e) => {
       let audio = pc._audioEl;
       if (!audio) {
@@ -109,21 +126,18 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
         audio.setAttribute('playsinline', 'true');
         pc._audioEl = audio;
       }
-      audio.srcObject = e.streams[0];
+      setMediaStream(audio, e.streams[0]);
       audio.muted = deafenedRef.current;
       audio.play().catch(() => {});
-      if (!analysersRef.current[otherId]) {
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtx) {
-          const context = new AudioCtx(); const analyser = context.createAnalyser();
-          analyser.fftSize = 256; context.createMediaStreamSource(e.streams[0]).connect(analyser);
-          analysersRef.current[otherId] = { context, analyser, data: new Uint8Array(analyser.fftSize) };
-        }
+      if (!analysersRef.current[otherId] && AudioContextClass) {
+        const context = new AudioContextClass(); const analyser = context.createAnalyser();
+        analyser.fftSize = 256; context.createMediaStreamSource(e.streams[0]).connect(analyser);
+        analysersRef.current[otherId] = { context, analyser, data: new Uint8Array(analyser.fftSize) };
       }
     };
 
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'failed') {
+      if (pc.connectionState === 'failed' || pc.iceConnectionState === 'failed') {
         closePeer(otherId);
         // Yeniden bağlanmayı dene
         setTimeout(() => {
@@ -145,7 +159,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     if (!pc || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
       pc = createPeer(otherId);
     }
-    if (pc.signalingState !== 'stable') return;
+    if (!pc || pc.signalingState !== 'stable') return;
     initiatedRef.current.add(otherId);
     try {
       const offer = await pc.createOffer({ iceRestart: true });
@@ -166,6 +180,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
         return;
       }
     }
+    if (!pc) return;
 
     let payload;
     try { payload = JSON.parse(s.data); } catch { return; }
@@ -233,7 +248,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       const stream = await requestMicrophoneStream();
       localStreamRef.current = stream;
       stream.getAudioTracks().forEach((track) => { track.enabled = true; });
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const AudioCtx = AudioContextClass || window.AudioContext || window.webkitAudioContext;
       if (AudioCtx && !localAnalyserRef.current) {
         const context = new AudioCtx(); const analyser = context.createAnalyser();
         analyser.fftSize = 256; context.createMediaStreamSource(stream).connect(analyser);
