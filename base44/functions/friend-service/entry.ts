@@ -77,10 +77,12 @@ export default async function(req) {
     if (['hide', 'unfriend', 'block', 'unblock'].includes(action)) {
       const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
       if (!friendship || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
-      if (action === 'hide' || action === 'unfriend') {
+      if (action === 'hide') {
         const hiddenFor = [...new Set([...(friendship.hidden_for || []), user.id])];
         const clearedAt = { ...(friendship.cleared_at || {}), [user.id]: new Date().toISOString() };
-        await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: 'removed', hidden_for: hiddenFor, cleared_at: clearedAt });
+        await base44.asServiceRole.entities.Friendship.update(friendship.id, { hidden_for: hiddenFor, cleared_at: clearedAt });
+      } else if (action === 'unfriend') {
+        await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: 'removed' });
       } else if (action === 'block') {
         const blockedBy = [...new Set([...(friendship.blocked_by || []), user.id])];
         await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: 'blocked', blocked_by: blockedBy });

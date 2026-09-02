@@ -14,7 +14,11 @@ export default function Friends() {
     if (hasUnread) invoke({ action: 'mark_read', friendship_id: selected.id }).catch(() => {});
   }, [view, selected?.id, messages, user?.id]);
   if (loading || !user) return <div className="p-6 text-muted-foreground">Yükleniyor...</div>;
-  const unread = messages.filter((message) => message.recipient_id === user.id && Array.isArray(message.read_by) && !message.read_by.includes(user.id)).length;
+  const unread = messages.filter((message) => {
+    const relation = relations.find((item) => item.id === message.friendship_id);
+    const clearedAt = new Date(relation?.cleared_at?.[user.id] || 0);
+    return relation?.status === 'accepted' && message.recipient_id === user.id && new Date(message.created_date) > clearedAt && Array.isArray(message.read_by) && !message.read_by.includes(user.id);
+  }).length;
   const openChat = (relation) => { setSelected(relation); setView('chat'); invoke({ action: 'mark_read', friendship_id: relation.id }).catch(() => {}); };
   const hide = async (relation) => { await invoke({ action: 'hide', friendship_id: relation.id }); if (selected?.id === relation.id) setSelected(null); };
   if (view === 'chat') { const clearedAt = new Date(selected?.cleared_at?.[user.id] || 0); const visibleMessages = messages.filter((message) => message.friendship_id !== selected?.id || new Date(message.created_date) > clearedAt); return <div className="max-w-3xl mx-auto sm:p-4"><ChatPanel friendship={selected} messages={visibleMessages} userId={user.id} invoke={invoke} onBack={() => setView('chats')} /></div>; }
