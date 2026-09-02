@@ -32,12 +32,28 @@
         "type": "string"
       }
     },
+    "hidden_for": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "blocked_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "status": {
       "type": "string",
       "enum": [
         "pending",
         "accepted",
-        "rejected"
+        "rejected",
+        "removed",
+        "blocked"
       ],
       "default": "pending"
     }
