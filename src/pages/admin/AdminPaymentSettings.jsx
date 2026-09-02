@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import ProviderForm from '@/components/admin/payment/ProviderForm';
+import GeneralSettingsTab from '@/components/admin/payment/GeneralSettingsTab';
+import CurrencySettingsTab from '@/components/admin/payment/CurrencySettingsTab';
+import TaxSettingsTab from '@/components/admin/payment/TaxSettingsTab';
+import InvoiceSettingsTab from '@/components/admin/payment/InvoiceSettingsTab';
+import RefundSettingsTab from '@/components/admin/payment/RefundSettingsTab';
 import { Plus, Info, ShieldCheck, FileText, ExternalLink, Settings, LifeBuoy } from 'lucide-react';
 
 const PROVIDERS = [
@@ -63,6 +68,16 @@ export default function AdminPaymentSettings() {
   };
 
   const provider = getProvider(selected);
+  const openNewProvider = () => { setSelected('other'); setTab('Sanal POS Ayarları'); };
+  const renderSettingsTab = () => {
+    const props = (key) => ({ value: configs[key] || {}, onSave: (data) => save(key, data) });
+    if (tab === 'Genel Ayarlar') return <GeneralSettingsTab {...props('general')} />;
+    if (tab === 'Para Birimleri') return <CurrencySettingsTab {...props('currencies')} />;
+    if (tab === 'Vergi Ayarları') return <TaxSettingsTab {...props('tax')} />;
+    if (tab === 'Fatura Ayarları') return <InvoiceSettingsTab {...props('invoice')} />;
+    if (tab === 'İade Ayarları') return <RefundSettingsTab {...props('refund')} />;
+    return null;
+  };
 
   if (loading) return <div className="h-64 flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -73,7 +88,7 @@ export default function AdminPaymentSettings() {
           <h1 className="text-2xl font-extrabold">Ödeme Ayarları</h1>
           <p className="text-sm text-muted-foreground mt-1">Sanal POS ayarlarını buradan yönetebilir ve düzenleyebilirsiniz.</p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90">
+        <button onClick={openNewProvider} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90">
           <Plus className="w-4 h-4" /> Yeni Ödeme Yöntemi Ekle
         </button>
       </div>
@@ -87,12 +102,7 @@ export default function AdminPaymentSettings() {
         ))}
       </div>
 
-      {tab !== 'Sanal POS Ayarları' ? (
-        <div className="bg-card border border-border rounded-xl p-12 text-center">
-          <Settings className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">Bu sekme yakında kullanıma açılacak.</p>
-        </div>
-      ) : (
+      {tab !== 'Sanal POS Ayarları' ? renderSettingsTab() : (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* Left: Provider list */}
@@ -113,7 +123,7 @@ export default function AdminPaymentSettings() {
                   );
                 })}
               </div>
-              <button className="w-full mt-2 flex items-center gap-2 px-2 py-2 rounded-lg text-sm text-primary hover:bg-secondary border-t border-border pt-3">
+              <button onClick={openNewProvider} className="w-full mt-2 flex items-center gap-2 px-2 py-2 rounded-lg text-sm text-primary hover:bg-secondary border-t border-border pt-3">
                 <Plus className="w-4 h-4" /> Yeni Ödeme Yöntemi Ekle
               </button>
             </div>
@@ -184,7 +194,7 @@ export default function AdminPaymentSettings() {
                   </div>
                 );
               })}
-              <button className="border-2 border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary min-h-[140px]">
+              <button onClick={openNewProvider} className="border-2 border-dashed border-border rounded-xl p-4 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary min-h-[140px]">
                 <Plus className="w-6 h-6" />
                 <span className="text-xs font-medium">Yeni Ödeme Yöntemi Ekle</span>
               </button>
