@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Lock, MessageSquare, Mic, DoorOpen } from 'lucide-react';
+import { Users, Lock, MessageSquare, Mic, DoorOpen, Check } from 'lucide-react';
+import { Image } from '@/components/ui/image';
 
 export default function CreateRoom() {
   const navigate = useNavigate();
@@ -47,10 +48,26 @@ export default function CreateRoom() {
         </div>
         <div>
           <label className="text-sm font-medium block mb-1.5">Film / Dizi Seç</label>
-          <select className={field} value={form.movie_id} onChange={(e) => setForm({ ...form, movie_id: e.target.value })} required>
-            <option value="">İçerik seçin...</option>
-            {movies.map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}
-          </select>
+          {movies.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Yüklü içerik yok.</p>
+          ) : (
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-80 overflow-y-auto p-1 -m-1">
+              {movies.map((m) => (
+                <button key={m.id} type="button" onClick={() => setForm({ ...form, movie_id: m.id })}
+                  className={`relative rounded-lg overflow-hidden border-2 transition-all ${form.movie_id === m.id ? 'border-primary ring-2 ring-primary' : 'border-transparent hover:border-border'}`}>
+                  <Image src={m.poster || m.backdrop} alt={m.title} className="aspect-[2/3] w-full" fittingType="fill" />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-1.5">
+                    <p className="text-xs font-medium text-white line-clamp-2">{m.title}</p>
+                  </div>
+                  {form.movie_id === m.id && (
+                    <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>

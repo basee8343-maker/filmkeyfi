@@ -2,7 +2,16 @@ import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { useTheme } from '@/lib/ThemeContext';
-import { Wrench, UserPlus, Palette, Sun, Moon, Monitor } from 'lucide-react';
+import { Wrench, UserPlus, Palette, Sun, Moon } from 'lucide-react';
+
+function Toggle({ on, onChange, disabled }) {
+  return (
+    <button type="button" onClick={() => !disabled && onChange(!on)} disabled={disabled}
+      className={`relative w-12 h-6 rounded-full transition-colors shrink-0 ${on ? 'bg-primary' : 'bg-secondary border border-border'}`}>
+      <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-6' : 'translate-x-0'}`} />
+    </button>
+  );
+}
 
 export default function AdminSettings() {
   const { toast } = useToast();
@@ -16,7 +25,7 @@ export default function AdminSettings() {
     setCfg({
       maintenance_mode: get('maintenance_mode', 'false') === 'true',
       registration_open: get('registration_open', 'true') === 'true',
-      app_theme: get('app_theme', 'auto'),
+      app_theme: get('app_theme', 'dark'),
     });
   };
   useEffect(() => { load(); }, []);
@@ -29,17 +38,11 @@ export default function AdminSettings() {
       const val = typeof value === 'boolean' ? String(value) : value;
       if (existing) await base44.entities.AppConfig.update(existing.id, { value: val });
       else await base44.entities.AppConfig.create({ key, value: val });
+      setCfg((prev) => ({ ...prev, [key]: value }));
       toast({ title: 'Ayar kaydedildi' });
-      load();
     } catch { toast({ title: 'Hata', variant: 'destructive' }); }
     setSaving(false);
   };
-
-  const Toggle = ({ on, onChange }) => (
-    <button onClick={() => onChange(!on)} className={`relative w-14 h-7 rounded-full transition-colors ${on ? 'bg-primary' : 'bg-secondary border border-border'}`}>
-      <span className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${on ? 'translate-x-7' : 'translate-x-0.5'}`} />
-    </button>
-  );
 
   const card = 'bg-card border border-border rounded-xl p-5 space-y-3';
 
@@ -57,7 +60,7 @@ export default function AdminSettings() {
                 <p className="text-sm text-muted-foreground">Açıkken normal kullanıcılar siteye giremez. Adminler etkilenmez.</p>
               </div>
             </div>
-            <Toggle on={cfg.maintenance_mode} onChange={(v) => { setCfg({ ...cfg, maintenance_mode: v }); save('maintenance_mode', v); }} />
+            <Toggle on={cfg.maintenance_mode} disabled={saving} onChange={(v) => save('maintenance_mode', v)} />
           </div>
         </div>
 
@@ -71,7 +74,7 @@ export default function AdminSettings() {
                 <p className="text-sm text-muted-foreground">Kapalıyken yeni kullanıcı kaydı engellenir. Mevcut kullanıcılar giriş yapabilir.</p>
               </div>
             </div>
-            <Toggle on={cfg.registration_open} onChange={(v) => { setCfg({ ...cfg, registration_open: v }); save('registration_open', v); }} />
+            <Toggle on={cfg.registration_open} disabled={saving} onChange={(v) => save('registration_open', v)} />
           </div>
         </div>
 
@@ -84,9 +87,8 @@ export default function AdminSettings() {
               <p className="text-sm text-muted-foreground">Varsayılan tema seçimi. Kullanıcılar kendi tercihlerini değiştirebilir.</p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {[
-              { v: 'auto', label: 'Otomatik', Icon: Monitor },
               { v: 'dark', label: 'Karanlık', Icon: Moon },
               { v: 'light', label: 'Aydınlık', Icon: Sun },
             ].map(({ v, label, Icon }) => (

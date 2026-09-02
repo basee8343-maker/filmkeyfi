@@ -108,12 +108,40 @@ export default function AdminLayout() {
       {open && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setOpen(false)} />}
       <div className="flex-1 min-w-0">
         <header className="lg:hidden sticky top-0 z-20 glass border-b border-border h-14 flex items-center px-4"
+          style={{ touchAction: 'pan-y' }}
           onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
-          onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); if (Math.abs(dx) > 55) setOpen((v) => !v); }}>
+          onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); if (dx > 55) setOpen(false); else if (dx < -55) setOpen(true); }}>
           <button onClick={() => setOpen(true)}><Menu className="w-6 h-6" /></button>
           <span className="ml-3 font-bold">Admin Panel</span>
           <div className="ml-auto flex items-center gap-2">
+            <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/60">
+              <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                {(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}
+              </div>
+              <div>
+                <p className="text-xs font-semibold leading-tight max-w-[80px] truncate">{user.username || user.full_name || 'Admin'}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">Yönetici</p>
+              </div>
+            </div>
             <ThemeToggle />
+            <button onClick={handleNotif} className="p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimleri Aç">
+              <Bell className="w-5 h-5" />
+              {notifGranted && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
+            </button>
+          </div>
+        </header>
+        <header className="hidden lg:flex sticky top-0 z-20 glass border-b border-border h-14 items-center px-6">
+          <span className="font-bold">Admin Panel</span>
+          <div className="ml-auto flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/60">
+              <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                {(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-semibold leading-tight">{user.username || user.full_name || 'Admin'}</p>
+                <p className="text-xs text-muted-foreground leading-tight">Yönetici</p>
+              </div>
+            </div>
             <button onClick={handleNotif} className="p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimleri Aç">
               <Bell className="w-5 h-5" />
               {notifGranted && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
