@@ -6,7 +6,7 @@ import ChatOverlay from '@/components/player/ChatOverlay';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
-import { Mic, MicOff, Crown, X, Eye, ArrowLeft } from 'lucide-react';
+import { Mic, MicOff, Crown, X, Eye, ArrowLeft, Film } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
@@ -14,6 +14,7 @@ import PartyControlBar from '@/components/player/PartyControlBar';
 import LiveKitDebugPanel from '@/components/player/LiveKitDebugPanel';
 import RoomDirectMessages from '@/components/player/RoomDirectMessages';
 import RoomNotifications from '@/components/player/RoomNotifications';
+import MoviePickerSheet from '@/components/player/MoviePickerSheet';
 import useSocialBadges from '@/hooks/useSocialBadges';
 
 export default function WatchParty() {
@@ -28,6 +29,7 @@ export default function WatchParty() {
   const [directOpen, setDirectOpen] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [moviePickerOpen, setMoviePickerOpen] = useState(false);
   const [needPassword, setNeedPassword] = useState(false);
   const [pwInput, setPwInput] = useState('');
   const [pwSetInput, setPwSetInput] = useState('');
@@ -43,6 +45,7 @@ export default function WatchParty() {
   const kickedRef = useRef(false);
   const lastUpdateRef = useRef(0);
   const lastSyncRef = useRef({ is_playing: false, current_time: 0 });
+  const prevMovieIdRef = useRef(null);
   const playerWrapRef = useRef(null);
   const touchStart = useRef({ x: 0, y: 0 });
   const seenRoomMessagesRef = useRef(new Set());
@@ -50,13 +53,19 @@ export default function WatchParty() {
   const { messages: directUnread } = useSocialBadges(user?.id);
 
   useEffect(() => {
-    base44.entities.Room.get(id).then(async (r) => {
-      setRoom(r);
-      setSyncState({ is_playing: r.is_playing, current_time: r.current_time, last_sync: r.last_sync });
-      if (r.movie_id) base44.entities.Movie.get(r.movie_id).then(setMovie).catch(() => {});
-      setLoading(false);
-    }).catch(() => setLoading(false));
+  base44.entities.Room.get(id).then(async (r) => {
+    setRoom(r);
+    setSyncState({ is_playing: r.is_playing, current_time: r.current_time, last_sync: r.last_sync });
+    setLoading(false);
+  }).catch(() => setLoading(false));
   }, [id]);
+
+  // Film değiştiğinde yeni filmi yükle (ilk yükleme dahil)
+  useEffect(() => {
+  if (!room?.movie_id || prevMovieIdRef.current === room.movie_id) return;
+  prevMovieIdRef.current = room.movie_id;
+  base44.entities.Movie.get(room.movie_id).then(setMovie).catch(() => {});
+  }, [room?.movie_id]);
 
   useEffect(() => {
     if (!user || !room || joinedRef.current) return;
@@ -188,6 +197,15 @@ export default function WatchParty() {
   const onTimeUpdate = (t) => updateRoom({ current_time: t });
   const onSeek = (t) => updateRoom({ current_time: t, is_playing: true }, true);
 
+  const changeMovie = async (newMovie) => {
+    try {
+      await base44.functions.invoke('room-presence', { action: 'change-movie', room_id: id, movie_id: newMovie.id, movie_title: newMovie.title });
+      toast({ title: 'Film değiştirildi', description: newMovie.title });
+    } catch (e) {
+      toast({ title: 'Değiştirilemedi', description: e.response?.data?.error || e.message, variant: 'destructive' });
+    }
+  };
+
   const toggleVoice = async () => {
     if (!canMod) { toast({ title: 'Yetkiniz yok', variant: 'destructive' }); return; }
     try { await base44.functions.invoke('room-presence', { action: 'toggle-voice', room_id: id }); toast({ title: room.voice_enabled ? 'Sesli sohbet kapatıldı' : 'Sesli sohbet açıldı' }); }
@@ -234,6 +252,10 @@ export default function WatchParty() {
     const t = e.changedTouches[0];
     const dx = t.clientX - touchStart.current.x;
     const dy = t.clientY - touchStart.current.y;
+    if (dy < -80 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+      setMoviePickerOpen(true);
+      return;
+    }
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
       if (dx < 0) setChatOpen(true);
       else setChatOpen(false);
@@ -272,6 +294,7 @@ export default function WatchParty() {
       <div ref={playerWrapRef} className="flex-1 flex min-h-0 relative" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <RoomNotifications participants={room?.participants || []} currentUserId={user?.id} />
         <button onClick={handleBack} className="absolute top-[max(env(safe-area-inset-top),0.75rem)] left-3 z-[55] flex items-center justify-center w-9 h-9 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/10 active:scale-95 transition"><ArrowLeft className="w-5 h-5" /></button>
+        <button onClick={() => setMoviePickerOpen(true)} className="absolute top-[max(env(safe-area-inset-top),0.75rem)] left-1/2 -translate-x-1/2 z-[55] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white border border-white/10 backdrop-blur-md bg-black/60 active:scale-95 transition"><Film className="w-3.5 h-3.5" /> Film Değiştir</button>
         <button onClick={() => { setShowViewers(!showViewers); setShowSettings(false); }} className={`absolute top-[max(env(safe-area-inset-top),0.75rem)] right-3 z-[55] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white border border-white/10 backdrop-blur-md transition active:scale-95 ${showViewers ? 'bg-primary/80' : 'bg-black/60'}`}><Eye className="w-4 h-4" /><span>{visibleParticipants.length}</span></button>
         <div className={`flex items-center justify-center bg-black ${chatOpen ? 'flex-1 min-w-0' : 'flex-1 min-w-0'}`}>
           {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} fullscreenRef={playerWrapRef} watermark={user} controlsRaised /> :
@@ -332,6 +355,7 @@ export default function WatchParty() {
         confirmText="Kaldır"
         onConfirm={() => savePassword('')}
       />
+      <MoviePickerSheet open={moviePickerOpen} onClose={() => setMoviePickerOpen(false)} onSelect={changeMovie} currentMovieId={movie?.id} />
     </div>
   );
 }

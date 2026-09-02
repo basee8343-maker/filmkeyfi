@@ -19,7 +19,7 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json();
     const { action, room_id, password, target_id } = body || {};
-    if (!room_id || !['join', 'leave', 'kick', 'set-password', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat'].includes(action)) {
+    if (!room_id || !['join', 'leave', 'kick', 'set-password', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat', 'change-movie'].includes(action)) {
       return Response.json({ error: 'invalid request' }, { status: 400 });
     }
     const name = user.username || user.full_name || 'Kullanıcı';
@@ -92,7 +92,7 @@ export default async function(req) {
       const participants = (room.participants || []).filter((p) => p.user_id !== target_id);
       const targetName = (room.participants || []).find((p) => p.user_id === target_id)?.name || 'Kullanıcı';
       if (participants.length === 0) {
-        await base44.asServiceRole.entities.Room.update(room_id, { participants });
+        await base44.asServiceRole.entities.Room.update(room_id, { participants, status: 'closed', is_playing: false });
         await base44.asServiceRole.entities.RoomMessage.create({
           room_id, user_id: target_id, user_name: targetName,
           text: `${targetName} odadan atıldı.`, type: 'system'
@@ -146,12 +146,30 @@ export default async function(req) {
       return Response.json({ ok: true });
     }
 
+    if (action === 'change-movie') {
+      const { movie_id, movie_title } = body || {};
+      if (!movie_id) return Response.json({ error: 'film gerekli' }, { status: 400 });
+      const participants = room.participants || [];
+      const inRoom = participants.some((p) => p.user_id === user.id);
+      if (!inRoom && !isOwner && !isMod) return Response.json({ error: 'odada değilsiniz' }, { status: 403 });
+      await base44.asServiceRole.entities.Room.update(room_id, {
+        movie_id, movie_title: movie_title || '',
+        current_time: 0, is_playing: false,
+        last_sync: new Date().toISOString()
+      });
+      await base44.asServiceRole.entities.RoomMessage.create({
+        room_id, user_id: user.id, user_name: name,
+        text: `${name} filmi değiştirdi: ${movie_title || 'Yeni Film'}`, type: 'system'
+      });
+      return Response.json({ ok: true });
+    }
+
     // leave
     if (ghost) return Response.json({ ok: true });
     await updatePresenceRoom(base44, user.id, '');
     const participants = (room.participants || []).filter((p) => p.user_id !== user.id);
     if (participants.length === 0) {
-      await base44.asServiceRole.entities.Room.update(room_id, { participants });
+      await base44.asServiceRole.entities.Room.update(room_id, { participants, status: 'closed', is_playing: false });
       await base44.asServiceRole.entities.RoomMessage.create({
         room_id, user_id: user.id, user_name: name,
         text: `${name} odadan ayrıldı.`, type: 'system'

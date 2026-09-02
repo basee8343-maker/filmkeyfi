@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Flag } from 'lucide-react';
+import { Flag, X } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Image } from '@/components/ui/image';
 
 export default function AdminUserReports() {
   const { toast } = useToast();
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [lightbox, setLightbox] = useState(null);
 
   const load = () => {
     base44.entities.Report.list('-created_date', 200).then((r) => setReports(r)).catch(() => {}).finally(() => setLoading(false));
@@ -43,6 +45,7 @@ export default function AdminUserReports() {
                 <p className="text-sm font-semibold">{r.target_name || 'Bilinmeyen kullanıcı'}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Şikayet eden: {r.reporter_name}</p>
                 {r.reason && <p className="text-sm text-muted-foreground mt-2 bg-secondary/50 rounded p-2">{r.reason}</p>}
+                {r.file_url && <Image src={r.file_url} alt="ek" className="mt-2 rounded-lg max-h-32 cursor-pointer" fittingType="fit" onClick={() => setLightbox(r.file_url)} />}
                 <p className="text-[10px] text-muted-foreground mt-1">{new Date(r.created_date).toLocaleString('tr-TR')}</p>
               </div>
               <div className="flex flex-col gap-1 shrink-0">
@@ -53,6 +56,7 @@ export default function AdminUserReports() {
           </div>
         ))}
        </div>}
+      {lightbox && <div onClick={() => setLightbox(null)} className="fixed inset-0 z-[110] bg-black/90 flex items-center justify-center p-4"><button className="absolute top-4 right-4 text-white p-2"><X className="w-6 h-6" /></button><Image src={lightbox} className="max-w-full max-h-full rounded-lg" fittingType="fit" /></div>}
     </div>
   );
 }

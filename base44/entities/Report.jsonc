@@ -28,6 +28,9 @@
     "reason": {
       "type": "string"
     },
+    "file_url": {
+      "type": "string"
+    },
     "status": {
       "type": "string",
       "enum": [

@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { Trash2, Plus, Send } from 'lucide-react';
+import { Trash2, Plus, Send, Trash } from 'lucide-react';
 
 export default function AdminNotifications() {
   const { user: admin } = useCurrentUser();
@@ -16,6 +16,8 @@ export default function AdminNotifications() {
   const load = () => { base44.entities.Notification.list(100).then((r) => setItems([...r].reverse())).catch(() => {}); };
   useEffect(() => { load(); base44.entities.User.list(500).then(setUsers).catch(() => {}); }, []);
   const del = async () => { await base44.entities.Notification.delete(confirm.id); toast({ title: 'Silindi' }); setConfirm(null); load(); };
+  const [confirmAll, setConfirmAll] = useState(null);
+  const delAll = async () => { await base44.entities.Notification.deleteMany({}); toast({ title: 'Tüm bildirimler silindi' }); setConfirmAll(null); load(); };
   const send = async (e) => {
     e.preventDefault();
     if (!form.user_id || !form.title) return;
@@ -25,7 +27,10 @@ export default function AdminNotifications() {
 
   return (
     <div>
-      <h1 className="text-2xl font-extrabold mb-4">Bildirimler</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-extrabold">Bildirimler</h1>
+        {items.length > 0 && <button onClick={() => setConfirmAll(true)} className="flex items-center gap-1.5 bg-destructive/10 text-destructive border border-destructive/20 px-3 py-2 rounded-lg text-sm font-semibold"><Trash className="w-4 h-4" /> Tümünü Sil</button>}
+      </div>
       <form onSubmit={send} className="bg-card border border-border rounded-xl p-4 space-y-3 mb-6">
         <h3 className="font-semibold">Bildirim Gönder</h3>
         <select value={form.user_id} onChange={(e) => setForm({ ...form, user_id: e.target.value })} className="w-full bg-secondary/60 rounded-lg px-3 py-2 text-sm outline-none border border-border" required>
@@ -45,6 +50,7 @@ export default function AdminNotifications() {
         ))}
       </div>
       <ConfirmDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)} title="Bildirimi sil?" onConfirm={del} />
+      <ConfirmDialog open={!!confirmAll} onOpenChange={(o) => !o && setConfirmAll(null)} title="Tüm bildirimler silinsin mi?" description="Bu işlem geri alınamaz." confirmText="Tümünü Sil" onConfirm={delAll} />
     </div>
   );
 }
