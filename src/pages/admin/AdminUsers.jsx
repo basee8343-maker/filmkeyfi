@@ -37,7 +37,7 @@ export default function AdminUsers({ pendingOnly = false }) {
       setPaidUserIds(new Set(pays.map((p) => p.user_id)));
     }).catch(() => {});
   };
-  useEffect(load, []);
+  useEffect(() => { setLoading(true); load(); }, [pendingOnly]);
 
   const log = async (action, target) => { await base44.entities.AdminLog.create({ admin_id: admin?.id, admin_name: admin?.username || admin?.full_name, action, target }).catch(() => {}); };
   const notify = async (uid, title, body) => { await base44.entities.Notification.create({ user_id: uid, title, body, type: 'info' }).catch(() => {}); };

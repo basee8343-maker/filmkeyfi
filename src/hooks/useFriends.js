@@ -38,9 +38,11 @@ export default function useFriends() {
   }, [user?.id, reload]);
   const invoke = async (payload) => {
     try {
+      const readCount = payload.action === 'mark_read' ? messages.filter((message) => message.friendship_id === payload.friendship_id && message.recipient_id === user?.id && !(message.read_by || []).includes(user.id)).length : 0;
       const res = await base44.functions.invoke('friend-service', payload);
       if (payload.action === 'send' && res.data.message) setMessages((current) => current.some((message) => message.id === res.data.message.id) ? current : [...current, res.data.message]);
       else if (payload.action !== 'typing') await reload();
+      if (payload.action === 'mark_read' && readCount > 0) window.dispatchEvent(new CustomEvent('social-thread-read', { detail: { count: readCount } }));
       window.dispatchEvent(new Event('social-badges-refresh'));
       return res.data;
     } catch (error) { toast({ title: 'İşlem başarısız', description: error.response?.data?.error || error.message, variant: 'destructive' }); throw error; }

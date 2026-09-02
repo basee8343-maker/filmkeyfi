@@ -85,7 +85,7 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      <aside className={`fixed lg:sticky top-0 z-40 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col transition-transform ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <aside className={`fixed lg:sticky top-0 z-40 h-screen w-64 bg-sidebar border-r border-sidebar-border flex flex-col pt-[max(env(safe-area-inset-top),0rem)] lg:pt-0 transition-transform ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
         <div className="p-4 flex items-center justify-between">
           <Link to="/admin" className="text-lg font-extrabold"><span className="text-gradient">FILM</span>KEYFİ <span className="text-xs text-muted-foreground font-normal">Admin</span></Link>
           <button onClick={() => setOpen(false)} className="lg:hidden p-1"><X className="w-5 h-5" /></button>
@@ -113,22 +113,21 @@ export default function AdminLayout() {
           onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); if (dx > 55) setOpen(true); else if (dx < -55) setOpen(false); }}>
           <button onClick={() => setOpen(true)}><Menu className="w-6 h-6" /></button>
           <Link to="/" className="ml-2 p-1.5 rounded-lg hover:bg-secondary" title="Ana Sayfa"><Home className="w-5 h-5" /></Link>
-          <span className="ml-1 font-bold">Admin Panel</span>
-          <div className="ml-auto flex items-center gap-2">
+          <span className="ml-1 hidden min-[390px]:block font-bold whitespace-nowrap">Admin Panel</span>
+          <div className="ml-auto flex min-w-0 items-center gap-1">
             <ThemeToggle />
             <button onClick={handleNotif} className="p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimleri Aç">
               <Bell className="w-5 h-5" />
               {notifGranted && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
             </button>
-            <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-secondary/60">
+            <div className="flex shrink-0 items-center gap-1 rounded-lg bg-secondary/60 p-1">
               <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
                 {(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}
               </div>
-              <div>
+              <div className="hidden min-[430px]:block">
                 <p className="text-xs font-semibold leading-tight">Yönetici</p>
                 <p className="text-[10px] text-muted-foreground leading-tight max-w-[90px] truncate">{user.email}</p>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
             </div>
           </div>
         </header>

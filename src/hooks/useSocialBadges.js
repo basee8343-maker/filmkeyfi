@@ -20,12 +20,15 @@ export default function useSocialBadges(userId) {
     load();
     const offFriends = base44.entities.Friendship.subscribe(load);
     const offMessages = base44.entities.DirectMessage.subscribe(load);
+    const clearReadThread = (event) => setBadges((current) => ({ ...current, messages: Math.max(0, current.messages - (event.detail?.count || 0)) }));
     window.addEventListener('social-badges-refresh', load);
+    window.addEventListener('social-thread-read', clearReadThread);
     return () => {
       active = false;
       offFriends();
       offMessages();
       window.removeEventListener('social-badges-refresh', load);
+      window.removeEventListener('social-thread-read', clearReadThread);
     };
   }, [userId]);
 

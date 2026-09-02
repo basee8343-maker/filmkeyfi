@@ -15,6 +15,12 @@ export default async function(req) {
     const body = await req.json();
     const action = body.action;
 
+    if (action === 'admin_clear_all') {
+      if (user.role !== 'admin') return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
+      await base44.asServiceRole.entities.DirectMessage.deleteMany({});
+      return Response.json({ ok: true });
+    }
+
     if (action === 'search') {
       const memberId = String(body.member_id || '').trim();
       if (!/^\d{8}$/.test(memberId)) return Response.json({ error: '8 haneli üye numarası girin' }, { status: 400 });

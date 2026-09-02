@@ -253,7 +253,7 @@ export default function AdminRoomMessages() {
       {/* Mobile Slide-in Panel */}
       <div className={`lg:hidden fixed inset-0 z-50 transition-opacity duration-300 ${panelOpen && active ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'}`}>
         <div className="absolute inset-0 bg-black/50" onClick={closePanel} />
-        <div className={`absolute top-0 right-0 w-full max-w-[400px] h-[100dvh] bg-card flex flex-col transition-transform duration-300 ease-out ${panelOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className={`absolute top-0 right-0 w-full max-w-[400px] h-[100dvh] bg-card flex flex-col pt-[max(env(safe-area-inset-top),1rem)] transition-transform duration-300 ease-out ${panelOpen ? 'translate-x-0' : 'translate-x-full'}`}>
           {active && <RoomMessagePanel {...panelProps} isMobile={true} onClose={closePanel} scrollRef={mobileScrollRef} />}
         </div>
       </div>
