@@ -4,7 +4,7 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, password
   if (!open) return null;
   const button = 'w-full flex items-center gap-3 rounded-xl border border-border bg-secondary/60 px-3 py-3 text-sm font-semibold hover:bg-secondary transition-colors';
   return (
-    <div className="absolute top-2 right-2 z-40 w-64 rounded-2xl border border-border bg-card/95 p-3 shadow-2xl backdrop-blur-xl">
+    <div className="absolute bottom-24 right-3 z-[60] w-64 rounded-2xl border border-border bg-card/95 p-3 shadow-2xl backdrop-blur-xl">
       <div className="mb-3 flex items-center justify-between"><p className="font-bold">Oda Ayarları</p><button onClick={onClose} className="rounded-lg p-1.5 hover:bg-secondary"><X className="w-4 h-4" /></button></div>
       {!canMod ? <p className="text-sm text-muted-foreground">Bu ayarları yalnızca oda sahibi değiştirebilir.</p> : <div className="space-y-2">
         <button onClick={onVoice} className={button}>{room.voice_enabled ? <MicOff className="w-4 h-4 text-destructive" /> : <Mic className="w-4 h-4 text-green-400" />} {room.voice_enabled ? 'Sesli sohbeti kapat' : 'Sesli sohbeti aç'}</button>

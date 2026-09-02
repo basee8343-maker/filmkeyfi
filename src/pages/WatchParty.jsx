@@ -6,11 +6,11 @@ import ChatOverlay from '@/components/player/ChatOverlay';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
-import { Mic, MicOff, Crown, X, MessageSquare, Settings } from 'lucide-react';
+import { Mic, MicOff, Crown, X } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
-import VoiceControls from '@/components/player/VoiceControls';
+import PartyControlBar from '@/components/player/PartyControlBar';
 
 export default function WatchParty() {
   const { id } = useParams();
@@ -233,32 +233,21 @@ export default function WatchParty() {
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col overflow-hidden" style={{ touchAction: 'pan-y', overscrollBehavior: 'none' }}>
-      {/* Üst kontrol çubuğu */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-background/95 border-b border-border shrink-0 z-20" style={{ paddingTop: 'calc(0.5rem + env(safe-area-inset-top))' }}>
-        <button onClick={handleBack} className="px-3 py-1.5 rounded-lg bg-secondary text-sm font-semibold shrink-0">GERİ</button>
-        <h1 className="flex-1 min-w-0 text-center font-bold truncate px-2 text-sm sm:text-base">{room.name}</h1>
-        <button onClick={() => { setShowViewers(!showViewers); setShowSettings(false); }} className="px-3 py-1.5 rounded-lg bg-secondary text-sm font-semibold shrink-0">İZLEYİCİ {room.participants?.length || 0}</button>
-        <button onClick={() => { setShowSettings(!showSettings); setShowViewers(false); }} className={`p-2 rounded-lg shrink-0 ${showSettings ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`} title="Oda ayarları"><Settings className="w-5 h-5" /></button>
-        <button onClick={() => setChatOpen(!chatOpen)} className={`relative p-2 rounded-lg shrink-0 ${chatOpen ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`} title="Sohbet"><MessageSquare className="w-5 h-5" />
-          {!chatOpen && unread > 0 && <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">{unread > 99 ? '99+' : unread}</span>}
-        </button>
-      </div>
-
-      {/* Video + sohbet alanı */}
+      {/* Tam ekran video + alt kontrol alanı */}
       <div ref={playerWrapRef} className="flex-1 flex min-h-0 relative" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className={`flex items-center justify-center bg-black ${chatOpen ? 'flex-1 min-w-0' : 'flex-1 min-w-0'}`}>
-          {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} fullscreenRef={playerWrapRef} watermark={user} /> :
+          {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} fullscreenRef={playerWrapRef} watermark={user} controlsRaised /> :
             <div className="text-muted-foreground text-sm p-6 text-center">Video kaynağı yok</div>}
         </div>
 
         {chatOpen && (
-          <div className="w-[300px] max-w-[42%] min-h-0 border-l border-border bg-card flex flex-col shrink-0">
+          <div className="absolute inset-y-0 right-0 z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pb-20 shadow-2xl backdrop-blur-xl">
             <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} />
           </div>
         )}
 
         {showViewers && (
-          <div className="absolute top-2 right-2 bg-card border border-border rounded-xl p-3 z-30 w-56 max-h-[70%] overflow-y-auto">
+          <div className="absolute bottom-24 right-3 bg-card/95 border border-border rounded-xl p-3 z-[60] w-56 max-h-[65%] overflow-y-auto shadow-2xl backdrop-blur-xl">
             <div className="flex items-center justify-between mb-2">
               <p className="font-semibold text-sm">İzleyiciler</p>
               <button onClick={() => setShowViewers(false)} className="text-muted-foreground"><X className="w-4 h-4" /></button>
@@ -291,7 +280,7 @@ export default function WatchParty() {
         <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} />
       </div>
 
-      {room.voice_enabled && <VoiceControls voice={voice} />}
+      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} viewerCount={room.participants?.length || 0} unread={unread} settingsOpen={showSettings} chatOpen={chatOpen} onBack={handleBack} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => setChatOpen(!chatOpen)} />
 
       <ConfirmDialog
         open={showPwRemoveConfirm}
