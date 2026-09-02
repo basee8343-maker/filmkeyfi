@@ -251,7 +251,7 @@ export default function Register() {
                 ))}
               </ul>
               <Button className="w-full h-11 font-semibold bg-[#e50914] hover:bg-[#f6121d] text-white">
-                50 TL Üyeliği Seç
+                Ödeme Yap
               </Button>
             </div>
 
