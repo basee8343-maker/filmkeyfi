@@ -59,6 +59,11 @@ export default function WatchParty() {
     partyBarTimer.current = setTimeout(() => setPartyBarVisible(false), 4000);
   };
   useEffect(() => { showPartyBar(); return () => clearTimeout(partyBarTimer.current); }, []);
+  const [dmNotif, setDmNotif] = useState(null);
+  const [dmNotifLeaving, setDmNotifLeaving] = useState(false);
+  const dmNotifTimer = useRef(null);
+  const directOpenRef = useRef(false);
+  useEffect(() => { directOpenRef.current = directOpen; }, [directOpen]);
 
   useEffect(() => {
   base44.entities.Room.get(id).then(async (r) => {
@@ -190,6 +195,27 @@ export default function WatchParty() {
     return () => { leaveRoom(); };
   }, []);
 
+  // Oda içindeyken özel mesaj gelince üstte bildirim göster (sadece alıcı görür)
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = base44.entities.DirectMessage.subscribe((event) => {
+      if (event.type !== 'create') return;
+      const msg = event.data;
+      if (!msg || msg.recipient_id !== user.id || msg.sender_id === user.id) return;
+      if (directOpenRef.current) return;
+      setDmNotifLeaving(false);
+      base44.functions.invoke('user-profile', { user_id: msg.sender_id })
+        .then((res) => setDmNotif({ id: msg.id, name: msg.sender_name, avatar: res.data?.avatar }))
+        .catch(() => setDmNotif({ id: msg.id, name: msg.sender_name, avatar: null }));
+      clearTimeout(dmNotifTimer.current);
+      dmNotifTimer.current = setTimeout(() => {
+        setDmNotifLeaving(true);
+        setTimeout(() => setDmNotif(null), 400);
+      }, 5000);
+    });
+    return () => { unsub(); clearTimeout(dmNotifTimer.current); };
+  }, [user?.id]);
+
   const isOwner = user?.id === room?.owner_id;
   const isMod = user?.role === 'admin' || user?.role === 'moderator';
   const canMod = isOwner || isMod;
@@ -261,17 +287,13 @@ export default function WatchParty() {
     const t = e.changedTouches[0];
     const dx = t.clientX - touchStart.current.x;
     const dy = t.clientY - touchStart.current.y;
-    if (dy > 80 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+    if (isOwner && dy > 80 && Math.abs(dy) > Math.abs(dx) * 1.5) {
       setMoviePickerOpen(true);
       return;
     }
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx < 0) { setChatOpen(true); showPartyBar(); }
+      if (dx < 0) setChatOpen(true);
       else setChatOpen(false);
-      return;
-    }
-    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
-      showPartyBar();
     }
   };
 
@@ -306,10 +328,16 @@ export default function WatchParty() {
       {/* Tam ekran video + alt kontrol alanı */}
       <div ref={playerWrapRef} className="flex-1 flex min-h-0 relative" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <RoomNotifications participants={room?.participants || []} currentUserId={user?.id} />
+        {dmNotif && (
+          <div onClick={() => { setDirectOpen(true); setDmNotif(null); clearTimeout(dmNotifTimer.current); }} className={`absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] flex items-center gap-2 rounded-xl bg-card/95 border border-border px-3 py-2 shadow-2xl backdrop-blur-xl max-w-[70%] cursor-pointer ${dmNotifLeaving ? 'dm-notif-out' : 'dm-notif-in'}`}>
+            {dmNotif.avatar ? <Image src={dmNotif.avatar} className="w-8 h-8 rounded-full" fittingType="fill" /> : <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">{dmNotif.name?.[0]}</div>}
+            <div className="min-w-0"><p className="text-xs font-bold truncate">{dmNotif.name}</p><p className="text-[10px] text-muted-foreground">mesaj yazdı</p></div>
+          </div>
+        )}
         <button onClick={handleBack} className="absolute top-[max(env(safe-area-inset-top),0.75rem)] left-3 z-[55] flex items-center justify-center w-9 h-9 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/10 active:scale-95 transition"><ArrowLeft className="w-5 h-5" /></button>
         <button onClick={() => { setShowViewers(!showViewers); setShowSettings(false); }} className={`absolute top-[max(env(safe-area-inset-top),0.75rem)] right-3 z-[55] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white border border-white/10 backdrop-blur-md transition active:scale-95 ${showViewers ? 'bg-primary/80' : 'bg-black/60'}`}><Eye className="w-4 h-4" /><span>{visibleParticipants.length}</span></button>
         <div className={`flex items-center justify-center bg-black ${chatOpen ? 'flex-1 min-w-0' : 'flex-1 min-w-0'}`}>
-          {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} onEnded={() => setMoviePickerOpen(true)} fullscreenRef={playerWrapRef} watermark={user} controlsRaised /> :
+          {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} onEnded={() => setMoviePickerOpen(true)} onControlsChange={(v) => { if (v) showPartyBar(); }} fullscreenRef={playerWrapRef} watermark={user} controlsRaised /> :
             <div className="text-muted-foreground text-sm p-6 text-center">Video kaynağı yok</div>}
         </div>
 

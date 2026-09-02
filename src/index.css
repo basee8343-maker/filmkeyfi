@@ -141,4 +141,14 @@
   .room-notif-in { animation: room-notif-in 0.3s ease-out forwards; }
   .room-notif-out-left { animation: room-notif-out-left 0.4s ease-in forwards; }
   .room-notif-out-right { animation: room-notif-out-right 0.4s ease-in forwards; }
+  @keyframes dm-notif-in {
+    from { transform: translate(-100%, -100%); opacity: 0; }
+    to { transform: translate(0, 0); opacity: 1; }
+  }
+  @keyframes dm-notif-out {
+    from { transform: translate(0, 0); opacity: 1; }
+    to { transform: translate(-150%, -100%); opacity: 0; }
+  }
+  .dm-notif-in { animation: dm-notif-in 0.3s ease-out forwards; }
+  .dm-notif-out { animation: dm-notif-out 0.4s ease-in forwards; }
 }

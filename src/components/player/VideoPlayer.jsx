@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Settings, Rewind, FastForward } from 'lucide-react';
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onSeek, onEnded, syncState, isOwner, subtitles, fullscreenRef, watermark, controlsRaised = false }) {
+export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onSeek, onEnded, onControlsChange, syncState, isOwner, subtitles, fullscreenRef, watermark, controlsRaised = false }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [playing, setPlaying] = useState(false);
@@ -142,8 +142,9 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
 
   const showCtrl = () => {
     setShowControls(true);
+    onControlsChange?.(true);
     clearTimeout(hideTimer.current);
-    hideTimer.current = setTimeout(() => { if (playing) setShowControls(false); }, 3000);
+    hideTimer.current = setTimeout(() => { setShowControls(false); }, 4000);
   };
 
   return (
@@ -170,22 +171,20 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
       )}
 
       <div className={`absolute inset-x-0 p-3 sm:p-4 bg-gradient-to-t from-black/90 to-transparent transition-opacity ${controlsRaised ? 'bottom-24' : 'bottom-0'} ${showControls ? 'opacity-100' : 'opacity-0'}`} style={{ paddingBottom: controlsRaised ? undefined : 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
-        {isOwner && (
-          <div className="flex items-center gap-2 mb-2 text-white text-xs">
-            <span>{fmt(current)}</span>
-            <div className="flex-1 h-1.5 bg-white/30 rounded-full cursor-pointer relative" onClick={moveBar}>
-              <div className="absolute inset-y-0 left-0 bg-primary rounded-full" style={{ width: `${duration ? (current / duration) * 100 : 0}%` }} />
-              <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full -ml-1.5" style={{ left: `${duration ? (current / duration) * 100 : 0}%` }} />
-            </div>
-            <span>{fmt(duration)}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 mb-2 text-white text-xs">
+          {isOwner && <span>{fmt(current)}</span>}
+          {isOwner && <div className="flex-1 h-1.5 bg-white/30 rounded-full cursor-pointer relative" onClick={moveBar}>
+            <div className="absolute inset-y-0 left-0 bg-primary rounded-full" style={{ width: `${duration ? (current / duration) * 100 : 0}%` }} />
+            <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full -ml-1.5" style={{ left: `${duration ? (current / duration) * 100 : 0}%` }} />
+          </div>}
+          {isOwner && <span>{fmt(duration)}</span>}
+          <button onClick={() => { const v = videoRef.current; v.muted = !v.muted; setMuted(v.muted); }} className="p-1.5 hover:bg-white/10 rounded-lg shrink-0">{muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}</button>
+          <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onInput={(e) => { const val = parseFloat(e.target.value); const v = videoRef.current; v.volume = val; setVolume(val); v.muted = false; setMuted(false); }} onChange={(e) => { const val = parseFloat(e.target.value); const v = videoRef.current; v.volume = val; setVolume(val); v.muted = false; setMuted(false); }} className="w-14 sm:w-24 accent-primary shrink-0" />
+        </div>
         <div className="flex items-center gap-1 sm:gap-2 text-white">
           {isOwner && <button onClick={togglePlay} className="p-2 hover:bg-white/10 rounded-lg">{playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}</button>}
           {isOwner && <button onClick={() => skip(-10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn geri"><Rewind className="w-5 h-5" /></button>}
           {isOwner && <button onClick={() => skip(10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn ileri"><FastForward className="w-5 h-5" /></button>}
-          <button onClick={() => { const v = videoRef.current; v.muted = !v.muted; setMuted(v.muted); }} className="p-2 hover:bg-white/10 rounded-lg">{muted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}</button>
-          <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onChange={(e) => { const v = videoRef.current; v.volume = e.target.value; setVolume(e.target.value); v.muted = false; setMuted(false); }} className="w-14 sm:w-24 accent-primary" />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             {isOwner && (
               <div className="relative">
