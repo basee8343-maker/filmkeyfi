@@ -13,9 +13,10 @@ export default async function (req) {
       registration_open: get('registration_open', 'true') === 'true',
       app_theme: get('app_theme', 'auto'),
       shopier_enabled: shopier.active === true,
+      payment_required: get('payment_required', 'true') === 'true',
       payment_methods: methods.map((m) => ({ id: m.id, provider: m.provider, name: m.display_name, description: m.description || '' })),
     });
   } catch (e) {
-    return Response.json({ maintenance_mode: false, registration_open: true, app_theme: 'auto', shopier_enabled: false, payment_methods: [] });
+    return Response.json({ maintenance_mode: false, registration_open: true, app_theme: 'auto', shopier_enabled: false, payment_required: true, payment_methods: [] });
   }
 }

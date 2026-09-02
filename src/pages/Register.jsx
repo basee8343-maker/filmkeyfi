@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,14 @@ export default function Register() {
   const [socialLoading, setSocialLoading] = useState('');
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [paymentRequired, setPaymentRequired] = useState(true);
+
+  useEffect(() => {
+    base44.functions.invoke('public-settings', {}).then((ps) => {
+      const settings = ps.data || ps;
+      setPaymentRequired(settings.payment_required !== false);
+    }).catch(() => {});
+  }, []);
 
   const onAvatar = async (e) => {
     const file = e.target.files?.[0]; if (!file) return;
@@ -72,13 +80,18 @@ export default function Register() {
         try {
           await base44.auth.updateMe({
             full_name: fullName, username, avatar,
-            membership_status: "pending",
+            membership_status: paymentRequired ? "pending" : "active",
           });
           await base44.functions.invoke('ensure-member-id').catch(() => {});
         } catch {}
       }
-      toast({ title: "Kayıt tamamlandı", description: "Aboneliğinizi aktif etmek için ödeme yapın." });
-      window.location.href = "/abonelik";
+      if (paymentRequired) {
+        toast({ title: "Kayıt tamamlandı", description: "Aboneliğinizi aktif etmek için ödeme yapın." });
+        window.location.href = "/abonelik";
+      } else {
+        toast({ title: "Kayıt tamamlandı", description: "Film Keyfi'ne hoş geldiniz!" });
+        window.location.href = "/";
+      }
     } catch (err) {
       setError(err.message || "Geçersiz doğrulama kodu");
     } finally {
@@ -99,7 +112,7 @@ export default function Register() {
   const handleProvider = async (provider) => {
     if (!acceptTerms) { setError('Kullanım koşullarını kabul etmelisiniz'); return; }
     setError(''); setSocialLoading(provider);
-    try { await base44.auth.loginWithProvider(provider, '/abonelik'); }
+    try { await base44.auth.loginWithProvider(provider, paymentRequired ? '/abonelik' : '/'); }
     catch (err) { setError(err.message || 'Sosyal kayıt başlatılamadı'); setSocialLoading(''); }
   };
 

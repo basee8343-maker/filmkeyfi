@@ -29,6 +29,7 @@ export default function AppLayout() {
   // Abonelik kontrolü: ödemesi olmayan kullanıcılar içerik sayfalarına gidemez
   useEffect(() => {
     if (loading || !user || isRoom) return;
+    if (publicSettings?.payment_required === false) return;
     if (membershipActive(user)) return;
     const isExempt = EXEMPT_PATHS.some((p) => pathname.startsWith(p)) || pathname.startsWith('/admin') || pathname.startsWith('/kullanici');
     if (!isExempt && pathname !== '/abonelik') {

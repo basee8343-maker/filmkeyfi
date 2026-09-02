@@ -15,6 +15,12 @@ export default function PendingApproval() {
       setUser(me);
       if (me.membership_status === "active") {
         window.location.href = "/";
+        return;
+      }
+      const ps = await base44.functions.invoke('public-settings', {});
+      const settings = ps.data || ps;
+      if (settings.payment_required === false) {
+        window.location.href = "/";
       }
     } catch {}
   };

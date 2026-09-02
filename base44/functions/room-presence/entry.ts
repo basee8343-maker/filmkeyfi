@@ -154,7 +154,7 @@ export default async function(req) {
       if (!inRoom && !isOwner && !isMod) return Response.json({ error: 'odada değilsiniz' }, { status: 403 });
       await base44.asServiceRole.entities.Room.update(room_id, {
         movie_id, movie_title: movie_title || '',
-        current_time: 0, is_playing: false,
+        current_time: 0, is_playing: true,
         last_sync: new Date().toISOString()
       });
       await base44.asServiceRole.entities.RoomMessage.create({

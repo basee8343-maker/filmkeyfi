@@ -234,7 +234,6 @@ export default function WatchParty() {
   const changeMovie = async (newMovie) => {
     try {
       await base44.functions.invoke('room-presence', { action: 'change-movie', room_id: id, movie_id: newMovie.id, movie_title: newMovie.title });
-      await base44.entities.Room.update(id, { is_playing: true, current_time: 0, last_sync: new Date().toISOString() });
       toast({ title: 'Film değiştirildi', description: newMovie.title });
     } catch (e) {
       toast({ title: 'Değiştirilemedi', description: e.response?.data?.error || e.message, variant: 'destructive' });

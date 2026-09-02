@@ -100,8 +100,8 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     if (!isOwner && syncState) {
       const target = syncState.current_time || 0;
       if (Math.abs(v.currentTime - target) > 3) seekTo(target);
-      if (syncState.is_playing) v.play().catch(() => {});
     }
+    if (syncState?.is_playing) v.play().catch(() => {});
   };
 
   const onTime = () => {

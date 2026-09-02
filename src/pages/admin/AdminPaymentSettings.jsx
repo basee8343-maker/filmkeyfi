@@ -37,6 +37,7 @@ export default function AdminPaymentSettings() {
   const [selected, setSelected] = useState('paytr');
   const [configs, setConfigs] = useState({});
   const [loading, setLoading] = useState(true);
+  const [paymentRequired, setPaymentRequired] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -44,10 +45,24 @@ export default function AdminPaymentSettings() {
       const map = {};
       all.forEach((c) => { if (c.key.startsWith('payment_')) { try { map[c.key.replace('payment_', '')] = JSON.parse(c.value || '{}'); } catch { } } });
       setConfigs(map);
+      const pr = all.find((c) => c.key === 'payment_required');
+      setPaymentRequired(pr ? pr.value === 'true' : true);
       setLoading(false);
     };
     load();
   }, []);
+
+  const togglePaymentRequired = async () => {
+    const newVal = !paymentRequired;
+    setPaymentRequired(newVal);
+    try {
+      const all = await base44.entities.AppConfig.list(100).catch(() => []);
+      const existing = all.find((c) => c.key === 'payment_required');
+      if (existing) await base44.entities.AppConfig.update(existing.id, { value: String(newVal) });
+      else await base44.entities.AppConfig.create({ key: 'payment_required', value: String(newVal) });
+      toast({ title: newVal ? 'Paket seçimi & ödeme aktif' : 'Paket seçimi & ödeme kapatıldı', description: newVal ? 'Yeni üyeler paket seçip ödeme yapmalı.' : 'Yeni üyeler direkt siteye girebilir.' });
+    } catch { toast({ title: 'Hata', variant: 'destructive' }); }
+  };
 
   const getProvider = (id) => PROVIDERS.find((p) => p.id === id);
   const getSettings = (id) => configs[id] || { merchant_no: '', callback_url: '', merchant_pass: '', success_url: '', secret_key: '', fail_url: '', test_mode: false, secure_3d: 'required', installments: [1], active: false };
@@ -93,6 +108,16 @@ export default function AdminPaymentSettings() {
         </div>
         <button onClick={openNewProvider} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90">
           <Plus className="w-4 h-4" /> Yeni Ödeme Yöntemi Ekle
+        </button>
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-5 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex-1 min-w-[200px]">
+          <h2 className="text-lg font-bold">Paket Seçimi & Ödeme Zorunluluğu</h2>
+          <p className="text-sm text-muted-foreground mt-1">Aktif olduğunda yeni üyeler paket seçip ödeme yapmalı ve admin onayından geçmelidir. Kapalı olduğunda üyeler direkt siteye girebilir, paket seçimi ve admin onayı devre dışı kalır.</p>
+        </div>
+        <button onClick={togglePaymentRequired} className={`relative w-14 h-7 rounded-full transition-colors shrink-0 ${paymentRequired ? 'bg-primary' : 'bg-secondary border border-border'}`}>
+          <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${paymentRequired ? 'translate-x-7' : 'translate-x-0'}`} />
         </button>
       </div>
 
