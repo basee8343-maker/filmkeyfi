@@ -77,7 +77,8 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     if (localStreamRef.current) {
       localStreamRef.current.getAudioTracks().forEach((t) => pc.addTrack(t, localStreamRef.current));
     } else {
-      pc.addTransceiver('audio', { direction: 'recvonly' });
+      // sendrecv: mikrofon açıldığında replaceTrack ile ses gitmesi için
+      pc.addTransceiver('audio', { direction: 'sendrecv' });
     }
 
     pc.onicecandidate = (e) => {
@@ -240,18 +241,20 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       }
       Object.values(peersRef.current).forEach((pc) => {
         const track = stream.getAudioTracks()[0];
-        const transceiver = pc.getTransceivers().find((item) => item.receiver?.track?.kind === 'audio');
-        if (transceiver) { transceiver.direction = 'sendrecv'; transceiver.sender.replaceTrack(track).catch(() => {}); }
+        const transceiver = pc.getTransceivers().find((item) => item.receiver?.track?.kind === 'audio' || item.sender?.track?.kind === 'audio');
+        if (transceiver) { transceiver.sender.replaceTrack(track).catch(() => {}); }
         else pc.addTrack(track, stream);
       });
       mutedRef.current = false; setMuted(false); setActive(true); setPermissionRemembered(true); setPermissionState('granted');
-      for (const peerId of Object.keys(peersRef.current)) await initiateOffer(peerId, true);
-      await connectToAll();
+      // iOS: AudioContext suspended durumda başlar, kullanıcı dokunuşuyla resume et
+      if (localAnalyserRef.current) localAnalyserRef.current.context.resume().catch(() => {});
+      Object.values(analysersRef.current).forEach((meter) => meter.context.resume().catch(() => {}));
+      Object.values(peersRef.current).forEach((pc) => { if (pc._audioEl) pc._audioEl.play().catch(() => {}); });
     } catch (e) {
       setPermissionState(e?.name === 'NotAllowedError' ? 'denied' : permissionState);
       setError(microphoneErrorMessage(e));
     } finally { setRequesting(false); }
-  }, [connectToAll, initiateOffer, permissionState, requesting]);
+  }, [connectToAll, permissionState, requesting]);
 
   const stopLocalMicrophone = useCallback(() => {
     const stream = localStreamRef.current;
