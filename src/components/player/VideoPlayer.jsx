@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Settings, Rewind, FastForward } from 'lucide-react';
+import { Play, Pause, Maximize, Minimize, Settings, Rewind, FastForward } from 'lucide-react';
+import VolumeSlider from './VolumeSlider';
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onSeek, onEnded, onControlsChange, syncState, isOwner, subtitles, fullscreenRef, watermark, controlsRaised = false }) {
@@ -178,8 +179,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
             <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full -ml-1.5" style={{ left: `${duration ? (current / duration) * 100 : 0}%` }} />
           </div>}
           {isOwner && <span>{fmt(duration)}</span>}
-          <button onClick={() => { const v = videoRef.current; v.muted = !v.muted; setMuted(v.muted); }} className="p-1.5 hover:bg-white/10 rounded-lg shrink-0">{muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}</button>
-          <input type="range" min={0} max={1} step={0.05} value={muted ? 0 : volume} onInput={(e) => { const val = parseFloat(e.target.value); const v = videoRef.current; v.volume = val; setVolume(val); v.muted = false; setMuted(false); }} onChange={(e) => { const val = parseFloat(e.target.value); const v = videoRef.current; v.volume = val; setVolume(val); v.muted = false; setMuted(false); }} className="w-14 sm:w-24 accent-primary shrink-0" />
+          <VolumeSlider volume={volume} muted={muted} onChange={(val) => { const v = videoRef.current; if (!v) return; if (val === 0) { v.muted = true; setMuted(true); } else { v.volume = val; v.muted = false; setVolume(val); setMuted(false); } }} />
         </div>
         <div className="flex items-center gap-1 sm:gap-2 text-white">
           {isOwner && <button onClick={togglePlay} className="p-2 hover:bg-white/10 rounded-lg">{playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}</button>}
