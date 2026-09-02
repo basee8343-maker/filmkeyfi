@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 
+let sharedMicrophoneStream = null;
+
 const ICE_SERVERS = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
@@ -17,16 +19,22 @@ const ICE_SERVERS = {
  * otomatik yeniden bağlanma ve ayrılan katılımcı temizliği.
  */
 export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [remoteMuted, setRemoteMuted] = useState(false);
+  const [deafened, setDeafened] = useState(false);
+  const [localSpeaking, setLocalSpeaking] = useState(false);
+  const [speakingIds, setSpeakingIds] = useState([]);
   const [active, setActive] = useState(false);
   const [error, setError] = useState('');
   const localStreamRef = useRef(null);
   const peersRef = useRef({});          // { [otherId]: RTCPeerConnection }
   const pendingIceRef = useRef({});      // { [otherId]: candidate[] }
   const initiatedRef = useRef(new Set());
-  const mutedRef = useRef(false);
+  const mutedRef = useRef(true);
   const remoteMutedRef = useRef(false);
+  const deafenedRef = useRef(false);
+  const analysersRef = useRef({});
+  const localAnalyserRef = useRef(null);
   const participantsRef = useRef(participants);
   participantsRef.current = participants;
   const userRef = useRef(user);
@@ -52,6 +60,8 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       try { pc.close(); } catch {}
       delete peersRef.current[otherId];
     }
+    const meter = analysersRef.current[otherId];
+    if (meter) { meter.context.close().catch(() => {}); delete analysersRef.current[otherId]; }
     delete pendingIceRef.current[otherId];
     initiatedRef.current.delete(otherId);
   }, []);
@@ -64,6 +74,8 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
 
     if (localStreamRef.current) {
       localStreamRef.current.getAudioTracks().forEach((t) => pc.addTrack(t, localStreamRef.current));
+    } else {
+      pc.addTransceiver('audio', { direction: 'recvonly' });
     }
 
     pc.onicecandidate = (e) => {
@@ -95,7 +107,16 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
         pc._audioEl = audio;
       }
       audio.srcObject = e.streams[0];
+      audio.muted = deafenedRef.current;
       audio.play().catch(() => {});
+      if (!analysersRef.current[otherId]) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          const context = new AudioCtx(); const analyser = context.createAnalyser();
+          analyser.fftSize = 256; context.createMediaStreamSource(e.streams[0]).connect(analyser);
+          analysersRef.current[otherId] = { context, analyser, data: new Uint8Array(analyser.fftSize) };
+        }
+      }
     };
 
     pc.onconnectionstatechange = () => {
@@ -114,13 +135,14 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   }, [sendSignal, closePeer]);
 
   // --- Offer başlat (düşük ID'li kullanıcı başlatır) ---
-  const initiateOffer = useCallback(async (otherId) => {
+  const initiateOffer = useCallback(async (otherId, force = false) => {
     if (!localStreamRef.current || !userRef.current) return;
-    if (userRef.current.id >= otherId) return;
+    if (!force && userRef.current.id >= otherId) return;
     let pc = peersRef.current[otherId];
     if (!pc || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
       pc = createPeer(otherId);
     }
+    if (pc.signalingState !== 'stable') return;
     initiatedRef.current.add(otherId);
     try {
       const offer = await pc.createOffer({ iceRestart: true });
@@ -200,28 +222,44 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     }
   }, [initiateOffer]);
 
-  // --- Mikrofon başlat / temizle ---
+  // --- Mikrofonu uygulama oturumu boyunca tek kez al, odaya kapalı gir ---
   useEffect(() => {
     if (!voiceEnabled || !roomId || !user) return;
     let cancelled = false;
-    setError('');
-    navigator.mediaDevices?.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false })
-      .then(async (stream) => {
-        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
-        localStreamRef.current = stream;
-        setActive(true);
-        await connectToAll();
-      })
-      .catch((e) => setError(e?.message || 'Mikrofon izni reddedildi'));
+    setError(''); mutedRef.current = true; setMuted(true);
+    const acquire = async () => {
+      if (!sharedMicrophoneStream?.getAudioTracks().some((track) => track.readyState === 'live')) {
+        sharedMicrophoneStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
+      }
+      if (cancelled) return;
+      localStreamRef.current = sharedMicrophoneStream;
+      sharedMicrophoneStream.getAudioTracks().forEach((track) => { track.enabled = false; });
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx && !localAnalyserRef.current) {
+        const context = new AudioCtx(); const analyser = context.createAnalyser();
+        analyser.fftSize = 256; context.createMediaStreamSource(sharedMicrophoneStream).connect(analyser);
+        localAnalyserRef.current = { context, analyser, data: new Uint8Array(analyser.fftSize) };
+      }
+      Object.values(peersRef.current).forEach((pc) => {
+        const track = sharedMicrophoneStream.getAudioTracks()[0];
+        const transceiver = pc.getTransceivers().find((item) => item.receiver?.track?.kind === 'audio');
+        if (transceiver) { transceiver.direction = 'sendrecv'; transceiver.sender.replaceTrack(track).catch(() => {}); }
+        else pc.addTrack(track, sharedMicrophoneStream);
+      });
+      setActive(true);
+      for (const peerId of Object.keys(peersRef.current)) await initiateOffer(peerId, true);
+      await connectToAll();
+    };
+    acquire().catch((e) => setError(e?.message || 'Mikrofon izni reddedildi'));
     return () => {
       cancelled = true;
-      Object.keys(peersRef.current).forEach((id) => closePeer(id));
-      localStreamRef.current?.getTracks().forEach((t) => t.stop());
-      localStreamRef.current = null;
-      setActive(false);
+      Object.keys(peersRef.current).forEach((peerId) => closePeer(peerId));
+      localStreamRef.current?.getAudioTracks().forEach((track) => { track.enabled = false; });
+      localAnalyserRef.current?.context.close().catch(() => {}); localAnalyserRef.current = null;
+      localStreamRef.current = null; setActive(false); setLocalSpeaking(false); setSpeakingIds([]);
       base44.entities.VoiceSignal.deleteMany({ room_id: roomId, from_id: user.id }).catch(() => {});
     };
-  }, [voiceEnabled, roomId, user?.id, connectToAll, closePeer]);
+  }, [voiceEnabled, roomId, user?.id, connectToAll, closePeer, initiateOffer]);
 
   // --- Katılımcı değişikliklerini izle: yeni gelenlere bağlan, ayrılanları temizle ---
   const participantIdsKey = (participants || []).map((p) => p.user_id).filter(Boolean).sort().join(',');
@@ -251,14 +289,37 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     }
   }, [participants, user?.id]);
 
+  useEffect(() => {
+    if (!active) return;
+    const level = (meter) => {
+      if (!meter) return 0;
+      meter.analyser.getByteTimeDomainData(meter.data);
+      let sum = 0; for (const value of meter.data) { const sample = (value - 128) / 128; sum += sample * sample; }
+      return Math.sqrt(sum / meter.data.length);
+    };
+    const timer = setInterval(() => {
+      setLocalSpeaking(!mutedRef.current && !remoteMutedRef.current && level(localAnalyserRef.current) > 0.035);
+      setSpeakingIds(Object.entries(analysersRef.current).filter(([, meter]) => level(meter) > 0.035).map(([id]) => id));
+    }, 150);
+    return () => clearInterval(timer);
+  }, [active]);
+
   const toggleMute = useCallback(() => {
-    // Uzaktan susturulmuşsa kendi mikrofonunu açamaz
-    if (remoteMutedRef.current) return;
+    if (remoteMutedRef.current || !localStreamRef.current) return;
     const next = !mutedRef.current;
-    mutedRef.current = next;
-    setMuted(next);
-    localStreamRef.current?.getAudioTracks().forEach((t) => (t.enabled = !next));
+    mutedRef.current = next; setMuted(next);
+    localStreamRef.current.getAudioTracks().forEach((track) => { track.enabled = !next; });
+    localAnalyserRef.current?.context.resume().catch(() => {});
+    Object.values(analysersRef.current).forEach((meter) => meter.context.resume().catch(() => {}));
+    Object.values(peersRef.current).forEach((pc) => pc._audioEl?.play().catch(() => {}));
   }, []);
 
-  return { muted, remoteMuted, active, error, toggleMute };
+  const toggleDeafen = useCallback(() => {
+    const next = !deafenedRef.current;
+    deafenedRef.current = next; setDeafened(next);
+    Object.values(peersRef.current).forEach((pc) => { if (pc._audioEl) { pc._audioEl.muted = next; if (!next) pc._audioEl.play().catch(() => {}); } });
+    Object.values(analysersRef.current).forEach((meter) => meter.context.resume().catch(() => {}));
+  }, []);
+
+  return { muted, remoteMuted, deafened, localSpeaking, speakingIds, active, error, toggleMute, toggleDeafen };
 }

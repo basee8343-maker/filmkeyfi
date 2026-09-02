@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
 import { ShieldAlert, ShieldCheck, ShieldOff, QrCode, KeyRound } from 'lucide-react';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 
 export default function AdminSecurity() {
   const { user } = useCurrentUser();
@@ -13,6 +14,8 @@ export default function AdminSecurity() {
   const [setup, setSetup] = useState(null);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const loadStatus = () => base44.functions.invoke('admin-2fa', { action: 'status' }).then((r) => setStatus(r.data)).catch(() => {});
   const loadLogs = () => base44.entities.SecurityLog.list(200).then((r) => { setLogs(r); setLoading(false); }).catch(() => setLoading(false));
@@ -43,6 +46,16 @@ export default function AdminSecurity() {
       loadStatus(); toast({ title: '2FA kapatıldı' });
     } catch (e) { toast({ title: 'İşlem başarısız', variant: 'destructive' }); }
     setBusy(false);
+  };
+
+  const clearLogs = async () => {
+    setClearing(true);
+    try {
+      await base44.entities.SecurityLog.deleteMany({});
+      setLogs([]); setShowClearConfirm(false);
+      toast({ title: 'Tüm güvenlik kayıtları silindi' });
+    } catch (e) { toast({ title: 'Kayıtlar silinemedi', variant: 'destructive' }); }
+    setClearing(false);
   };
 
   const color = (l) => l === 'critical' ? 'bg-red-500/20 text-red-400' : l === 'warning' ? 'bg-amber-500/20 text-amber-400' : 'bg-blue-500/20 text-blue-400';
@@ -82,7 +95,10 @@ export default function AdminSecurity() {
         {status.enabled && <p className="text-xs text-muted-foreground mt-2">2FA açıkken admin paneline her girişte doğrulama kodu istenir.</p>}
       </div>
 
-      <h2 className="font-bold mb-2">Güvenlik Olayları</h2>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <h2 className="font-bold">Güvenlik Olayları</h2>
+        {logs.length > 0 && <button onClick={() => setShowClearConfirm(true)} className="rounded-lg bg-destructive px-3 py-2 text-xs font-semibold text-destructive-foreground hover:bg-destructive/90">TÜMÜNÜ SİL</button>}
+      </div>
       {loading ? <p className="text-muted-foreground">Yükleniyor...</p> :
        logs.length === 0 ? <p className="text-muted-foreground text-sm">Kayıtlı güvenlik olayı yok.</p> :
        <div className="space-y-2">
@@ -97,6 +113,7 @@ export default function AdminSecurity() {
            </div>
          ))}
        </div>}
+      <ConfirmDialog open={showClearConfirm} onOpenChange={setShowClearConfirm} title="Tüm kayıtlar silinsin mi?" description="Bütün güvenlik olayları kalıcı olarak silinecek. Bu işlem geri alınamaz." confirmText={clearing ? 'Siliniyor...' : 'Tümünü Sil'} onConfirm={clearLogs} />
     </div>
   );
 }
