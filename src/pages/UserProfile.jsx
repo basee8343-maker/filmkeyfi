@@ -3,13 +3,17 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 import { Image } from '@/components/ui/image';
-import { ArrowLeft, Crown, Hash } from 'lucide-react';
+import { ArrowLeft, Crown, Hash, UserPlus } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function UserProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: me } = useCurrentUser();
+  const { toast } = useToast();
   const [profile, setProfile] = useState(null);
+  const [relation, setRelation] = useState(null);
+  const [requesting, setRequesting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
 
@@ -19,6 +23,23 @@ export default function UserProfile() {
       .catch((e) => setErr(e.response?.data?.error || e.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!me?.id || me.id === id) return;
+    base44.entities.Friendship.list('-updated_date', 200)
+      .then((items) => setRelation(items.find((item) => item.members?.includes(id)) || null));
+  }, [id, me?.id]);
+
+  const addFriend = async () => {
+    setRequesting(true);
+    try {
+      const response = await base44.functions.invoke('friend-service', { action: 'request', user_id: id });
+      setRelation(response.data.friendship);
+      toast({ title: 'Arkadaşlık isteği gönderildi' });
+    } catch (error) {
+      toast({ title: 'İstek gönderilemedi', description: error.response?.data?.error || error.message, variant: 'destructive' });
+    } finally { setRequesting(false); }
+  };
 
   if (loading) return <div className="h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -40,6 +61,9 @@ export default function UserProfile() {
           </div>
           <p className="text-xs text-muted-foreground mt-1">Üye No</p>
           {profile.created_date && <p className="text-xs text-muted-foreground mt-3">Katılım: {new Date(profile.created_date).toLocaleDateString('tr-TR')}</p>}
+          {!isSelf && (!relation || ['removed', 'rejected'].includes(relation.status)) && <button onClick={addFriend} disabled={requesting} className="mt-5 inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"><UserPlus className="w-4 h-4" />{requesting ? 'Gönderiliyor...' : 'Arkadaş Ekle'}</button>}
+          {!isSelf && relation?.status === 'pending' && <p className="mt-5 text-sm font-semibold text-amber-400">Arkadaşlık isteği bekliyor</p>}
+          {!isSelf && relation?.status === 'accepted' && <p className="mt-5 text-sm font-semibold text-green-400">Arkadaşsınız</p>}
           {isSelf && <Link to="/profil" className="mt-5 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold">Profili Düzenle</Link>}
         </div>
       )}

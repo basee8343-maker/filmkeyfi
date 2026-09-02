@@ -39,6 +39,17 @@ export default async function(req) {
         });
         return Response.json({ error: 'üyelik aktif değil' }, { status: 403 });
       }
+      if (!isOwner) {
+        const blockedRelations = await base44.asServiceRole.entities.Friendship.filter({
+          $or: [
+            { requester_id: user.id, recipient_id: room.owner_id, status: 'blocked' },
+            { requester_id: room.owner_id, recipient_id: user.id, status: 'blocked' }
+          ]
+        }, '-created_date', 1);
+        if (blockedRelations.length) {
+          return Response.json({ error: 'Bu odanın sahibiyle aranızda engel bulunduğu için odaya katılamazsınız.' }, { status: 403 });
+        }
+      }
       // Admin ghost mode: görünmez katılım
       if (ghost) return Response.json({ ok: true, ghost: true });
       const participants = room.participants || [];

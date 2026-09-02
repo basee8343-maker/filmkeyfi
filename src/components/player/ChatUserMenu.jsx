@@ -12,7 +12,7 @@ export default function ChatUserMenu({ userId, userName, userAvatar, roomId, onC
   const menuRef = useRef(null);
 
   useEffect(() => {
-    base44.functions.invoke('user-profile', { user_id: userId }).then(setProfile).catch(() => {});
+    base44.functions.invoke('user-profile', { user_id: userId }).then((response) => setProfile(response.data)).catch(() => {});
   }, [userId]);
 
   const suspendUser = async () => {

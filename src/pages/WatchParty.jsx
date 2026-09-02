@@ -31,6 +31,7 @@ export default function WatchParty() {
   const [syncState, setSyncState] = useState({ is_playing: false, current_time: 0, last_sync: null });
   const [unread, setUnread] = useState(0);
   const [viewerProfiles, setViewerProfiles] = useState({});
+  const [joinError, setJoinError] = useState('');
   const joinedRef = useRef(false);
   const ghostRef = useRef(false);
   const kickedRef = useRef(false);
@@ -55,10 +56,16 @@ export default function WatchParty() {
       setNeedPassword(true);
       return;
     }
-    joinedRef.current = true;
     base44.functions.invoke('room-presence', { action: 'join', room_id: id })
-      .then((res) => { if (res?.ghost) ghostRef.current = true; })
-      .catch((e) => toast({ title: 'Katılım başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }));
+      .then((res) => {
+        joinedRef.current = true;
+        if (res.data?.ghost) ghostRef.current = true;
+      })
+      .catch((e) => {
+        const message = e.response?.data?.error || e.message;
+        setJoinError(message);
+        toast({ title: 'Katılım başarısız', description: message, variant: 'destructive' });
+      });
   }, [user?.id, room?.id]);
 
   const submitPassword = async () => {
@@ -73,7 +80,7 @@ export default function WatchParty() {
   useEffect(() => {
     const unsub = base44.entities.Room.subscribe((ev) => {
       if (ev.type === 'update' && ev.data?.id === id) {
-        setRoom(ev.data);
+        setRoom((current) => ({ ...current, ...ev.data }));
         const playingChanged = ev.data.is_playing !== lastSyncRef.current.is_playing;
         const timeChanged = Math.abs((ev.data.current_time || 0) - lastSyncRef.current.current_time) > 3;
         if (playingChanged || timeChanged) {
@@ -120,7 +127,7 @@ export default function WatchParty() {
   useEffect(() => {
     if (!participantIdsKey) return;
     const ids = participantIdsKey.split(',');
-    Promise.all(ids.map((uid) => base44.functions.invoke('user-profile', { user_id: uid }).catch(() => null)))
+    Promise.all(ids.map((uid) => base44.functions.invoke('user-profile', { user_id: uid }).then((response) => response.data).catch(() => null)))
       .then((profiles) => {
         const map = {};
         ids.forEach((uid, i) => { if (profiles[i]) map[uid] = profiles[i]; });
@@ -211,6 +218,7 @@ export default function WatchParty() {
   if (!room) return <div className="p-6">Oda bulunamadı.</div>;
   if (room.status === 'closed') return <div className="p-10 text-center"><p className="text-xl font-bold mb-2">Oda kapatıldı</p><Link to="/" className="text-primary">Ana sayfaya dön</Link></div>;
   if (!membershipActive(user)) return <div className="p-10 text-center"><p className="mb-4">Watch Party için aktif üyelik gerekli.</p><Link to="/profil" className="text-primary">Üyeliğim</Link></div>;
+  if (joinError) return <div className="fixed inset-0 bg-black flex items-center justify-center p-6"><div className="bg-card border border-border rounded-xl p-5 w-full max-w-xs text-center"><h2 className="font-bold mb-2">Odaya katılamadınız</h2><p className="text-sm text-muted-foreground mb-4">{joinError}</p><button onClick={() => navigate(-1)} className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold">Geri Dön</button></div></div>;
 
   if (needPassword) {
     return (
@@ -230,6 +238,7 @@ export default function WatchParty() {
 
   const src = movie?.video_url || movie?.hls_url || movie?.external_url || '';
   const chatEnabled = room.chat_enabled;
+  const visibleParticipants = (room.participants || []).filter((participant) => participant.user_id === room.owner_id || viewerProfiles[participant.user_id]?.role !== 'admin');
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col overflow-hidden" style={{ touchAction: 'pan-y', overscrollBehavior: 'none' }}>
@@ -253,7 +262,7 @@ export default function WatchParty() {
               <button onClick={() => setShowViewers(false)} className="text-muted-foreground"><X className="w-4 h-4" /></button>
             </div>
             <div className="space-y-1.5">
-              {room.participants?.map((p) => {
+              {visibleParticipants.map((p) => {
                 const prof = viewerProfiles[p.user_id];
                 const avatar = p.avatar || prof?.avatar;
                 const speaking = p.user_id === user.id ? voice.localSpeaking : voice.speakingIds.includes(p.user_id);
@@ -280,7 +289,7 @@ export default function WatchParty() {
         <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} />
       </div>
 
-      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} viewerCount={room.participants?.length || 0} unread={unread} settingsOpen={showSettings} chatOpen={chatOpen} onBack={handleBack} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => setChatOpen(!chatOpen)} />
+      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} viewerCount={visibleParticipants.length} unread={unread} settingsOpen={showSettings} chatOpen={chatOpen} onBack={handleBack} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => setChatOpen(!chatOpen)} />
 
       <ConfirmDialog
         open={showPwRemoveConfirm}
