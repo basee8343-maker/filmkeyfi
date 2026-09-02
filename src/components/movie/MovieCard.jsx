@@ -30,8 +30,8 @@ export default function MovieCard({ movie }) {
 
   return (
     <Link to={`/izle/${movie.id}`} className="group relative block w-[150px] sm:w-[180px] shrink-0 rounded-xl overflow-hidden bg-card border border-border transition-all duration-300 hover:scale-[1.04] hover:z-10 hover:cinema-shadow">
-      <div className="relative aspect-[2/3] overflow-hidden">
-        <Image src={movie.poster} alt={movie.title} className="w-full h-full object-cover" fittingType="fill" />
+      <div className="relative aspect-[2/3] overflow-hidden bg-black">
+        <Image src={movie.poster} alt={movie.title} className="w-full h-full" fittingType="fit" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80 group-hover:opacity-95 transition-opacity" />
         <span className={`absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded ${qualityColor[movie.quality] || 'bg-secondary'}`}>{movie.quality}</span>
         {movie.imdb && (

@@ -21,8 +21,12 @@ export default function useSocialBadges(userId) {
     load();
     const offFriends = base44.entities.Friendship.subscribe(load);
     const offMessages = base44.entities.DirectMessage.subscribe((event) => {
-      if (event.type === 'create' && event.data?.recipient_id === userId && event.data?.friendship_id !== openThreadRef.current && !(event.data.read_by || []).includes(userId)) setBadges((current) => ({ ...current, messages: current.messages + 1 }));
-      else if (event.data?.recipient_id === userId) load();
+      if (event.data?.recipient_id !== userId) return;
+      if (event.type === 'create') {
+        if (event.data.friendship_id !== openThreadRef.current && !(event.data.read_by || []).includes(userId)) setBadges((current) => ({ ...current, messages: current.messages + 1 }));
+        return;
+      }
+      load();
     });
     const clearReadThread = (event) => setBadges((current) => ({ ...current, messages: Math.max(0, current.messages - (event.detail?.count || 0)) }));
     const openThread = (event) => { openThreadRef.current = event.detail?.friendshipId || null; };
