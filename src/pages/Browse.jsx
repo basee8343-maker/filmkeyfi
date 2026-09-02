@@ -13,7 +13,7 @@ export default function Browse({ type, title }) {
   useEffect(() => {
     Promise.all([
       base44.entities.Movie.filter({ published: true, type }, '-views', 300).catch(() => []),
-      base44.entities.Category.list(200).catch(() => []),
+      base44.entities.Category.list('name', 200).catch(() => []),
     ]).then(([m, c]) => { setMovies(m); setCats(c); setLoading(false); });
   }, [type]);
 
@@ -21,7 +21,7 @@ export default function Browse({ type, title }) {
   const filtered = activeCat === 'all' ? movies : movies.filter((m) => m.category_id === activeCat || m.category === catName(activeCat));
 
   return (
-    <div className="px-4 sm:px-6 py-6">
+    <div className="min-h-screen bg-catalog px-4 py-6 text-white sm:px-6">
       <h1 className="text-2xl sm:text-3xl font-extrabold mb-4">{title}</h1>
       {cats.length > 0 && (
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-3 mb-4">

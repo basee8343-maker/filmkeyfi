@@ -29,8 +29,9 @@ export default function useFriends() {
       });
     });
     const offMessages = base44.entities.DirectMessage.subscribe((event) => {
-      if (!event.data?.participants?.includes(user.id)) return;
-      setMessages((current) => event.type === 'delete' ? current.filter((message) => message.id !== event.id) : upsertMessage(current, event.data));
+      const message = event.data;
+      if (message?.sender_id !== user.id && message?.recipient_id !== user.id) return;
+      setMessages((current) => event.type === 'delete' ? current.filter((item) => item.id !== event.id) : upsertMessage(current, message));
     });
     const reconnect = () => reload();
     const resume = () => { if (document.visibilityState === 'visible') reload(); };

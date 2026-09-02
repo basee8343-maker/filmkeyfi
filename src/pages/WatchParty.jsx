@@ -266,7 +266,7 @@ export default function WatchParty() {
   const visibleParticipants = (room.participants || []).filter((participant) => participant.user_id === room.owner_id || viewerProfiles[participant.user_id]?.role !== 'admin');
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col overflow-hidden" style={{ touchAction: 'pan-y', overscrollBehavior: 'none' }}>
+    <div className="fixed inset-x-0 top-0 h-screen h-[100dvh] bg-black flex flex-col overflow-hidden" style={{ touchAction: 'pan-y', overscrollBehavior: 'none' }}>
       {/* Tam ekran video + alt kontrol alanı */}
       <div ref={playerWrapRef} className="flex-1 flex min-h-0 relative" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className={`flex items-center justify-center bg-black ${chatOpen ? 'flex-1 min-w-0' : 'flex-1 min-w-0'}`}>
@@ -275,12 +275,12 @@ export default function WatchParty() {
         </div>
 
         {chatOpen && (
-          <div className="absolute inset-y-0 right-0 z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pb-20 pt-[max(env(safe-area-inset-top),0.75rem)] shadow-2xl backdrop-blur-xl">
+          <div className="absolute right-0 top-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] shadow-2xl backdrop-blur-xl">
             <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} />
           </div>
         )}
 
-        {directOpen && <div className="absolute inset-0 z-[70] pb-20"><RoomDirectMessages onClose={() => setDirectOpen(false)} /></div>}
+        {directOpen && <div className="absolute inset-x-0 top-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-[70]"><RoomDirectMessages onClose={() => setDirectOpen(false)} /></div>}
 
         {showViewers && (
           <div className="absolute bottom-24 right-3 bg-card/95 border border-border rounded-xl p-3 z-[60] w-56 max-h-[65%] overflow-y-auto shadow-2xl backdrop-blur-xl">
@@ -318,7 +318,7 @@ export default function WatchParty() {
       </div>
 
       <LiveKitDebugPanel voice={voice} />
-      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} viewerCount={visibleParticipants.length} unread={unread} directUnread={directUnread} settingsOpen={showSettings} chatOpen={chatOpen} directOpen={directOpen} onBack={handleBack} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => { const next = !chatOpen; setChatOpen(next); if (next) setUnread(0); setDirectOpen(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} />
+      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} viewerCount={visibleParticipants.length} unread={unread} directUnread={directUnread} settingsOpen={showSettings} chatOpen={chatOpen} directOpen={directOpen} onBack={handleBack} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => { const next = !chatOpen; setChatOpen(next); if (next) setUnread(0); setDirectOpen(false); setShowViewers(false); setShowSettings(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} />
 
       <ConfirmDialog
         open={showPwRemoveConfirm}

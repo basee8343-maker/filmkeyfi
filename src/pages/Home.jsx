@@ -34,7 +34,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div>
+    <div className="min-h-screen bg-catalog text-white">
       <Hero movie={featured} />
       <div className="mt-6">
         {loading ? <><SkeletonRow /><SkeletonRow /><SkeletonRow /></> : (
