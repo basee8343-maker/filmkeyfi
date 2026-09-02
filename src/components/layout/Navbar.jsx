@@ -1,9 +1,10 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, User, Menu, X, LogOut, Shield, Smartphone } from 'lucide-react';
+import { Search, Bell, Menu, X, LogOut, Shield, Smartphone } from 'lucide-react';
 import DownloadButtons from '@/components/DownloadButtons';
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
+import { Image } from '@/components/ui/image';
 
 const links = [
   { label: 'Ana Sayfa', path: '/' },
@@ -78,8 +79,9 @@ export default function Navbar() {
             {unread > 0 && <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary text-[10px] font-bold flex items-center justify-center text-primary-foreground">{unread}</span>}
           </Link>
           {isActive && (
-          <Link to="/profil" className="p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
-            <User className="w-5 h-5" />
+          <Link to="/profil?tab=settings" className="flex items-center gap-2 rounded-full p-1 pr-1 sm:pr-3 hover:bg-secondary transition-colors" aria-label="Profil ayarları">
+            {user?.avatar ? <Image src={user.avatar} className="w-9 h-9 rounded-full" fittingType="fill" /> : <span className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">{(user?.username || user?.full_name || 'K')[0]}</span>}
+            <span className="hidden sm:block max-w-28 truncate text-sm font-semibold">{user?.username || user?.full_name || 'Profil'}</span>
           </Link>
           )}
           <button onClick={logout} className="hidden sm:block p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">

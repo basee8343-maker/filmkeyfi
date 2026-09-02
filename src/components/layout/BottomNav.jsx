@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Film, Plus, MessageCircle, User, DoorOpen, CreditCard, Users } from 'lucide-react';
+import { Home, Film, Plus, MessageCircle, DoorOpen, CreditCard, Users } from 'lucide-react';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 
 const fullItems = [
@@ -9,7 +9,6 @@ const fullItems = [
   { label: 'Odalar', path: '/acik-odalar', icon: DoorOpen },
   { label: 'Sohbet', path: '/destek', icon: MessageCircle },
   { label: 'Arkadaşlar', path: '/arkadaslar', icon: Users },
-  { label: 'Profil', path: '/profil', icon: User },
 ];
 
 const limitedItems = [
