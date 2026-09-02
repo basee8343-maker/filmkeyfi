@@ -6,9 +6,44 @@ async function getConfigs(base44) {
   const get = (key, fallback = '') => configs.find((c) => c.key === key)?.value ?? fallback;
   return {
     secret: get('shopier_secret'),
+    apiKey: get('shopier_api_key'),
+    apiVerifyUrl: get('shopier_api_verify_url', ''),
     successUrl: get('shopier_success_url', '/odeme/basarili'),
     failUrl: get('shopier_fail_url', '/odeme/basarisiz'),
   };
+}
+
+// Shopier API üzerinden siparişin gerçekten ödenmiş olduğunu doğrula
+// API verify URL yapılandırılmamışsa HMAC imza doğrulamasına güvenilir (zaten güvenli)
+// API çağrısı başarısız olursa imza doğrulamasına fallback yapılır (akışı bozmaz)
+// API açıkça "ödenmedi" derse abonelik aktif edilmez
+async function verifyOrderWithShopierApi(cfg, shopierOrderId) {
+  if (!cfg.apiVerifyUrl || !cfg.apiKey) {
+    return { verified: true, source: 'signature_only', reason: 'API verify yapılandırılmamış — HMAC imza doğrulamasına güveniliyor' };
+  }
+  try {
+    const res = await fetch(cfg.apiVerifyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+      body: new URLSearchParams({
+        API_key: cfg.apiKey,
+        platform_order_id: shopierOrderId,
+      }).toString(),
+    });
+    if (!res.ok) {
+      return { verified: true, source: 'signature_fallback', reason: 'API HTTP ' + res.status + ' — imza doğrulamasına güveniliyor' };
+    }
+    const data = await res.json().catch(() => ({}));
+    const status = String(data.status || data.order_status || data.payment_status || '').toLowerCase();
+    // API ödemenin başarısız olduğunu doğruluyorsa aboneliği aktif etme
+    if (['failed', 'cancelled', 'canceled', 'error', 'unpaid', 'rejected', 'declined'].includes(status)) {
+      return { verified: false, source: 'api', reason: 'API ödeme durumu: ' + status };
+    }
+    // API başarılı veya belirsizse imza doğrulamasına güven
+    return { verified: true, source: status ? 'api_confirmed' : 'signature_fallback', reason: status || 'API yanıtı belirsiz — imza doğrulamasına güveniliyor' };
+  } catch (e) {
+    return { verified: true, source: 'signature_fallback', reason: 'API hatası: ' + (e.message || 'network') + ' — imza doğrulamasına güveniliyor' };
+  }
 }
 
 async function verifySignature(secret, params) {
@@ -182,8 +217,24 @@ export default async function (req) {
       return Response.json({ ok: false, status: 'failed' });
     }
 
+    // --- SHOPIER API DOĞRULAMASI (EK GÜVENLİK) ---
+    // Webhook imzası doğrulandı, ek olarak Shopier API üzerinden sipariş durumunu kontrol et
+    const apiVerify = await verifyOrderWithShopierApi(cfg, shopierOrderId || payment.shopier_order_id);
+    log('api_verify', apiVerify);
+    if (!apiVerify.verified) {
+      log('api_verify_failed', { reason: apiVerify.reason });
+      await base44.asServiceRole.entities.Payment.update(payment.id, {
+        status: 'failed',
+        payment_id: paymentId,
+        shopier_order_id: shopierOrderId || payment.shopier_order_id,
+      }).catch(() => {});
+      await logSecurity(base44, 'shopier_api_verify_failed', { id: payment.user_id, email: buyerEmail }, apiVerify.reason, 'warning').catch(() => {});
+      if (isBrowser) return Response.redirect(cfg.failUrl + '?reason=api_verify_failed', 302);
+      return Response.json({ ok: false, status: 'failed', reason: apiVerify.reason });
+    }
+
     // --- BAŞARILI ÖDEME — ABONELİĞİ AKTİF ET ---
-    log('payment_success', { payment_id: payment.id, user_id: payment.user_id, amount: payment.amount });
+    log('payment_success', { payment_id: payment.id, user_id: payment.user_id, amount: payment.amount, api_verify: apiVerify.source });
 
     // Ürünü bul (süre ve plan adı için)
     let product = null;

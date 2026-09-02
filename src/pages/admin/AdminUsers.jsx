@@ -16,6 +16,7 @@ export default function AdminUsers({ pendingOnly = false }) {
   const [detail, setDetail] = useState(null);
   const [idQuery, setIdQuery] = useState('');
   const [nameQuery, setNameQuery] = useState('');
+  const [paidUserIds, setPaidUserIds] = useState(new Set());
 
   const filtered = users.filter((u) => {
     if (idQuery.trim() && u.member_id !== idQuery.trim()) return false;
@@ -31,6 +32,10 @@ export default function AdminUsers({ pendingOnly = false }) {
       setUsers(pendingOnly ? u.filter((x) => x.membership_status === 'pending') : u);
       setLoading(false);
     }).catch((e) => { setLoading(false); toast({ title: 'Liste yüklenemedi', description: e.message, variant: 'destructive' }); });
+    // Tamamlanmış ödemeleri yükle — "Onayla" butonunu gizlemek için
+    base44.entities.Payment.filter({ status: 'completed' }, '-created_date', 500).then((pays) => {
+      setPaidUserIds(new Set(pays.map((p) => p.user_id)));
+    }).catch(() => {});
   };
   useEffect(load, []);
 
@@ -110,9 +115,11 @@ export default function AdminUsers({ pendingOnly = false }) {
                   <p className="text-xs text-muted-foreground truncate hidden sm:block">{u.email}</p>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded ${isActive ? 'bg-green-500/20 text-green-400' : u.membership_status === 'pending' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>{isActive ? 'Aktif' : u.membership_status === 'pending' ? 'Beklemede' : 'Askıya Alındı'}</span>
+                {paidUserIds.has(u.id) && <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 font-semibold">ÖDENDİ</span>}
                 <div className="flex flex-wrap gap-1.5">
-                  {!pendingOnly && <button onClick={() => setDetail(u)} className={`${btn} bg-secondary hover:bg-secondary/70`}>GÖRÜNTÜLE</button>}
-                  {!isActive && <button onClick={() => approve(u)} className={`${btn} bg-green-500/20 text-green-400 hover:bg-green-500/30`}>ONAYLA</button>}
+                {!pendingOnly && <button onClick={() => setDetail(u)} className={`${btn} bg-secondary hover:bg-secondary/70`}>GÖRÜNTÜLE</button>}
+                {!isActive && paidUserIds.has(u.id) && <button onClick={() => approve(u)} className={`${btn} bg-green-500/20 text-green-400 hover:bg-green-500/30`}>AKTİF ET</button>}
+                {!isActive && !paidUserIds.has(u.id) && <button onClick={() => approve(u)} className={`${btn} bg-green-500/20 text-green-400 hover:bg-green-500/30`}>ONAYLA</button>}
                   {!pendingOnly && <button onClick={() => toggleActive(u)} className={`${btn} ${isActive ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'}`}>{isActive ? 'ASKIYA AL' : 'AKTİF ET'}</button>}
                   {pendingOnly && <button onClick={() => reject(u)} className={`${btn} bg-red-500/20 text-red-400 hover:bg-red-500/30`}>REDDET</button>}
                   {!pendingOnly && <button onClick={() => extend(u)} className={`${btn} bg-blue-500/20 text-blue-400 hover:bg-blue-500/30`}>+30 GÜN</button>}
