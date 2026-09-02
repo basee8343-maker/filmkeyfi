@@ -44,6 +44,7 @@ export default function WatchParty() {
   const lastSyncRef = useRef({ is_playing: false, current_time: 0 });
   const playerWrapRef = useRef(null);
   const touchStart = useRef({ x: 0, y: 0 });
+  const seenRoomMessagesRef = useRef(new Set());
   const voice = useVoiceChat({ roomId: id, user, participants: room?.participants, voiceEnabled: !!room?.voice_enabled && voiceReady });
   const { messages: directUnread } = useSocialBadges(user?.id);
 
@@ -99,14 +100,30 @@ export default function WatchParty() {
     return unsub;
   }, [id]);
 
-  // Sohbet kapalıyken gelen mesajlar için okunmamış sayacı
+  // Sohbet kapalıyken realtime okunmamış sayacı; bağlantı dönünce kaçan mesajları tamamlar.
   useEffect(() => {
     if (chatOpen) { setUnread(0); return; }
-    const unsub = base44.entities.RoomMessage.subscribe((ev) => {
-      if (ev.type === 'create' && ev.data?.room_id === id && ev.data?.type !== 'system') setUnread((u) => u + 1);
+    seenRoomMessagesRef.current = new Set();
+    const syncMessages = async (countMissed = false) => {
+      const items = await base44.entities.RoomMessage.filter({ room_id: id }, 'created_date', 500).catch(() => []);
+      let missed = 0;
+      items.forEach((message) => {
+        if (countMissed && !seenRoomMessagesRef.current.has(message.id) && message.type !== 'system' && message.user_id !== user?.id) missed += 1;
+        seenRoomMessagesRef.current.add(message.id);
+      });
+      if (missed) setUnread((current) => current + missed);
+    };
+    syncMessages(false);
+    const unsub = base44.entities.RoomMessage.subscribe((event) => {
+      const message = event.data;
+      if (event.type !== 'create' || message?.room_id !== id || message.type === 'system' || message.user_id === user?.id || seenRoomMessagesRef.current.has(message.id)) return;
+      seenRoomMessagesRef.current.add(message.id);
+      setUnread((current) => current + 1);
     });
-    return unsub;
-  }, [chatOpen, id]);
+    const reconnect = () => syncMessages(true);
+    window.addEventListener('online', reconnect);
+    return () => { unsub(); window.removeEventListener('online', reconnect); };
+  }, [chatOpen, id, user?.id]);
 
   // Atılma tespiti: katılımcı listesinden çıkarıldıysa yönlendir
   useEffect(() => {
@@ -301,7 +318,7 @@ export default function WatchParty() {
       </div>
 
       <LiveKitDebugPanel voice={voice} />
-      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} viewerCount={visibleParticipants.length} unread={unread} directUnread={directUnread} settingsOpen={showSettings} chatOpen={chatOpen} directOpen={directOpen} onBack={handleBack} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => { setChatOpen(!chatOpen); setDirectOpen(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} />
+      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} viewerCount={visibleParticipants.length} unread={unread} directUnread={directUnread} settingsOpen={showSettings} chatOpen={chatOpen} directOpen={directOpen} onBack={handleBack} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => { const next = !chatOpen; setChatOpen(next); if (next) setUnread(0); setDirectOpen(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} />
 
       <ConfirmDialog
         open={showPwRemoveConfirm}

@@ -15,10 +15,13 @@ export default function Friends() {
   const [selected, setSelected] = useState(null);
   useEffect(() => {
     if (view !== 'chat' || !selected || !user) return;
+    window.dispatchEvent(new CustomEvent('social-thread-open', { detail: { friendshipId: selected.id } }));
+    return () => window.dispatchEvent(new Event('social-thread-close'));
+  }, [view, selected?.id, user?.id]);
+  useEffect(() => {
+    if (view !== 'chat' || !selected || !user) return;
     const hasUnread = messages.some((message) => message.friendship_id === selected.id && message.recipient_id === user.id && !(message.read_by || []).includes(user.id));
     if (hasUnread) invoke({ action: 'mark_read', friendship_id: selected.id }).catch(() => {});
-    const timer = setInterval(reload, 2000);
-    return () => clearInterval(timer);
   }, [view, selected?.id, messages, user?.id, reload]);
   useEffect(() => {
     if (view !== 'chat' || !selected) return;

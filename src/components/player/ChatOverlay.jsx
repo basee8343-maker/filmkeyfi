@@ -6,6 +6,8 @@ import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
 import { Image } from '@/components/ui/image';
 import ChatUserMenu from '@/components/player/ChatUserMenu';
+import useMessageProfiles from '@/hooks/useMessageProfiles';
+import { mergeMessages, upsertMessage } from '@/lib/realtimeMessages';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
@@ -18,6 +20,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   const [loading, setLoading] = useState(true);
   const [modTarget, setModTarget] = useState(null); // { userId, userName, userAvatar }
   const scrollRef = useRef(null);
+  const profiles = useMessageProfiles(messages.map((message) => message.user_id));
 
   const scrollToBottom = () => {
     const el = scrollRef.current;
@@ -26,23 +29,25 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
 
   const load = () => {
     base44.entities.RoomMessage.filter({ room_id: roomId }, 'created_date', 200)
-      .then((r) => { setMessages(r); setLoading(false); requestAnimationFrame(scrollToBottom); })
+      .then((r) => { setMessages((current) => mergeMessages(current, r)); setLoading(false); requestAnimationFrame(scrollToBottom); })
       .catch(() => setLoading(false));
   };
 
   useEffect(() => {
     load();
     const unsub = base44.entities.RoomMessage.subscribe((ev) => {
-      if (ev.type === 'create') {
-        setMessages((prev) => {
-          const tempMatch = prev.find((m) => m.id.startsWith('temp-') && m.user_id === ev.data.user_id && m.text === ev.data.text);
-          if (tempMatch) return prev.map((m) => m === tempMatch ? ev.data : m);
-          return prev.some((m) => m.id === ev.data.id) ? prev : [...prev, ev.data];
-        });
-        setTimeout(scrollToBottom, 50);
-      }
+      if (ev.data?.room_id !== roomId) return;
+      if (ev.type === 'delete') setMessages((prev) => prev.filter((message) => message.id !== ev.id));
+      else setMessages((prev) => {
+        const tempMatch = prev.find((message) => message.id?.startsWith('temp-') && message.user_id === ev.data.user_id && message.text === ev.data.text);
+        const clean = tempMatch ? prev.filter((message) => message.id !== tempMatch.id) : prev;
+        return upsertMessage(clean, ev.data);
+      });
+      setTimeout(scrollToBottom, 50);
     });
-    return unsub;
+    const reconnect = () => load();
+    window.addEventListener('online', reconnect);
+    return () => { unsub(); window.removeEventListener('online', reconnect); };
   }, [roomId]);
 
   const send = (e) => {
@@ -104,7 +109,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
              ) : (
                <>
                  <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="shrink-0">
-                   {m.user_avatar ? <Image src={m.user_avatar} className="w-7 h-7 rounded-full object-cover" fittingType="fill" /> : <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold">{(m.user_name || '?')[0]}</span>}
+                   {(profiles[m.user_id]?.avatar || m.user_avatar) ? <Image src={profiles[m.user_id]?.avatar || m.user_avatar} className="w-7 h-7 rounded-full object-cover" fittingType="fill" /> : <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold">{(m.user_name || '?')[0]}</span>}
                  </Link>
                  <div className="min-w-0 flex-1">
                    <div className="flex items-center gap-2">

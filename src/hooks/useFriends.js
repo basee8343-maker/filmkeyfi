@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
+import { mergeMessages, upsertMessage } from '@/lib/realtimeMessages';
 
 export default function useFriends() {
   const { user } = useCurrentUser();
@@ -15,7 +16,7 @@ export default function useFriends() {
       base44.entities.Friendship.filter({ members: user.id }, '-updated_date', 200),
       base44.entities.DirectMessage.filter({ participants: user.id }, 'created_date', 500)
     ]);
-    setRelations(friendships); setMessages(directMessages); setLoading(false);
+    setRelations(friendships); setMessages((current) => mergeMessages(current, directMessages)); setLoading(false);
   }, [user?.id]);
   useEffect(() => {
     reload();
@@ -28,19 +29,20 @@ export default function useFriends() {
       });
     });
     const offMessages = base44.entities.DirectMessage.subscribe((event) => {
-      setMessages((current) => {
-        if (event.type === 'create') return current.some((message) => message.id === event.id) ? current : [...current, event.data];
-        if (event.type === 'update') return current.map((message) => message.id === event.id ? { ...message, ...event.data } : message);
-        return current.filter((message) => message.id !== event.id);
-      });
+      if (!event.data?.participants?.includes(user.id)) return;
+      setMessages((current) => event.type === 'delete' ? current.filter((message) => message.id !== event.id) : upsertMessage(current, event.data));
     });
-    return () => { offFriends(); offMessages(); };
+    const reconnect = () => reload();
+    const resume = () => { if (document.visibilityState === 'visible') reload(); };
+    window.addEventListener('online', reconnect);
+    document.addEventListener('visibilitychange', resume);
+    return () => { offFriends(); offMessages(); window.removeEventListener('online', reconnect); document.removeEventListener('visibilitychange', resume); };
   }, [user?.id, reload]);
   const invoke = async (payload) => {
     try {
       const readCount = payload.action === 'mark_read' ? messages.filter((message) => message.friendship_id === payload.friendship_id && message.recipient_id === user?.id && !(message.read_by || []).includes(user.id)).length : 0;
       const res = await base44.functions.invoke('friend-service', payload);
-      if (payload.action === 'send' && res.data.message) setMessages((current) => current.some((message) => message.id === res.data.message.id) ? current : [...current, res.data.message]);
+      if (payload.action === 'send' && res.data.message) setMessages((current) => upsertMessage(current, res.data.message));
       else if (payload.action !== 'typing') await reload();
       if (payload.action === 'mark_read' && readCount > 0) window.dispatchEvent(new CustomEvent('social-thread-read', { detail: { count: readCount } }));
       window.dispatchEvent(new Event('social-badges-refresh'));

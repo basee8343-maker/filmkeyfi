@@ -28,7 +28,7 @@ export default function AdminUsers({ pendingOnly = false }) {
   });
 
   const load = () => {
-    base44.entities.User.list(500).then((u) => {
+    base44.entities.User.list('-created_date', 500).then((u) => {
       setUsers(pendingOnly ? u.filter((x) => x.membership_status === 'pending') : u);
       setLoading(false);
     }).catch((e) => { setLoading(false); toast({ title: 'Liste yüklenemedi', description: e.message, variant: 'destructive' }); });
@@ -37,7 +37,11 @@ export default function AdminUsers({ pendingOnly = false }) {
       setPaidUserIds(new Set(pays.map((p) => p.user_id)));
     }).catch(() => {});
   };
-  useEffect(() => { setLoading(true); load(); }, [pendingOnly]);
+  useEffect(() => {
+    setLoading(true); load();
+    const off = base44.entities.User.subscribe(load);
+    return off;
+  }, [pendingOnly]);
 
   const log = async (action, target) => { await base44.entities.AdminLog.create({ admin_id: admin?.id, admin_name: admin?.username || admin?.full_name, action, target }).catch(() => {}); };
   const notify = async (uid, title, body) => { await base44.entities.Notification.create({ user_id: uid, title, body, type: 'info' }).catch(() => {}); };

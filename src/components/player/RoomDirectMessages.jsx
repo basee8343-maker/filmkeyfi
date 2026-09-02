@@ -11,7 +11,12 @@ export default function RoomDirectMessages({ onClose }) {
   const { isOnline } = useFriendPresence(user);
   const [selected, setSelected] = useState(null);
   const [tab, setTab] = useState('messages');
-  useEffect(() => { if (selected) invoke({ action: 'mark_read', friendship_id: selected.id }).catch(() => {}); }, [selected?.id]);
+  useEffect(() => {
+    if (!selected) return;
+    window.dispatchEvent(new CustomEvent('social-thread-open', { detail: { friendshipId: selected.id } }));
+    invoke({ action: 'mark_read', friendship_id: selected.id }).catch(() => {});
+    return () => window.dispatchEvent(new Event('social-thread-close'));
+  }, [selected?.id]);
   if (loading || !user) return <div className="p-6 text-sm text-muted-foreground">Yükleniyor...</div>;
   if (selected) {
     const current = relations.find((item) => item.id === selected.id) || selected;
