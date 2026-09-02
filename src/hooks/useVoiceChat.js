@@ -36,7 +36,8 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   const localStreamRef = useRef(null);
   const peersRef = useRef({});          // { [otherId]: RTCPeerConnection }
   const pendingIceRef = useRef({});      // { [otherId]: candidate[] }
-  const initiatedRef = useRef(new Set());
+  const reconnectTimersRef = useRef({});
+  const mountedRef = useRef(true);
   const mutedRef = useRef(true);
   const remoteMutedRef = useRef(false);
   const deafenedRef = useRef(false);
@@ -50,27 +51,39 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   roomIdRef.current = roomId;
 
   // --- Sinyal gönderme ---
-  const sendSignal = useCallback((toId, type, data) => {
-    base44.entities.VoiceSignal.create({
-      room_id: roomIdRef.current,
-      from_id: userRef.current.id,
-      to_id: toId,
-      type,
-      data: JSON.stringify(data)
-    }).catch(() => {});
+  const sendSignal = useCallback(async (toId, type, data) => {
+    try {
+      await base44.entities.VoiceSignal.create({
+        room_id: roomIdRef.current,
+        from_id: userRef.current.id,
+        to_id: toId,
+        type,
+        data: JSON.stringify(data)
+      });
+    } catch (signalError) {
+      console.error(`[WebRTC] ${type} sinyali gönderilemedi`, signalError);
+      throw signalError;
+    }
   }, []);
 
   // --- Peer bağlantısı oluştur / kapat ---
   const closePeer = useCallback((otherId) => {
     const pc = peersRef.current[otherId];
+    if (reconnectTimersRef.current[otherId]) {
+      clearTimeout(reconnectTimersRef.current[otherId]);
+      delete reconnectTimersRef.current[otherId];
+    }
     if (pc) {
+      pc._audioEl?.pause();
+      setMediaStream(pc._audioEl, null);
+      pc._audioEl?.remove();
+      pc.getReceivers?.().forEach((receiver) => receiver.track?.stop());
       try { pc.close(); } catch {}
       delete peersRef.current[otherId];
     }
     const meter = analysersRef.current[otherId];
     if (meter) { meter.context.close().catch(() => {}); delete analysersRef.current[otherId]; }
     delete pendingIceRef.current[otherId];
-    initiatedRef.current.delete(otherId);
   }, []);
 
   const createPeer = useCallback((otherId) => {
@@ -78,73 +91,85 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     if (!RTCPeerConnectionClass) { setError('Tarayıcınız WebRTC desteklemiyor.'); return null; }
     const pc = new RTCPeerConnectionClass(ICE_SERVERS);
     peersRef.current[otherId] = pc;
-    pendingIceRef.current[otherId] = [];
+    pendingIceRef.current[otherId] ||= [];
+    pc._localIce = [];
+    pc._descriptionSent = false;
 
-    if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach((t) => pc.addTrack(t, localStreamRef.current));
-    } else {
-      // sendrecv: mikrofon açıldığında replaceTrack ile ses gitmesi için
-      pc.addTransceiver('audio', { direction: 'sendrecv' });
+    const localTrack = localStreamRef.current?.getAudioTracks().find((track) => track.readyState === 'live');
+    if (localTrack) {
+      pc._audioSender = pc.addTrack(localTrack, localStreamRef.current);
+    } else if (pc.addTransceiver) {
+      pc._audioSender = pc.addTransceiver('audio', { direction: 'sendrecv' }).sender;
     }
 
     pc.onicecandidate = (e) => {
-      if (e.candidate) sendSignal(otherId, 'ice', e.candidate);
+      if (!e.candidate) return;
+      if (!pc._descriptionSent) pc._localIce.push(e.candidate);
+      else sendSignal(otherId, 'ice', e.candidate).catch(() => {});
     };
 
     // ICE bağlantı durumu izleme — koparsa yeniden bağlan
     pc.oniceconnectionstatechange = () => {
+      console.info(`[WebRTC] ${otherId} ICE: ${pc.iceConnectionState}, sinyal: ${pc.signalingState}`);
+      if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+        if (reconnectTimersRef.current[otherId]) clearTimeout(reconnectTimersRef.current[otherId]);
+        delete reconnectTimersRef.current[otherId];
+        return;
+      }
       if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-        setTimeout(() => {
-          if (peersRef.current[otherId] === pc && pc.iceConnectionState !== 'connected') {
-            try { pc.restartIce(); } catch {}
-            if (userRef.current.id < otherId) {
-              initiateOffer(otherId);
-            }
-          }
-        }, 1500);
+        if (reconnectTimersRef.current[otherId]) clearTimeout(reconnectTimersRef.current[otherId]);
+        reconnectTimersRef.current[otherId] = setTimeout(() => {
+          if (!mountedRef.current || peersRef.current[otherId] !== pc) return;
+          if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') return;
+          try { pc.restartIce(); } catch {}
+          initiateOffer(otherId, true);
+        }, pc.iceConnectionState === 'failed' ? (userRef.current.id < otherId ? 500 : 1500) : (userRef.current.id < otherId ? 3000 : 4000));
       }
     };
 
-    // Eski tarayıcı desteği: onaddstream (eski Android/iOS sürümleri)
-    pc.onaddstream = (e) => {
+    const attachRemoteStream = (stream) => {
+      if (!stream) return;
       let audio = pc._audioEl;
       if (!audio) {
-        audio = new Audio();
+        audio = document.createElement('audio');
         audio.autoplay = true;
+        audio.playsInline = true;
         audio.setAttribute('playsinline', 'true');
+        audio.setAttribute('webkit-playsinline', 'true');
+        audio.style.display = 'none';
+        audio.dataset.voicePeer = otherId;
+        document.body.appendChild(audio);
         pc._audioEl = audio;
       }
-      setMediaStream(audio, e.stream);
+      setMediaStream(audio, stream);
+      audio.volume = 1;
       audio.muted = deafenedRef.current;
-      audio.play().catch(() => {});
-    };
-    pc.ontrack = (e) => {
-      let audio = pc._audioEl;
-      if (!audio) {
-        audio = new Audio();
-        audio.autoplay = true;
-        audio.setAttribute('playsinline', 'true');
-        pc._audioEl = audio;
-      }
-      setMediaStream(audio, e.streams[0]);
-      audio.muted = deafenedRef.current;
-      audio.play().catch(() => {});
+      audio.play().catch((playError) => console.warn('[WebRTC] Uzak ses otomatik oynatılamadı; kullanıcı etkileşimi beklenecek', playError));
       if (!analysersRef.current[otherId] && AudioContextClass) {
-        const context = new AudioContextClass(); const analyser = context.createAnalyser();
-        analyser.fftSize = 256; context.createMediaStreamSource(e.streams[0]).connect(analyser);
-        analysersRef.current[otherId] = { context, analyser, data: new Uint8Array(analyser.fftSize) };
+        try {
+          const context = new AudioContextClass(); const analyser = context.createAnalyser();
+          analyser.fftSize = 256; context.createMediaStreamSource(stream).connect(analyser);
+          analysersRef.current[otherId] = { context, analyser, data: new Uint8Array(analyser.fftSize) };
+        } catch (meterError) {
+          console.warn('[WebRTC] Uzak ses seviyesi ölçülemedi', meterError);
+        }
       }
+    };
+
+    pc.onaddstream = (e) => attachRemoteStream(e.stream);
+    pc.ontrack = (e) => {
+      const stream = e.streams?.[0] || new MediaStream([e.track]);
+      attachRemoteStream(stream);
+      e.track.onunmute = () => pc._audioEl?.play().catch(() => {});
     };
 
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'failed' || pc.iceConnectionState === 'failed') {
+      console.info(`[WebRTC] ${otherId} bağlantı: ${pc.connectionState}`);
+      if (pc.connectionState === 'failed') {
         closePeer(otherId);
-        // Yeniden bağlanmayı dene
-        setTimeout(() => {
-          if (participantsRef.current?.some((p) => p.user_id === otherId)) {
-            initiateOffer(otherId);
-          }
-        }, 2000);
+        reconnectTimersRef.current[otherId] = setTimeout(() => {
+          if (mountedRef.current && participantsRef.current?.some((p) => p.user_id === otherId)) initiateOffer(otherId, true);
+        }, userRef.current.id < otherId ? 500 : 1500);
       }
     };
 
@@ -160,69 +185,81 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       pc = createPeer(otherId);
     }
     if (!pc || pc.signalingState !== 'stable') return;
-    initiatedRef.current.add(otherId);
     try {
-      const offer = await pc.createOffer({ iceRestart: true });
+      pc._descriptionSent = false;
+      pc._localIce = [];
+      const offer = await pc.createOffer({ iceRestart: force });
       await pc.setLocalDescription(offer);
-      sendSignal(otherId, 'offer', offer);
-    } catch {}
+      await sendSignal(otherId, 'offer', pc.localDescription);
+      pc._descriptionSent = true;
+      const candidates = pc._localIce.splice(0);
+      await Promise.all(candidates.map((candidate) => sendSignal(otherId, 'ice', candidate)));
+    } catch (offerError) {
+      console.error('[WebRTC] Offer oluşturulamadı', offerError);
+    }
   }, [createPeer, sendSignal]);
 
   // --- Sinyal işleme ---
   const handleSignal = useCallback(async (s) => {
-    let pc = peersRef.current[s.from_id];
-    if (!pc) {
-      // Karşıdan offer/answer geldiyse peer oluştur
-      if (s.type === 'offer') {
-        pc = createPeer(s.from_id);
-      } else {
-        // ice/answer ama peer yok — eski sinyal, yoksay
-        return;
-      }
+    let payload;
+    try { payload = JSON.parse(s.data); } catch (parseError) {
+      console.error('[WebRTC] Geçersiz sinyal verisi', parseError);
+      return;
     }
+
+    let pc = peersRef.current[s.from_id];
+    if (!pc && s.type === 'ice') {
+      pendingIceRef.current[s.from_id] ||= [];
+      pendingIceRef.current[s.from_id].push(payload);
+      return;
+    }
+    if (!pc && s.type === 'offer') pc = createPeer(s.from_id);
     if (!pc) return;
 
-    let payload;
-    try { payload = JSON.parse(s.data); } catch { return; }
+    const applyPendingIce = async () => {
+      const candidates = pendingIceRef.current[s.from_id] || [];
+      pendingIceRef.current[s.from_id] = [];
+      for (const candidate of candidates) {
+        try { await pc.addIceCandidate(candidate); }
+        catch (iceError) { console.warn('[WebRTC] Bekleyen ICE adayı eklenemedi', iceError); }
+      }
+    };
 
     try {
       if (s.type === 'offer') {
-        await pc.setRemoteDescription(payload);
-        // Bekleyen ICE candidate'ları uygula
-        const pending = pendingIceRef.current[s.from_id] || [];
-        for (const c of pending) {
-          try { await pc.addIceCandidate(c); } catch {}
-        }
-        pendingIceRef.current[s.from_id] = [];
-        const ans = await pc.createAnswer();
-        await pc.setLocalDescription(ans);
-        sendSignal(s.from_id, 'answer', ans);
-      } else if (s.type === 'answer') {
         if (pc.signalingState !== 'stable') {
-          await pc.setRemoteDescription(payload);
-          const pending = pendingIceRef.current[s.from_id] || [];
-          for (const c of pending) {
-            try { await pc.addIceCandidate(c); } catch {}
-          }
-          pendingIceRef.current[s.from_id] = [];
+          await pc.setLocalDescription({ type: 'rollback' });
         }
+        await pc.setRemoteDescription(payload);
+        await applyPendingIce();
+        const answer = await pc.createAnswer();
+        pc._descriptionSent = false;
+        pc._localIce = [];
+        await pc.setLocalDescription(answer);
+        await sendSignal(s.from_id, 'answer', pc.localDescription);
+        pc._descriptionSent = true;
+        const candidates = pc._localIce.splice(0);
+        await Promise.all(candidates.map((candidate) => sendSignal(s.from_id, 'ice', candidate)));
+      } else if (s.type === 'answer' && pc.signalingState === 'have-local-offer') {
+        await pc.setRemoteDescription(payload);
+        await applyPendingIce();
       } else if (s.type === 'ice') {
-        if (pc.remoteDescription) {
-          try { await pc.addIceCandidate(payload); } catch {}
-        } else {
-          // Remote description henüz yok — buffer'la
-          if (!pendingIceRef.current[s.from_id]) pendingIceRef.current[s.from_id] = [];
+        if (pc.remoteDescription) await pc.addIceCandidate(payload);
+        else {
+          pendingIceRef.current[s.from_id] ||= [];
           pendingIceRef.current[s.from_id].push(payload);
         }
       }
-    } catch {}
+    } catch (signalError) {
+      console.error(`[WebRTC] ${s.type} sinyali işlenemedi`, signalError);
+    }
   }, [createPeer, sendSignal]);
 
   // Sinyal aboneliği — stabilize refs ile sabit
   useEffect(() => {
     if (!voiceEnabled || !user || !roomId) return;
     const unsub = base44.entities.VoiceSignal.subscribe((ev) => {
-      if (ev.type === 'create' && ev.data?.to_id === user.id) handleSignal(ev.data);
+      if (ev.type === 'create' && ev.data?.room_id === roomId && ev.data?.to_id === user.id) handleSignal(ev.data);
     });
     return unsub;
   }, [voiceEnabled, user?.id, roomId, handleSignal]);
@@ -246,38 +283,65 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     setRequesting(true); setError('');
     try {
       const stream = await requestMicrophoneStream();
+      const track = stream.getAudioTracks().find((item) => item.readyState === 'live');
+      if (!track) {
+        console.error('[WebRTC] Mikrofon izni verildi ancak canlı audio track alınamadı', stream.getTracks());
+        stopMicrophoneStream(stream);
+        throw new Error('Mikrofon izni verildi ancak ses kaynağı alınamadı. Cihazınızın mikrofon ayarlarını kontrol edin.');
+      }
+
       localStreamRef.current = stream;
-      stream.getAudioTracks().forEach((track) => { track.enabled = true; });
+      track.enabled = true;
+      track.onended = () => {
+        if (localStreamRef.current !== stream) return;
+        console.warn('[WebRTC] Mikrofon track’i cihaz tarafından sonlandırıldı');
+        localStreamRef.current = null;
+        mutedRef.current = true;
+        setMuted(true);
+        setActive(false);
+        setLocalSpeaking(false);
+      };
+
+      await connectToAll();
+      for (const [otherId, pc] of Object.entries(peersRef.current)) {
+        if (pc._audioSender) {
+          await pc._audioSender.replaceTrack(track);
+        } else if (pc.addTrack) {
+          pc._audioSender = pc.addTrack(track, stream);
+          await initiateOffer(otherId, true);
+        } else if (pc.addStream) {
+          pc.addStream(stream);
+          await initiateOffer(otherId, true);
+        }
+      }
+
       const AudioCtx = AudioContextClass || window.AudioContext || window.webkitAudioContext;
       if (AudioCtx && !localAnalyserRef.current) {
         const context = new AudioCtx(); const analyser = context.createAnalyser();
         analyser.fftSize = 256; context.createMediaStreamSource(stream).connect(analyser);
         localAnalyserRef.current = { context, analyser, data: new Uint8Array(analyser.fftSize) };
       }
-      Object.values(peersRef.current).forEach((pc) => {
-        const track = stream.getAudioTracks()[0];
-        const transceiver = pc.getTransceivers().find((item) => item.receiver?.track?.kind === 'audio' || item.sender?.track?.kind === 'audio');
-        if (transceiver) { transceiver.sender.replaceTrack(track).catch(() => {}); }
-        else pc.addTrack(track, stream);
-      });
       mutedRef.current = false; setMuted(false); setActive(true); setPermissionRemembered(true); setPermissionState('granted');
-      // iOS: AudioContext suspended durumda başlar, kullanıcı dokunuşuyla resume et
-      if (localAnalyserRef.current) localAnalyserRef.current.context.resume().catch(() => {});
+      if (localAnalyserRef.current) await localAnalyserRef.current.context.resume().catch(() => {});
       Object.values(analysersRef.current).forEach((meter) => meter.context.resume().catch(() => {}));
-      Object.values(peersRef.current).forEach((pc) => { if (pc._audioEl) pc._audioEl.play().catch(() => {}); });
+      Object.values(peersRef.current).forEach((pc) => {
+        if (pc._audioEl) {
+          pc._audioEl.muted = deafenedRef.current;
+          pc._audioEl.play().catch(() => {});
+        }
+      });
     } catch (e) {
+      console.error('[WebRTC] Mikrofon başlatılamadı', e);
       setPermissionState(e?.name === 'NotAllowedError' ? 'denied' : permissionState);
       setError(microphoneErrorMessage(e));
     } finally { setRequesting(false); }
-  }, [connectToAll, permissionState, requesting]);
+  }, [connectToAll, initiateOffer, permissionState, requesting]);
 
   const stopLocalMicrophone = useCallback(() => {
     const stream = localStreamRef.current;
+    stream?.getAudioTracks().forEach((track) => { track.enabled = false; });
+    Object.values(peersRef.current).forEach((pc) => pc._audioSender?.replaceTrack(null).catch(() => {}));
     if (stream) stopMicrophoneStream(stream);
-    Object.values(peersRef.current).forEach((pc) => {
-      const sender = pc.getSenders().find((item) => item.track?.kind === 'audio');
-      sender?.replaceTrack(null).catch(() => {});
-    });
     localAnalyserRef.current?.context.close().catch(() => {}); localAnalyserRef.current = null;
     localStreamRef.current = null; mutedRef.current = true; setMuted(true); setActive(false); setLocalSpeaking(false);
   }, []);
@@ -285,6 +349,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   useEffect(() => {
     if (!voiceEnabled || !roomId || !user) return;
     let cancelled = false;
+    mountedRef.current = true;
     setError(''); mutedRef.current = true; setMuted(true);
     const refreshPermission = () => checkMicrophonePermission().then((state) => { if (!cancelled) setPermissionState(state); });
     refreshPermission();
@@ -294,13 +359,14 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     document.addEventListener('visibilitychange', onVisibilityChange);
     connectToAll();
     return () => {
-      cancelled = true; unsubscribePermission();
+      cancelled = true; mountedRef.current = false; unsubscribePermission();
       window.removeEventListener('focus', refreshPermission);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       Object.keys(peersRef.current).forEach((peerId) => closePeer(peerId));
       if (localStreamRef.current) stopMicrophoneStream(localStreamRef.current);
       localAnalyserRef.current?.context.close().catch(() => {}); localAnalyserRef.current = null;
       localStreamRef.current = null;
+      mutedRef.current = true;
       base44.entities.VoiceSignal.deleteMany({ room_id: roomId, from_id: user.id }).catch(() => {});
     };
   }, [voiceEnabled, roomId, user?.id, connectToAll, closePeer]);
@@ -357,9 +423,13 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   const toggleDeafen = useCallback(() => {
     const next = !deafenedRef.current;
     deafenedRef.current = next; setDeafened(next);
-    Object.values(peersRef.current).forEach((pc) => { if (pc._audioEl) { pc._audioEl.muted = next; if (!next) pc._audioEl.play().catch(() => {}); } });
+    Object.values(peersRef.current).forEach((pc) => {
+      if (!pc._audioEl) return;
+      pc._audioEl.muted = next;
+      if (!next) pc._audioEl.play().catch((playError) => console.warn('[WebRTC] Hoparlör yeniden başlatılamadı', playError));
+    });
     Object.values(analysersRef.current).forEach((meter) => meter.context.resume().catch(() => {}));
   }, []);
 
-  return { muted, remoteMuted, deafened, localSpeaking, speakingIds, active, error, permissionState, permissionRemembered, requesting, toggleMute, toggleDeafen };
+  return { muted, remoteMuted, deafened, localSpeaking, speakingIds, active: active && !remoteMuted, error, permissionState, permissionRemembered, requesting, toggleMute, toggleDeafen };
 }

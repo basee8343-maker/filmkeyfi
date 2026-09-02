@@ -60,6 +60,12 @@ export async function requestMicrophoneStream() {
   }
 
   pendingRequest = pendingRequest.then((stream) => {
+    const audioTracks = stream?.getAudioTracks?.() || [];
+    if (!audioTracks.some((track) => track.readyState === 'live')) {
+      console.error('[WebRTC] getUserMedia başarılı döndü ancak canlı audio track yok', audioTracks);
+      stream?.getTracks?.().forEach((track) => track.stop());
+      throw new Error('Mikrofon ses kaynağı alınamadı.');
+    }
     currentStream = stream;
     rememberGranted();
     publish('granted');

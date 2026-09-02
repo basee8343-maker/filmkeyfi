@@ -4,10 +4,13 @@ export function setMediaStream(element, stream) {
   if (!element) return;
   try {
     if ('srcObject' in element) {
-      element.srcObject = stream;
+      element.srcObject = stream || null;
     } else if (stream) {
-      // Eski API: URL.createObjectURL
       element.src = window.URL?.createObjectURL(stream) || '';
+    } else {
+      element.removeAttribute('src');
     }
-  } catch {}
+  } catch (error) {
+    console.error('[WebRTC] Ses akışı audio elementine bağlanamadı', error);
+  }
 }
