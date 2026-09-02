@@ -10,7 +10,7 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, password
     else { await navigator.clipboard?.writeText(window.location.href); window.open('https://www.instagram.com/', '_blank', 'noopener,noreferrer'); }
   };
   return (
-    <div className="absolute bottom-24 right-3 z-[60] w-64 rounded-2xl border border-border bg-card/95 p-3 shadow-2xl backdrop-blur-xl">
+    <div className="absolute bottom-24 right-3 z-[60] max-h-[calc(100dvh-7rem-max(env(safe-area-inset-top),1rem))] w-64 overflow-y-auto rounded-2xl border border-border bg-card/95 p-3 shadow-2xl backdrop-blur-xl">
       <div className="mb-3 flex items-center justify-between"><p className="font-bold">Oda Ayarları</p><button onClick={onClose} className="rounded-lg p-1.5 hover:bg-secondary"><X className="w-4 h-4" /></button></div>
       {!canMod ? <p className="text-sm text-muted-foreground">Bu ayarları yalnızca oda sahibi değiştirebilir.</p> : <div className="space-y-2">
         <button onClick={onVoice} className={button}>{room.voice_enabled ? <MicOff className="w-4 h-4 text-destructive" /> : <Mic className="w-4 h-4 text-green-400" />} {room.voice_enabled ? 'Sesli sohbeti kapat' : 'Sesli sohbeti aç'}</button>
