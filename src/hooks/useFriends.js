@@ -21,12 +21,22 @@ export default function useFriends() {
     reload();
     if (!user) return;
     const offFriends = base44.entities.Friendship.subscribe(reload);
-    const offMessages = base44.entities.DirectMessage.subscribe(reload);
+    const offMessages = base44.entities.DirectMessage.subscribe((event) => {
+      setMessages((current) => {
+        if (event.type === 'create') return current.some((message) => message.id === event.id) ? current : [...current, event.data];
+        if (event.type === 'update') return current.map((message) => message.id === event.id ? { ...message, ...event.data } : message);
+        return current.filter((message) => message.id !== event.id);
+      });
+    });
     return () => { offFriends(); offMessages(); };
   }, [user?.id, reload]);
   const invoke = async (payload) => {
-    try { const res = await base44.functions.invoke('friend-service', payload); await reload(); return res.data; }
-    catch (error) { toast({ title: 'İşlem başarısız', description: error.response?.data?.error || error.message, variant: 'destructive' }); throw error; }
+    try {
+      const res = await base44.functions.invoke('friend-service', payload);
+      if (payload.action === 'send' && res.data.message) setMessages((current) => current.some((message) => message.id === res.data.message.id) ? current : [...current, res.data.message]);
+      else await reload();
+      return res.data;
+    } catch (error) { toast({ title: 'İşlem başarısız', description: error.response?.data?.error || error.message, variant: 'destructive' }); throw error; }
   };
   return { user, relations, messages, loading, reload, invoke };
 }

@@ -3,8 +3,9 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
 import { Image } from '@/components/ui/image';
-import { User, Crown, Clock, Heart, List, Settings, RefreshCw, Camera, LogOut, Trash2 } from 'lucide-react';
+import { User, Crown, Clock, Heart, List, Settings, RefreshCw, Camera, LogOut, Trash2, Ban } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import BlockedUsers from '@/components/profile/BlockedUsers';
 
 export default function Profile() {
   const { user, setUser, reload } = useCurrentUser();
@@ -81,6 +82,7 @@ export default function Profile() {
     { id: 'history', label: 'İzleme Geçmişi', icon: Clock },
     { id: 'list', label: 'Listem', icon: List },
     { id: 'favs', label: 'Favoriler', icon: Heart },
+    { id: 'blocked', label: 'Engellenenler', icon: Ban },
   ];
 
   return (
@@ -162,6 +164,7 @@ export default function Profile() {
       )}
       {tab === 'list' && <MovieGrid movies={list} empty="Henüz listenize film eklemediniz." />}
       {tab === 'favs' && <MovieGrid movies={favs} empty="Henüz favori yok." />}
+      {tab === 'blocked' && <BlockedUsers />}
     </div>
   );
 }

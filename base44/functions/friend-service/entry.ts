@@ -20,7 +20,14 @@ export default async function(req) {
       if (!/^\d{8}$/.test(memberId)) return Response.json({ error: '8 haneli üye numarası girin' }, { status: 400 });
       const matches = await base44.asServiceRole.entities.User.filter({ member_id: memberId }, '-created_date', 2);
       const target = matches.find((item) => item.id !== user.id);
-      return Response.json({ user: target ? cleanUser(target) : null });
+      if (!target) return Response.json({ user: null });
+      const blocked = await base44.asServiceRole.entities.Friendship.filter({
+        $or: [
+          { requester_id: user.id, recipient_id: target.id, status: 'blocked' },
+          { requester_id: target.id, recipient_id: user.id, status: 'blocked' }
+        ]
+      }, '-created_date', 1);
+      return Response.json({ user: blocked.length ? null : cleanUser(target) });
     }
 
     if (action === 'request') {
@@ -67,18 +74,20 @@ export default async function(req) {
       return Response.json({ ok: true });
     }
 
-    if (['hide', 'unfriend', 'block'].includes(action)) {
+    if (['hide', 'unfriend', 'block', 'unblock'].includes(action)) {
       const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
       if (!friendship || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
-      if (action === 'hide') {
+      if (action === 'hide' || action === 'unfriend') {
         const hiddenFor = [...new Set([...(friendship.hidden_for || []), user.id])];
         const clearedAt = { ...(friendship.cleared_at || {}), [user.id]: new Date().toISOString() };
-        await base44.asServiceRole.entities.Friendship.update(friendship.id, { hidden_for: hiddenFor, cleared_at: clearedAt });
-      } else if (action === 'unfriend') {
-        await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: 'removed' });
-      } else {
+        await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: 'removed', hidden_for: hiddenFor, cleared_at: clearedAt });
+      } else if (action === 'block') {
         const blockedBy = [...new Set([...(friendship.blocked_by || []), user.id])];
         await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: 'blocked', blocked_by: blockedBy });
+      } else {
+        if (!(friendship.blocked_by || []).includes(user.id)) return Response.json({ error: 'Bu engeli kaldıramazsınız' }, { status: 403 });
+        const blockedBy = (friendship.blocked_by || []).filter((id) => id !== user.id);
+        await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: blockedBy.length ? 'blocked' : 'removed', blocked_by: blockedBy });
       }
       return Response.json({ ok: true });
     }
