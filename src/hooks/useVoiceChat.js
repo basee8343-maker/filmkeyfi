@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-
-let sharedMicrophoneStream = null;
+import { checkMicrophonePermission, microphoneErrorMessage, requestMicrophoneStream, stopMicrophoneStream, subscribeToMicrophonePermission, wasMicrophoneGrantedBefore } from '@/lib/microphonePermissionManager';
 
 const ICE_SERVERS = {
   iceServers: [
@@ -26,6 +25,9 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   const [speakingIds, setSpeakingIds] = useState([]);
   const [active, setActive] = useState(false);
   const [error, setError] = useState('');
+  const [permissionState, setPermissionState] = useState('checking');
+  const [permissionRemembered, setPermissionRemembered] = useState(wasMicrophoneGrantedBefore);
+  const [requesting, setRequesting] = useState(false);
   const localStreamRef = useRef(null);
   const peersRef = useRef({});          // { [otherId]: RTCPeerConnection }
   const pendingIceRef = useRef({});      // { [otherId]: candidate[] }
@@ -124,7 +126,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
         closePeer(otherId);
         // Yeniden bağlanmayı dene
         setTimeout(() => {
-          if (localStreamRef.current && participantsRef.current?.some((p) => p.user_id === otherId)) {
+          if (participantsRef.current?.some((p) => p.user_id === otherId)) {
             initiateOffer(otherId);
           }
         }, 2000);
@@ -136,7 +138,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
 
   // --- Offer başlat (düşük ID'li kullanıcı başlatır) ---
   const initiateOffer = useCallback(async (otherId, force = false) => {
-    if (!localStreamRef.current || !userRef.current) return;
+    if (!userRef.current) return;
     if (!force && userRef.current.id >= otherId) return;
     let pc = peersRef.current[otherId];
     if (!pc || pc.connectionState === 'failed' || pc.connectionState === 'closed') {
@@ -211,7 +213,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
 
   // --- Tüm peer'lara bağlan ---
   const connectToAll = useCallback(async () => {
-    if (!localStreamRef.current || !userRef.current) return;
+    if (!userRef.current) return;
     const others = (participantsRef.current || [])
       .map((p) => p.user_id)
       .filter((uid) => uid !== userRef.current.id);
@@ -222,49 +224,73 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     }
   }, [initiateOffer]);
 
-  // --- Mikrofonu uygulama oturumu boyunca tek kez al, odaya kapalı gir ---
+  // Mikrofon yalnızca kullanıcının düğmeye basmasıyla başlatılır.
+  const startMicrophone = useCallback(async () => {
+    if (requesting || remoteMutedRef.current) return;
+    setRequesting(true); setError('');
+    try {
+      const stream = await requestMicrophoneStream();
+      localStreamRef.current = stream;
+      stream.getAudioTracks().forEach((track) => { track.enabled = true; });
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx && !localAnalyserRef.current) {
+        const context = new AudioCtx(); const analyser = context.createAnalyser();
+        analyser.fftSize = 256; context.createMediaStreamSource(stream).connect(analyser);
+        localAnalyserRef.current = { context, analyser, data: new Uint8Array(analyser.fftSize) };
+      }
+      Object.values(peersRef.current).forEach((pc) => {
+        const track = stream.getAudioTracks()[0];
+        const transceiver = pc.getTransceivers().find((item) => item.receiver?.track?.kind === 'audio');
+        if (transceiver) { transceiver.direction = 'sendrecv'; transceiver.sender.replaceTrack(track).catch(() => {}); }
+        else pc.addTrack(track, stream);
+      });
+      mutedRef.current = false; setMuted(false); setActive(true); setPermissionRemembered(true); setPermissionState('granted');
+      for (const peerId of Object.keys(peersRef.current)) await initiateOffer(peerId, true);
+      await connectToAll();
+    } catch (e) {
+      setPermissionState(e?.name === 'NotAllowedError' ? 'denied' : permissionState);
+      setError(microphoneErrorMessage(e));
+    } finally { setRequesting(false); }
+  }, [connectToAll, initiateOffer, permissionState, requesting]);
+
+  const stopLocalMicrophone = useCallback(() => {
+    const stream = localStreamRef.current;
+    if (stream) stopMicrophoneStream(stream);
+    Object.values(peersRef.current).forEach((pc) => {
+      const sender = pc.getSenders().find((item) => item.track?.kind === 'audio');
+      sender?.replaceTrack(null).catch(() => {});
+    });
+    localAnalyserRef.current?.context.close().catch(() => {}); localAnalyserRef.current = null;
+    localStreamRef.current = null; mutedRef.current = true; setMuted(true); setActive(false); setLocalSpeaking(false);
+  }, []);
+
   useEffect(() => {
     if (!voiceEnabled || !roomId || !user) return;
     let cancelled = false;
     setError(''); mutedRef.current = true; setMuted(true);
-    const acquire = async () => {
-      if (!sharedMicrophoneStream?.getAudioTracks().some((track) => track.readyState === 'live')) {
-        sharedMicrophoneStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
-      }
-      if (cancelled) return;
-      localStreamRef.current = sharedMicrophoneStream;
-      sharedMicrophoneStream.getAudioTracks().forEach((track) => { track.enabled = false; });
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtx && !localAnalyserRef.current) {
-        const context = new AudioCtx(); const analyser = context.createAnalyser();
-        analyser.fftSize = 256; context.createMediaStreamSource(sharedMicrophoneStream).connect(analyser);
-        localAnalyserRef.current = { context, analyser, data: new Uint8Array(analyser.fftSize) };
-      }
-      Object.values(peersRef.current).forEach((pc) => {
-        const track = sharedMicrophoneStream.getAudioTracks()[0];
-        const transceiver = pc.getTransceivers().find((item) => item.receiver?.track?.kind === 'audio');
-        if (transceiver) { transceiver.direction = 'sendrecv'; transceiver.sender.replaceTrack(track).catch(() => {}); }
-        else pc.addTrack(track, sharedMicrophoneStream);
-      });
-      setActive(true);
-      for (const peerId of Object.keys(peersRef.current)) await initiateOffer(peerId, true);
-      await connectToAll();
-    };
-    acquire().catch((e) => setError(e?.message || 'Mikrofon izni reddedildi'));
+    const refreshPermission = () => checkMicrophonePermission().then((state) => { if (!cancelled) setPermissionState(state); });
+    refreshPermission();
+    const onVisibilityChange = () => { if (document.visibilityState === 'visible') refreshPermission(); };
+    const unsubscribePermission = subscribeToMicrophonePermission((state) => { if (!cancelled) setPermissionState(state); });
+    window.addEventListener('focus', refreshPermission);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    connectToAll();
     return () => {
-      cancelled = true;
+      cancelled = true; unsubscribePermission();
+      window.removeEventListener('focus', refreshPermission);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       Object.keys(peersRef.current).forEach((peerId) => closePeer(peerId));
-      localStreamRef.current?.getAudioTracks().forEach((track) => { track.enabled = false; });
+      if (localStreamRef.current) stopMicrophoneStream(localStreamRef.current);
       localAnalyserRef.current?.context.close().catch(() => {}); localAnalyserRef.current = null;
-      localStreamRef.current = null; setActive(false); setLocalSpeaking(false); setSpeakingIds([]);
+      localStreamRef.current = null;
       base44.entities.VoiceSignal.deleteMany({ room_id: roomId, from_id: user.id }).catch(() => {});
     };
-  }, [voiceEnabled, roomId, user?.id, connectToAll, closePeer, initiateOffer]);
+  }, [voiceEnabled, roomId, user?.id, connectToAll, closePeer]);
 
   // --- Katılımcı değişikliklerini izle: yeni gelenlere bağlan, ayrılanları temizle ---
   const participantIdsKey = (participants || []).map((p) => p.user_id).filter(Boolean).sort().join(',');
   useEffect(() => {
-    if (!active) return;
+    if (!voiceEnabled || !user) return;
     const currentIds = new Set((participants || []).map((p) => p.user_id).filter((uid) => uid !== user?.id));
     // Ayrılan katılımcıların peer'larını kapat
     Object.keys(peersRef.current).forEach((otherId) => {
@@ -274,7 +300,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     });
     // Yeni katılımcılara bağlan
     connectToAll();
-  }, [participantIdsKey, active, connectToAll, closePeer]);
+  }, [participantIdsKey, voiceEnabled, user?.id, connectToAll, closePeer]);
 
   // Uzaktan susturma zorunluluğu — oda sahibi/admin susturduğunda mikrofonu gerçekten kapat
   useEffect(() => {
@@ -290,7 +316,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   }, [participants, user?.id]);
 
   useEffect(() => {
-    if (!active) return;
+    if (!voiceEnabled) return;
     const level = (meter) => {
       if (!meter) return 0;
       meter.analyser.getByteTimeDomainData(meter.data);
@@ -302,17 +328,13 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       setSpeakingIds(Object.entries(analysersRef.current).filter(([, meter]) => level(meter) > 0.035).map(([id]) => id));
     }, 150);
     return () => clearInterval(timer);
-  }, [active]);
+  }, [voiceEnabled]);
 
   const toggleMute = useCallback(() => {
-    if (remoteMutedRef.current || !localStreamRef.current) return;
-    const next = !mutedRef.current;
-    mutedRef.current = next; setMuted(next);
-    localStreamRef.current.getAudioTracks().forEach((track) => { track.enabled = !next; });
-    localAnalyserRef.current?.context.resume().catch(() => {});
-    Object.values(analysersRef.current).forEach((meter) => meter.context.resume().catch(() => {}));
-    Object.values(peersRef.current).forEach((pc) => pc._audioEl?.play().catch(() => {}));
-  }, []);
+    if (remoteMutedRef.current || requesting) return;
+    if (!localStreamRef.current) { startMicrophone(); return; }
+    stopLocalMicrophone();
+  }, [requesting, startMicrophone, stopLocalMicrophone]);
 
   const toggleDeafen = useCallback(() => {
     const next = !deafenedRef.current;
@@ -321,5 +343,5 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     Object.values(analysersRef.current).forEach((meter) => meter.context.resume().catch(() => {}));
   }, []);
 
-  return { muted, remoteMuted, deafened, localSpeaking, speakingIds, active, error, toggleMute, toggleDeafen };
+  return { muted, remoteMuted, deafened, localSpeaking, speakingIds, active, error, permissionState, permissionRemembered, requesting, toggleMute, toggleDeafen };
 }
