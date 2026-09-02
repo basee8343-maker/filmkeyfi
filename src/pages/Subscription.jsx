@@ -19,6 +19,13 @@ export default function Subscription() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Aktif aboneliği olan kullanıcıyı ödeme sayfasında tutma — ana sayfaya yönlendir
+  useEffect(() => {
+    if (!ul && !loading && user && membershipActive(user)) {
+      navigate('/');
+    }
+  }, [user, ul, loading, navigate]);
+
   const buy = async (product) => {
     setPaying(product.id);
     setError('');

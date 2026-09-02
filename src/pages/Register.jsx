@@ -147,7 +147,7 @@ export default function Register() {
             {[
               { n: 1, label: "Hesap Bilgileri" },
               { n: 2, label: "Üyelik Seçimi" },
-              { n: 3, label: "Onay & Başvuru" },
+              { n: 3, label: "Ödeme & Aktivasyon" },
             ].map((s, i) => (
               <React.Fragment key={s.n}>
                 <div className="flex flex-col items-center gap-1.5">
@@ -259,7 +259,7 @@ export default function Register() {
             <div className="bg-[#141414]/95 backdrop-blur-sm rounded-xl border border-[#2a2a2a] p-4 flex items-start gap-3">
               <ShieldCheck className="w-5 h-5 text-[#e50914] shrink-0 mt-0.5" />
               <p className="text-xs text-[#a0a0a0] leading-relaxed">
-                Üyelik başvurunuz onaydan sonra aktif olacaktır. 50 TL üyelik ücretinizin onaylanmasının ardından hesabınız aktif edilecektir.
+                Ödeme yaptıktan sonra aboneliğiniz otomatik olarak aktif olacaktır. Admin onayı gerekmez.
               </p>
             </div>
           </div>

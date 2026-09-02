@@ -237,16 +237,16 @@ export default async function (req) {
     }
 
     // Ödeme kaydını tamamlandı olarak güncelle
-    await base44.asServiceRole.entities.Payment.update(payment.id, {
+    const payErr = await base44.asServiceRole.entities.Payment.update(payment.id, {
       status: 'completed',
       payment_id: paymentId,
       shopier_order_id: shopierOrderId || payment.shopier_order_id,
       paid_at: now.toISOString(),
-    }).catch(() => {});
-    log('payment_updated', { payment_id: payment.id, status: 'completed', paid_at: now.toISOString() });
+    }).catch((e) => e?.message || 'Payment update failed');
+    log('payment_updated', { payment_id: payment.id, status: 'completed', paid_at: now.toISOString(), error: typeof payErr === 'string' ? payErr : null });
 
     // Kullanıcı aboneliğini aktif et
-    await base44.asServiceRole.entities.User.update(payment.user_id, {
+    const userErr = await base44.asServiceRole.entities.User.update(payment.user_id, {
       membership_status: 'active',
       membership_start: startDate.toISOString(),
       membership_end: endDate.toISOString(),
@@ -259,14 +259,22 @@ export default async function (req) {
       payment_provider: 'shopier',
       payment_id: payment.id,
       last_payment_date: now.toISOString(),
-    }).catch(() => {});
+    }).catch((e) => e?.message || 'User update failed');
     log('user_updated', {
       user_id: payment.user_id,
       membership_status: 'active',
       membership_start: startDate.toISOString(),
       membership_end: endDate.toISOString(),
       subscription_plan: planName,
+      error: typeof userErr === 'string' ? userErr : null,
     });
+
+    // Abonelik aktivasyonu başarısız olduysa hata logu oluştur
+    if (typeof userErr === 'string' || typeof payErr === 'string') {
+      const errMsg = typeof userErr === 'string' ? `User update failed: ${userErr}` : `Payment update failed: ${payErr}`;
+      console.error('[Shopier Webhook] Activation error:', errMsg);
+      await logSecurity(base44, 'shopier_activation_failed', { id: payment.user_id, email: buyerEmail }, `Order: ${shopierOrderId} — ${errMsg}`, 'critical').catch(() => {});
+    }
 
     // --- MEVCUT "ONAYLA" İŞLEMİYLE AYNI BİLDİRİM (AdminUsers.jsx approve fonksiyonu) ---
     const wasPending = userRecord?.membership_status === 'pending';

@@ -21,7 +21,7 @@ export default function PaymentResult() {
           setMessage(reason === 'invalid_signature' ? 'Ödeme doğrulanamadı.' : 'Ödeme başarısız oldu.');
           return;
         }
-        // Başarı — webhook'un işlemesi için kısa bekleme
+        // Başarı — webhook'un işlemesi için bekleme (15 deneme × 1.5sn = ~22sn)
         let attempts = 0;
         const checkActive = async () => {
           const u = await base44.auth.me();
@@ -30,8 +30,8 @@ export default function PaymentResult() {
             setPlan(u.subscription_plan || '');
             return;
           }
-          if (attempts++ < 5) setTimeout(checkActive, 1500);
-          else { setStatus('success'); setPlan(u.subscription_plan || ''); }
+          if (attempts++ < 20) setTimeout(checkActive, 1500);
+          else setStatus('processing');
         };
         checkActive();
       } catch {
@@ -41,13 +41,35 @@ export default function PaymentResult() {
     verify();
   }, []);
 
+  // Başarılı ödeme sonrası otomatik ana sayfaya yönlendir
+  useEffect(() => {
+    if (status === 'success') {
+      const t = setTimeout(() => navigate('/'), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [status, navigate]);
+
   if (status === 'checking') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="text-center">
           <Loader2 className="w-12 h-12 mx-auto mb-4 text-primary animate-spin" />
           <h1 className="text-xl font-bold mb-1">Ödemeniz kontrol ediliyor</h1>
-          <p className="text-sm text-muted-foreground">Lütfen bekleyin...</p>
+          <p className="text-sm text-muted-foreground">Aboneliğiniz aktif ediliyor, lütfen bekleyin...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'processing') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="max-w-sm w-full text-center bg-card border border-border rounded-2xl p-8">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/15 flex items-center justify-center"><Loader2 className="w-9 h-9 text-amber-500 animate-spin" /></div>
+          <h1 className="text-2xl font-extrabold mb-2">Ödemeniz Alındı</h1>
+          <p className="text-sm text-muted-foreground mb-6">Aboneliğiniz henüz işlenmedi. Birkaç dakika içinde otomatik olarak aktif edilecektir. Bu sayfayı kapatıp daha sonra geri dönebilirsiniz.</p>
+          <button onClick={() => navigate('/')} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold">Ana Sayfaya Dön</button>
+          <button onClick={() => window.location.reload()} className="w-full mt-2 text-sm text-muted-foreground py-2 flex items-center justify-center gap-2"><RefreshCw className="w-4 h-4" /> Tekrar Kontrol Et</button>
         </div>
       </div>
     );
@@ -71,8 +93,9 @@ export default function PaymentResult() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="max-w-sm w-full text-center bg-card border border-border rounded-2xl p-8">
         <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/15 flex items-center justify-center"><CheckCircle className="w-9 h-9 text-green-500" /></div>
-        <h1 className="text-2xl font-extrabold mb-2">Ödeme Başarılı 🎉</h1>
-        <p className="text-sm text-muted-foreground mb-6">{plan ? `${plan} aboneliğiniz aktif edildi.` : 'Aboneliğiniz aktif edildi.'}</p>
+        <h1 className="text-2xl font-extrabold mb-2">Aboneliğiniz Aktif Edildi! 🎉</h1>
+        <p className="text-sm text-muted-foreground mb-2">{plan ? `${plan} aboneliğiniz aktif edildi.` : 'Aboneliğiniz aktif edildi.'}</p>
+        <p className="text-xs text-muted-foreground mb-6">Ana sayfaya yönlendiriliyorsunuz...</p>
         <button onClick={() => navigate('/')} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-semibold">Filmlere Göz At</button>
       </div>
     </div>

@@ -47,21 +47,28 @@ export default function PendingApproval() {
           <div className="w-20 h-20 rounded-full bg-amber-500/20 flex items-center justify-center mx-auto mb-6">
             <Clock className="w-10 h-10 text-amber-400" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-3">Onay Bekleniyor</h1>
+          <h1 className="text-2xl font-bold text-white mb-3">Ödeme Bekleniyor</h1>
           <p className="text-sm text-[#a0a0a0] mb-6 leading-relaxed">
-            Merhaba{user?.username ? ` ${user.username}` : ""}, üyelik başvurunuz alındı.
-            Hesabınız yönetici onayından sonra aktif edilecektir.
-            Bu sayfa açık kaldıkça, onay verildiğinde otomatik olarak ana sayfaya yönlendirileceksiniz.
+            Merhaba{user?.username ? ` ${user.username}` : ""}, hesabınız oluşturuldu.
+            Aboneliğinizi aktif etmek için ödeme yapmanız yeterlidir. Admin onayı gerekmez.
+            Ödeme yaptıktan sonra aboneliğiniz otomatik olarak aktif edilecektir.
           </p>
 
           <div className="flex items-center justify-center gap-2 text-xs text-[#a0a0a0] mb-6">
             {checking ? <Loader2 className="w-3 h-3 animate-spin" /> : <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />}
-            <span>Onay durumu kontrol ediliyor...</span>
+            <span>Abonelik durumu kontrol ediliyor...</span>
           </div>
+
+          <button
+            onClick={() => navigate('/abonelik')}
+            className="w-full bg-[#e50914] hover:bg-[#f6121d] text-white font-semibold py-3 rounded-lg mb-4"
+          >
+            Abonelik Seç ve Ödeme Yap
+          </button>
 
           <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-4 mb-4">
             <p className="text-xs text-[#a0a0a0] leading-relaxed">
-              💡 Onay süreciniz hızlanır. Sorularınız varsa canlı destek üzerinden ekibimize ulaşabilirsiniz.
+              💡 Ödeme sonrası aboneliğiniz otomatik aktif olur. Sorularınız varsa canlı destek üzerinden ekibimize ulaşabilirsiniz.
             </p>
           </div>
 

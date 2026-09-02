@@ -109,8 +109,9 @@ export default function Profile() {
       </div>
 
       {user.membership_status === 'pending' && (
-        <div className="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm">
-          Hesabınız admin onayı bekliyor. Onaylandıktan sonra premium içeriklere erişebilirsiniz.
+        <div className="mb-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm flex items-center justify-between flex-wrap gap-2">
+          <span>Aboneliğinizi aktif etmek için ödeme yapın. Ödeme sonrası aboneliğiniz otomatik aktif olur.</span>
+          <Link to="/abonelik" className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap">Abonelik Seç</Link>
         </div>
       )}
       {expired && (

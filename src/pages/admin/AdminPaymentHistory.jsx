@@ -16,17 +16,22 @@ export default function AdminPaymentHistory() {
   }, []);
 
   const statusBadge = (s) => {
-    if (s === 'completed') return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-500"><Check className="w-3 h-3" /> Başarılı</span>;
+    if (s === 'completed') return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-500"><Check className="w-3 h-3" /> Ödeme Yapıldı</span>;
     if (s === 'failed') return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-red-500/20 text-red-500"><X className="w-3 h-3" /> Başarısız</span>;
     if (s === 'cancelled') return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-orange-500/20 text-orange-500"><Ban className="w-3 h-3" /> İptal</span>;
     return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-500"><Clock className="w-3 h-3" /> Bekliyor</span>;
+  };
+
+  const processedBadge = (s) => {
+    if (s === 'completed') return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-500"><Check className="w-3 h-3" /> İşlendi</span>;
+    return <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-amber-500/20 text-amber-500"><Clock className="w-3 h-3" /> İşlenmedi</span>;
   };
 
   if (loading) return <div className="h-64 flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <div>
-      <h1 className="text-2xl font-extrabold mb-6">Ödeme Geçmişi</h1>
+      <h1 className="text-2xl font-extrabold mb-6">Ödemeler</h1>
       {payments.length === 0 ? (
         <p className="text-sm text-muted-foreground">Henüz ödeme kaydı yok.</p>
       ) : (
@@ -36,23 +41,27 @@ export default function AdminPaymentHistory() {
               <thead>
                 <tr className="text-left text-xs text-muted-foreground border-b border-border">
                   <th className="py-2 px-3 font-semibold">Kullanıcı</th>
+                  <th className="py-2 px-3 font-semibold">E-posta</th>
                   <th className="py-2 px-3 font-semibold">Ürün</th>
                   <th className="py-2 px-3 font-semibold">Tutar</th>
                   <th className="py-2 px-3 font-semibold">Ödeme Tarihi</th>
                   <th className="py-2 px-3 font-semibold">Durum</th>
+                  <th className="py-2 px-3 font-semibold">İşlenme</th>
                   <th className="py-2 px-3 font-semibold">Shopier Sipariş ID</th>
                 </tr>
               </thead>
               <tbody>
                 {payments.map((p) => (
-                  <tr key={p.id} className="border-b border-border hover:bg-secondary/30">
-                    <td className="py-2.5 px-3">{p.user_name || '—'}</td>
-                    <td className="py-2.5 px-3">{p.package_name || '—'}</td>
-                    <td className="py-2.5 px-3 font-semibold">{p.amount} ₺</td>
-                    <td className="py-2.5 px-3 text-muted-foreground">{p.paid_at ? new Date(p.paid_at).toLocaleString('tr-TR') : new Date(p.created_date).toLocaleString('tr-TR')}</td>
-                    <td className="py-2.5 px-3">{statusBadge(p.status)}</td>
-                    <td className="py-2.5 px-3 font-mono text-xs text-muted-foreground">{p.shopier_order_id || '—'}</td>
-                  </tr>
+                <tr key={p.id} className="border-b border-border hover:bg-secondary/30">
+                  <td className="py-2.5 px-3">{p.user_name || '—'}</td>
+                  <td className="py-2.5 px-3 text-muted-foreground">{p.user_email || '—'}</td>
+                  <td className="py-2.5 px-3">{p.package_name || '—'}</td>
+                  <td className="py-2.5 px-3 font-semibold">{p.amount} ₺</td>
+                  <td className="py-2.5 px-3 text-muted-foreground">{p.paid_at ? new Date(p.paid_at).toLocaleString('tr-TR') : new Date(p.created_date).toLocaleString('tr-TR')}</td>
+                  <td className="py-2.5 px-3">{statusBadge(p.status)}</td>
+                  <td className="py-2.5 px-3">{processedBadge(p.status)}</td>
+                  <td className="py-2.5 px-3 font-mono text-xs text-muted-foreground">{p.shopier_order_id || '—'}</td>
+                </tr>
                 ))}
               </tbody>
             </table>
@@ -64,9 +73,13 @@ export default function AdminPaymentHistory() {
                   <p className="font-semibold">{p.user_name || '—'}</p>
                   {statusBadge(p.status)}
                 </div>
+                <p className="text-xs text-muted-foreground mb-1">{p.user_email || '—'}</p>
                 <p className="text-xs text-muted-foreground mb-1">{p.package_name || '—'}</p>
                 <p className="text-lg font-bold">{p.amount} ₺</p>
-                <p className="text-xs text-muted-foreground">{p.paid_at ? new Date(p.paid_at).toLocaleString('tr-TR') : new Date(p.created_date).toLocaleString('tr-TR')}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-xs text-muted-foreground">{p.paid_at ? new Date(p.paid_at).toLocaleString('tr-TR') : new Date(p.created_date).toLocaleString('tr-TR')}</p>
+                  {processedBadge(p.status)}
+                </div>
                 <p className="text-xs text-muted-foreground font-mono mt-1">{p.shopier_order_id || '—'}</p>
               </div>
             ))}
