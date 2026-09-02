@@ -98,5 +98,16 @@ export default function useDirectMessages(friendshipId) {
     }
   }, [toast]);
 
-  return { messages, loading, sending, send, markRead, del };
+  const clearAll = useCallback(async () => {
+    if (!friendshipId || !userId) return;
+    try {
+      await base44.functions.invoke('friend-service', { action: 'clear_chat', friendship_id: friendshipId });
+      setMessages([]);
+      window.dispatchEvent(new Event('social-badges-refresh'));
+    } catch (err) {
+      toast({ title: 'Temizlenemedi', description: err.response?.data?.error || err.message, variant: 'destructive' });
+    }
+  }, [friendshipId, userId, toast]);
+
+  return { messages, loading, sending, send, markRead, del, clearAll };
 }
