@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ConnectionState, Room, RoomEvent, Track } from 'livekit-client';
+import { Room, RoomEvent, Track } from 'livekit-client';
 import { base44 } from '@/api/base44Client';
 
 const initialDebug = { participantCount: 0, remoteParticipants: 0, remoteTracks: 0, playback: 'hazır' };
@@ -13,6 +13,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   const roomRef = useRef(null);
   const audioElementsRef = useRef(new Set());
   const mutedByModeratorRef = useRef(false);
+  const deafenedRef = useRef(false);
   const [active, setActive] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [deafened, setDeafened] = useState(false);
@@ -47,13 +48,15 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
 
   const attachRemoteAudio = useCallback((track) => {
     if (track.kind !== Track.Kind.Audio) return;
+    if ([...audioElementsRef.current].some((element) => element.dataset.livekitTrack === track.sid)) return;
     const element = track.attach();
     element.autoplay = true;
     element.playsInline = true;
     element.setAttribute('playsinline', 'true');
     element.dataset.livekitVoice = roomId;
+    element.dataset.livekitTrack = track.sid;
     element.style.display = 'none';
-    element.muted = deafened;
+    element.muted = deafenedRef.current;
     document.body.appendChild(element);
     audioElementsRef.current.add(element);
     element.play().then(() => setAudioBlocked(false)).catch((playError) => {
@@ -62,7 +65,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       setError('🔊 Ses başlatılamadı. Ekrana dokunarak tekrar deneyin.');
     });
     refreshState();
-  }, [deafened, refreshState, roomId]);
+  }, [refreshState, roomId]);
 
   const retryAudio = useCallback(async () => {
     try {
@@ -98,6 +101,8 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     room.on(RoomEvent.TrackUnsubscribed, onUnsubscribed);
     room.on(RoomEvent.ParticipantConnected, refreshState);
     room.on(RoomEvent.ParticipantDisconnected, refreshState);
+    room.on(RoomEvent.TrackPublished, refreshState);
+    room.on(RoomEvent.TrackUnpublished, refreshState);
     room.on(RoomEvent.TrackMuted, refreshState);
     room.on(RoomEvent.TrackUnmuted, refreshState);
     room.on(RoomEvent.LocalTrackPublished, refreshState);
@@ -120,9 +125,6 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
         if (cancelled) return;
         setConnectionState('connected');
         setError('');
-        room.remoteParticipants.forEach((participant) => participant.audioTrackPublications.forEach((publication) => {
-          if (publication.track) attachRemoteAudio(publication.track);
-        }));
         room.startAudio().catch(() => setAudioBlocked(true));
         refreshState();
       } catch (connectError) {
@@ -172,7 +174,8 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   }, [active, connectionState, refreshState, requesting]);
 
   const toggleDeafen = useCallback(() => {
-    const next = !deafened;
+    const next = !deafenedRef.current;
+    deafenedRef.current = next;
     setDeafened(next);
     audioElementsRef.current.forEach((element) => { element.muted = next; });
     if (!next) retryAudio();
