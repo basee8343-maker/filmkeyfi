@@ -4,7 +4,11 @@ import { Image } from '@/components/ui/image';
 
 export default function ConversationList({ relations, messages, userId, onOpen, onHide }) {
   const [swiped, setSwiped] = useState(null); const startX = useRef(0);
-  const chats = relations.filter((r) => r.status === 'accepted' && !(r.hidden_for || []).includes(userId)).map((r) => ({ relation: r, latest: messages.filter((m) => m.friendship_id === r.id).at(-1) })).sort((a, b) => new Date(b.latest?.created_date || b.relation.updated_date) - new Date(a.latest?.created_date || a.relation.updated_date));
+  const chats = relations.filter((r) => r.status === 'accepted' && !(r.hidden_for || []).includes(userId)).map((r) => {
+    const clearedAt = new Date(r.cleared_at?.[userId] || 0);
+    const latest = messages.filter((m) => m.friendship_id === r.id && new Date(m.created_date) > clearedAt).at(-1);
+    return { relation: r, latest };
+  }).sort((a, b) => new Date(b.latest?.created_date || b.relation.updated_date) - new Date(a.latest?.created_date || a.relation.updated_date));
   if (!chats.length) return <p className="py-16 text-center text-sm text-muted-foreground">Henüz sohbetiniz yok.</p>;
   return <div>{chats.map(({ relation, latest }) => {
     const mine = relation.requester_id === userId; const name = mine ? relation.recipient_name : relation.requester_name; const avatar = mine ? relation.recipient_avatar : relation.requester_avatar;

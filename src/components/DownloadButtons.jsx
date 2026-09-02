@@ -12,7 +12,8 @@ export default function DownloadButtons({ variant = 'light' }) {
   }, []);
   const install = async (platform) => {
     if (platform === 'android' && prompt) { await prompt.prompt(); await prompt.userChoice; setPrompt(null); return; }
-    setGuide(platform);
+    if (platform === 'ios') { if (navigator.share) await navigator.share({ title: 'FILMKEYFİ', url: window.location.href }); return; }
+    setGuide('android');
   };
   const light = variant === 'light';
   if (installed) return <div className={`flex items-center justify-center gap-2 rounded-xl border p-3 text-sm font-semibold ${light ? 'bg-white/5 border-white/10 text-white' : 'bg-card border-border'}`}><Check className="w-4 h-4 text-green-500" /> Uygulama yüklü</div>;

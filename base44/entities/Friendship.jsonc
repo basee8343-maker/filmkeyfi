@@ -39,6 +39,14 @@
       },
       "default": []
     },
+    "cleared_at": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "default": {}
+    },
     "blocked_by": {
       "type": "array",
       "items": {

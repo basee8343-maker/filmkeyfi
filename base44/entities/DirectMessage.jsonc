@@ -23,6 +23,13 @@
         "type": "string"
       }
     },
+    "read_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "text": {
       "type": "string",
       "maxLength": 2000

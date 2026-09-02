@@ -58,12 +58,22 @@ export default async function(req) {
       return Response.json({ friendship: updated });
     }
 
+    if (action === 'mark_read') {
+      const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
+      if (!friendship || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
+      const received = await base44.asServiceRole.entities.DirectMessage.filter({ friendship_id: friendship.id, recipient_id: user.id }, '-created_date', 500);
+      const unread = received.filter((message) => !(message.read_by || []).includes(user.id));
+      if (unread.length) await base44.asServiceRole.entities.DirectMessage.bulkUpdate(unread.map((message) => ({ id: message.id, read_by: [...new Set([...(message.read_by || []), user.id])] })));
+      return Response.json({ ok: true });
+    }
+
     if (['hide', 'unfriend', 'block'].includes(action)) {
       const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
       if (!friendship || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
       if (action === 'hide') {
         const hiddenFor = [...new Set([...(friendship.hidden_for || []), user.id])];
-        await base44.asServiceRole.entities.Friendship.update(friendship.id, { hidden_for: hiddenFor });
+        const clearedAt = { ...(friendship.cleared_at || {}), [user.id]: new Date().toISOString() };
+        await base44.asServiceRole.entities.Friendship.update(friendship.id, { hidden_for: hiddenFor, cleared_at: clearedAt });
       } else if (action === 'unfriend') {
         await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: 'removed' });
       } else {
@@ -85,8 +95,7 @@ export default async function(req) {
       const recipientName = friendship.requester_id === user.id ? friendship.recipient_name : friendship.requester_name;
       const visibleToBoth = (friendship.hidden_for || []).filter((id) => id !== user.id && id !== recipientId);
       if (visibleToBoth.length !== (friendship.hidden_for || []).length) await base44.asServiceRole.entities.Friendship.update(friendship.id, { hidden_for: visibleToBoth });
-      const message = await base44.asServiceRole.entities.DirectMessage.create({ friendship_id: friendship.id, sender_id: user.id, sender_name: senderName, recipient_id: recipientId, recipient_name: recipientName, participants: friendship.members, text });
-      await base44.asServiceRole.entities.Notification.create({ user_id: recipientId, title: `Yeni mesaj: ${senderName}`, body: text.slice(0, 120), type: 'direct_message', link: '/arkadaslar' });
+      const message = await base44.asServiceRole.entities.DirectMessage.create({ friendship_id: friendship.id, sender_id: user.id, sender_name: senderName, recipient_id: recipientId, recipient_name: recipientName, participants: friendship.members, read_by: [user.id], text });
       return Response.json({ message });
     }
 
