@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Film, DoorOpen, LifeBuoy, CreditCard, TrendingUp, Activity, Trash2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
+import { Users, Film, DoorOpen, LifeBuoy, CreditCard, TrendingUp, Activity, Trash2, Tv, CheckCircle2, Clock3 } from 'lucide-react';
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -50,19 +49,17 @@ export default function AdminDashboard() {
     { label: 'Gelir (₺)', value: stats.revenue, icon: CreditCard, color: 'text-emerald-400' },
   ];
 
-  const chartData = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'].map((d, i) => ({ name: d, izlenme: Math.floor(Math.random() * 500) + 200, kayit: Math.floor(Math.random() * 30) + 5 }));
-  const pieData = [
-    { name: 'BASIC', value: 45, color: 'hsl(217 91% 60%)' },
-    { name: 'STANDARD', value: 30, color: 'hsl(265 83% 60%)' },
-    { name: 'PREMIUM', value: 25, color: 'hsl(0 72% 51%)' },
-  ];
+  const activeRate = stats.totalUsers ? Math.round((stats.activeMembers / stats.totalUsers) * 100) : 0;
 
   if (loading) return <div className="h-64 flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
     <div>
-      <h1 className="text-2xl font-extrabold mb-6">Dashboard</h1>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+      <div className="flex items-end justify-between gap-4 mb-6">
+        <div><h1 className="text-2xl font-extrabold">Dashboard</h1><p className="text-sm text-muted-foreground mt-1">Platformun güncel durumunu ve yönetim aktivitelerini takip edin.</p></div>
+        <p className="hidden sm:block text-xs text-muted-foreground">{new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
         {cards.map((c) => (
           <div key={c.label} className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
@@ -74,25 +71,10 @@ export default function AdminDashboard() {
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4 mb-6">
-        <div className="bg-card border border-border rounded-xl p-4">
-          <h3 className="font-semibold mb-3">Haftalık İzlenme</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={chartData}><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="hsl(0 72% 51%)" stopOpacity={0.5} /><stop offset="95%" stopColor="hsl(0 72% 51%)" stopOpacity={0} /></linearGradient></defs>
-              <XAxis dataKey="name" stroke="hsl(240 5% 65%)" fontSize={12} /><YAxis stroke="hsl(240 5% 65%)" fontSize={12} />
-              <Tooltip contentStyle={{ background: 'hsl(240 8% 7%)', border: '1px solid hsl(240 6% 16%)', borderRadius: 8 }} />
-              <Area type="monotone" dataKey="izlenme" stroke="hsl(0 72% 51%)" fill="url(#g)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-        <div className="bg-card border border-border rounded-xl p-4">
-          <h3 className="font-semibold mb-3">Üyelik Dağılımı</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart><Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-              {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
-            </Pie><Tooltip contentStyle={{ background: 'hsl(240 8% 7%)', border: '1px solid hsl(240 6% 16%)', borderRadius: 8 }} /></PieChart>
-          </ResponsiveContainer>
-        </div>
+      <div className="grid md:grid-cols-3 gap-3 mb-6">
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center"><CheckCircle2 className="w-5 h-5 text-green-400" /></div><div><p className="text-xl font-bold">%{activeRate}</p><p className="text-xs text-muted-foreground">Aktif üyelik oranı</p></div></div>
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"><Tv className="w-5 h-5 text-primary" /></div><div><p className="text-xl font-bold">{(stats.movies || 0) + (stats.series || 0)}</p><p className="text-xs text-muted-foreground">Toplam içerik</p></div></div>
+        <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center"><Clock3 className="w-5 h-5 text-amber-400" /></div><div><p className="text-xl font-bold">{stats.openTickets || 0}</p><p className="text-xs text-muted-foreground">Yanıt bekleyen destek</p></div></div>
       </div>
 
       <div className="bg-card border border-border rounded-xl p-4">

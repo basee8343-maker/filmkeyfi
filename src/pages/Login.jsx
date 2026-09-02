@@ -9,6 +9,9 @@ import AuthBackground from "@/components/auth/AuthBackground";
 import SupportWidget from "@/components/auth/SupportWidget";
 import DownloadButtons from "@/components/DownloadButtons";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import GoogleIcon from "@/components/GoogleIcon";
+import AppleIcon from "@/components/AppleIcon";
+import LegalLinks from "@/components/auth/LegalLinks";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -17,6 +20,7 @@ export default function Login() {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState('');
   const returnTo = safeReturnTo();
   const bannedParam = new URLSearchParams(window.location.search).get('banned');
   const [banned] = useState(bannedParam === '1');
@@ -33,12 +37,20 @@ export default function Login() {
         setError("Hesabınız askıya alınmıştır. Giriş yapamazsınız. İletişime geçin.");
         return;
       }
-      window.location.href = returnTo;
+      const privileged = me.role === 'admin' || me.role === 'moderator';
+      const membershipActive = me.membership_status === 'active' && (!me.membership_end || new Date(me.membership_end) > new Date());
+      window.location.href = privileged || membershipActive ? returnTo : '/abonelik';
     } catch (err) {
       setError(err.message || "Geçersiz e-posta veya şifre");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleProvider = async (provider) => {
+    setError(''); setSocialLoading(provider);
+    try { await base44.auth.loginWithProvider(provider, returnTo); }
+    catch (err) { setError(err.message || 'Sosyal giriş başlatılamadı'); setSocialLoading(''); }
   };
 
   const features = [
@@ -161,15 +173,19 @@ export default function Login() {
           </div>
         </div>
 
-        <Link to={"/register" + (returnTo !== "/" ? "?returnTo=" + encodeURIComponent(returnTo) : "")}>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full h-12 font-medium border-[#2a2a2a] bg-transparent text-white hover:bg-[#1a1a1a] hover:text-white"
-          >
-            Hesap Oluştur
+        <div className="grid sm:grid-cols-2 gap-3 mb-4">
+          <Button type="button" variant="outline" onClick={() => handleProvider('google')} disabled={!!socialLoading} className="h-12 border-[#2a2a2a] bg-white text-black hover:bg-[#eee] hover:text-black">
+            {socialLoading === 'google' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <GoogleIcon className="w-5 h-5 mr-2" />} Google ile Giriş
           </Button>
+          <Button type="button" variant="outline" onClick={() => handleProvider('apple')} disabled={!!socialLoading} className="h-12 border-[#2a2a2a] bg-black text-white hover:bg-[#111] hover:text-white">
+            {socialLoading === 'apple' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <AppleIcon className="w-5 h-5 mr-2" />} Apple ile Giriş
+          </Button>
+        </div>
+        <Link to={"/register" + (returnTo !== "/" ? "?returnTo=" + encodeURIComponent(returnTo) : "")}>
+          <Button type="button" variant="outline" className="w-full h-12 font-medium border-[#2a2a2a] bg-transparent text-white hover:bg-[#1a1a1a] hover:text-white">Hesap Oluştur</Button>
         </Link>
+        <p className="text-center text-[11px] text-[#777] mt-4">Devam ederek yasal koşulları kabul etmiş olursunuz.</p>
+        <LegalLinks className="w-full mt-2 text-[11px] text-[#a0a0a0]" />
       </div>
 
       {/* Footer Features */}

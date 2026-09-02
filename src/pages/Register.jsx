@@ -9,6 +9,9 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import AuthBackground from "@/components/auth/AuthBackground";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
+import GoogleIcon from "@/components/GoogleIcon";
+import AppleIcon from "@/components/AppleIcon";
+import LegalLinks from "@/components/auth/LegalLinks";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -23,6 +26,7 @@ export default function Register() {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState('');
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
 
@@ -90,6 +94,13 @@ export default function Register() {
     } catch (err) {
       setError(err.message || "Kod gönderilemedi");
     }
+  };
+
+  const handleProvider = async (provider) => {
+    if (!acceptTerms) { setError('Kullanım koşullarını kabul etmelisiniz'); return; }
+    setError(''); setSocialLoading(provider);
+    try { await base44.auth.loginWithProvider(provider, '/abonelik'); }
+    catch (err) { setError(err.message || 'Sosyal kayıt başlatılamadı'); setSocialLoading(''); }
   };
 
   const pricingFeatures = [
@@ -220,10 +231,14 @@ export default function Register() {
               </div>
               <label className="flex items-start gap-2 cursor-pointer">
                 <input type="checkbox" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} className="w-4 h-4 mt-0.5 rounded accent-[#e50914] bg-[#0a0a0a] border-[#2a2a2a]" />
-                <span className="text-xs text-[#a0a0a0]">
-                  Kullanım koşullarını ve gizlilik politikasını okudum, kabul ediyorum.
-                </span>
+                <span className="text-xs text-[#a0a0a0]">Yasal koşulları okudum ve kabul ediyorum.</span>
               </label>
+              <LegalLinks className="w-full text-[11px] text-[#e50914]" />
+              <div className="relative py-2"><div className="border-t border-[#2a2a2a]" /><span className="absolute left-1/2 top-0 -translate-x-1/2 bg-[#141414] px-3 text-xs text-[#777]">veya</span></div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Button type="button" variant="outline" onClick={() => handleProvider('google')} disabled={!!socialLoading} className="h-11 bg-white text-black border-white hover:bg-[#eee] hover:text-black">{socialLoading === 'google' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <GoogleIcon className="w-5 h-5 mr-2" />} Google ile Üye Ol</Button>
+                <Button type="button" variant="outline" onClick={() => handleProvider('apple')} disabled={!!socialLoading} className="h-11 bg-black text-white border-[#444] hover:bg-[#111] hover:text-white">{socialLoading === 'apple' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <AppleIcon className="w-5 h-5 mr-2" />} Apple ile Üye Ol</Button>
+              </div>
               <Button type="submit" className="w-full h-12 font-semibold bg-[#e50914] hover:bg-[#f6121d] text-white" disabled={loading}>
                 {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Hesap oluşturuluyor...</> : "Devam Et"}
               </Button>
