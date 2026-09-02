@@ -4,7 +4,7 @@ import DownloadButtons from '@/components/DownloadButtons';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 
 const links = [
   { label: 'Ana Sayfa', path: '/' },
@@ -16,6 +16,7 @@ const links = [
 
 export default function Navbar() {
   const { user } = useCurrentUser();
+  const isActive = membershipActive(user);
   const navigate = useNavigate();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -51,6 +52,7 @@ export default function Navbar() {
           </span>
         </Link>
 
+        {isActive && (
         <nav className="hidden lg:flex items-center gap-1 ml-4">
           {links.map((l) => (
             <Link key={l.path} to={l.path}
@@ -60,12 +62,15 @@ export default function Navbar() {
             </Link>
           ))}
         </nav>
+        )}
 
+        {isActive && (
         <form onSubmit={submit} className="hidden md:flex items-center ml-auto bg-secondary/60 rounded-full px-3 py-1.5 w-44 lg:w-64 focus-within:ring-2 focus-within:ring-ring">
           <Search className="w-4 h-4 text-muted-foreground shrink-0" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Film, dizi ara..."
             className="bg-transparent outline-none px-2 text-sm w-full placeholder:text-muted-foreground" />
         </form>
+        )}
 
         <div className="flex items-center gap-1 ml-auto md:ml-2">
           <ThemeToggle />
@@ -73,9 +78,11 @@ export default function Navbar() {
             <Bell className="w-5 h-5" />
             {unread > 0 && <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-primary text-[10px] font-bold flex items-center justify-center text-primary-foreground">{unread}</span>}
           </Link>
+          {isActive && (
           <Link to="/profil" className="p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
             <User className="w-5 h-5" />
           </Link>
+          )}
           <button onClick={logout} className="hidden sm:block p-2 rounded-full hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors">
             <LogOut className="w-5 h-5" />
           </button>
@@ -91,12 +98,18 @@ export default function Navbar() {
             <Search className="w-4 h-4 text-muted-foreground" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ara..." className="bg-transparent outline-none px-2 text-sm w-full" />
           </form>
-          {links.map((l) => (
+          {isActive && links.map((l) => (
             <Link key={l.path} to={l.path} onClick={() => setOpen(false)}
               className={`block px-3 py-2.5 rounded-lg text-sm font-medium ${location.pathname === l.path ? 'bg-secondary text-foreground' : 'text-muted-foreground'}`}>
               {l.label}
             </Link>
           ))}
+          {!isActive && (
+            <Link to="/abonelik" onClick={() => setOpen(false)}
+              className="block px-3 py-2.5 rounded-lg text-sm font-medium bg-primary/20 text-primary">
+              Abonelik
+            </Link>
+          )}
           <Link to="/güvenlik-protokolü" onClick={() => setOpen(false)}
             className="block px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground flex items-center gap-2 hover:bg-secondary">
             <Shield className="w-4 h-4" /> Güvenlik Protokolü

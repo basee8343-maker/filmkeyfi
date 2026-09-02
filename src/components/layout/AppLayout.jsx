@@ -8,7 +8,7 @@ import BottomNav from '@/components/layout/BottomNav';
 import MaintenanceMode from '@/pages/MaintenanceMode';
 
 // Abonelik gerektirmeyen sayfalar
-const EXEMPT_PATHS = ['/abonelik', '/profil', '/destek', '/bildirimler', '/odeme', '/güvenlik-protokolü', '/bakim'];
+const EXEMPT_PATHS = ['/abonelik', '/destek', '/bildirimler', '/odeme', '/güvenlik-protokolü', '/bakim'];
 
 export default function AppLayout() {
   const { pathname } = useLocation();

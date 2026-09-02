@@ -84,6 +84,13 @@ export default function AdminUsers({ pendingOnly = false }) {
       toast({ title: 'Şifre sıfırlama bağlantısı gönderildi' });
     } catch (e) { toast({ title: 'Sıfırlama başarısız', description: e.message, variant: 'destructive' }); }
   };
+  const testActivate = async (u) => {
+    try {
+      const res = await base44.functions.invoke('shopier-test-activate', { user_id: u.id });
+      toast({ title: 'Test ödeme ile abonelik aktif edildi', description: (res.data || res)?.plan || '' });
+      load();
+    } catch (e) { toast({ title: 'Test başarısız', description: e.message, variant: 'destructive' }); }
+  };
   const del = async (u) => {
     try {
       await base44.entities.User.delete(u.id);
@@ -122,6 +129,7 @@ export default function AdminUsers({ pendingOnly = false }) {
                 {!isActive && !paidUserIds.has(u.id) && <button onClick={() => approve(u)} className={`${btn} bg-green-500/20 text-green-400 hover:bg-green-500/30`}>ONAYLA</button>}
                   {!pendingOnly && <button onClick={() => toggleActive(u)} className={`${btn} ${isActive ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'}`}>{isActive ? 'ASKIYA AL' : 'AKTİF ET'}</button>}
                   {pendingOnly && <button onClick={() => reject(u)} className={`${btn} bg-red-500/20 text-red-400 hover:bg-red-500/30`}>REDDET</button>}
+                  {!pendingOnly && <button onClick={() => testActivate(u)} className={`${btn} bg-purple-500/20 text-purple-400 hover:bg-purple-500/30`}>TEST ÖDEME</button>}
                   {!pendingOnly && <button onClick={() => extend(u)} className={`${btn} bg-blue-500/20 text-blue-400 hover:bg-blue-500/30`}>+30 GÜN</button>}
                   {!pendingOnly && <button onClick={() => resetPass(u)} className={`${btn} bg-purple-500/20 text-purple-400 hover:bg-purple-500/30`}>ŞİFRE SIFIRLA</button>}
                   <button onClick={() => setConfirm(u)} className={`${btn} bg-red-500/20 text-red-400 hover:bg-red-500/30`}>SİL</button>
