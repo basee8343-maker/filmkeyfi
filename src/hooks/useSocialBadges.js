@@ -29,15 +29,20 @@ export default function useSocialBadges(userId) {
       }
       load();
     });
-    const openThread = (event) => { openThreadRef.current = event.detail?.friendshipId || null; };
+    const openThread = (event) => { openThreadRef.current = event.detail?.friendshipId || null; load(); };
     const closeThread = () => { openThreadRef.current = null; };
-    const refresh = () => load();
+    let refreshTimer = null;
+    const refresh = () => {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => { if (active) load(); }, 250);
+    };
     window.addEventListener('social-badges-refresh', refresh);
     window.addEventListener('social-thread-open', openThread);
     window.addEventListener('social-thread-close', closeThread);
     window.addEventListener('online', refresh);
     return () => {
       active = false;
+      if (refreshTimer) clearTimeout(refreshTimer);
       offFriends();
       offMessages();
       window.removeEventListener('social-badges-refresh', refresh);

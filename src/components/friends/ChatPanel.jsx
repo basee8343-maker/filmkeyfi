@@ -52,8 +52,7 @@ export default function ChatPanel({ friendship, userId, invoke, onBack, online }
   const mine = friendship.requester_id === userId;
   const name = mine ? friendship.recipient_name : friendship.requester_name;
   const avatar = mine ? friendship.recipient_avatar : friendship.requester_avatar;
-  const clearedAt = new Date(friendship.cleared_at?.[userId] || 0);
-  const items = allMessages.filter((message) => new Date(message.created_date) > clearedAt);
+  const items = allMessages;
 
   const handleSubmit = async (event) => {
     event.preventDefault();
