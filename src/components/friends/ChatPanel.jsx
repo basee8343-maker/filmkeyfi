@@ -45,7 +45,7 @@ export default function ChatPanel({ friendship, userId, invoke, onBack, online }
     window.dispatchEvent(new CustomEvent('social-thread-open', { detail: { friendshipId: friendship.id } }));
     markRead();
     return () => window.dispatchEvent(new Event('social-thread-close'));
-  }, [friendship?.id]);
+  }, [friendship?.id, markRead]);
 
   if (!friendship) return <section className="bg-card border border-border rounded-xl min-h-80 flex items-center justify-center text-sm text-muted-foreground">Mesajlaşmak için bir arkadaş seçin.</section>;
 

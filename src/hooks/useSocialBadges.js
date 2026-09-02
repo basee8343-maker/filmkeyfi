@@ -34,7 +34,7 @@ export default function useSocialBadges(userId) {
       }
       debouncedLoad();
     });
-    const openThread = (event) => { openThreadRef.current = event.detail?.friendshipId || null; debouncedLoad(); };
+    const openThread = (event) => { openThreadRef.current = event.detail?.friendshipId || null; setBadges((current) => ({ ...current, messages: 0 })); debouncedLoad(); };
     const closeThread = () => { openThreadRef.current = null; };
     window.addEventListener('social-badges-refresh', debouncedLoad);
     window.addEventListener('social-thread-open', openThread);

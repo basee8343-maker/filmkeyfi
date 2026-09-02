@@ -13,6 +13,7 @@ export default function Subscription() {
   const [error, setError] = useState('');
   const [manualMessage, setManualMessage] = useState('');
   const [shopierEnabled, setShopierEnabled] = useState(true);
+  const [paymentMethods, setPaymentMethods] = useState([]);
 
   useEffect(() => {
     Promise.all([
@@ -23,6 +24,17 @@ export default function Subscription() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Gerçek zamanlı ödeme yöntemi takibi — admin panelden değiştiğinde anlık güncellenir
+  useEffect(() => {
+    const loadMethods = async () => {
+      const items = await base44.entities.PaymentMethod.filter({ enabled: true }, 'sort_order', 50).catch(() => []);
+      setPaymentMethods(items);
+    };
+    loadMethods();
+    const unsub = base44.entities.PaymentMethod.subscribe(() => loadMethods());
+    return () => unsub();
+  }, []);
+
   // Aktif aboneliği olan kullanıcıyı ödeme sayfasında tutma — ana sayfaya yönlendir
   useEffect(() => {
     if (!ul && !loading && user && membershipActive(user)) {
@@ -31,6 +43,10 @@ export default function Subscription() {
   }, [user, ul, loading, navigate]);
 
   const buy = async (product) => {
+    if (!paymentMethods.length) {
+      setError('Şu anda aktif bir ödeme yöntemi bulunmuyor. Lütfen daha sonra tekrar deneyin.');
+      return;
+    }
     setPaying(product.id);
     setError('');
     try {
@@ -94,6 +110,12 @@ export default function Subscription() {
         {error && <p className="text-sm text-destructive mb-4 text-center">{error}</p>}
         {manualMessage && <div className="mb-4 rounded-xl border border-green-500/30 bg-green-500/10 p-4 text-center text-sm font-semibold text-green-500">{manualMessage}</div>}
 
+        {paymentMethods.length === 0 && (
+          <div className="mb-6 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-center text-sm font-semibold text-yellow-500">
+            Şu anda aktif bir ödeme yöntemi bulunmuyor. Lütfen daha sonra tekrar deneyin.
+          </div>
+        )}
+
         {products.length === 0 ? (
           <p className="text-center text-muted-foreground">Henüz abonelik paketi bulunmuyor.</p>
         ) : (
@@ -118,7 +140,7 @@ export default function Subscription() {
                     {p.voice_chat && <li className="flex items-center gap-2 text-sm"><Check className="w-4 h-4 text-green-500" /> Sesli Sohbet</li>}
                   </ul>
                   <button onClick={() => buy(p)} disabled={paying === p.id} className="w-full bg-primary text-primary-foreground py-3 rounded-lg font-bold flex items-center justify-center gap-2 disabled:opacity-50">
-                    {paying === p.id ? <><Loader2 className="w-5 h-5 animate-spin" /> İşleniyor...</> : <><CreditCard className="w-5 h-5" /> {shopierEnabled ? 'Satın Al' : 'Manuel Ödeme Kaydı Oluştur'}</>}
+                    {paying === p.id ? <><Loader2 className="w-5 h-5 animate-spin" /> İşleniyor...</> : <><CreditCard className="w-5 h-5" /> {paymentMethods.some((m) => m.provider === 'shopier') ? 'Satın Al' : 'Manuel Ödeme Kaydı Oluştur'}</>}
                   </button>
                 </div>
               </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import ProviderForm from '@/components/admin/payment/ProviderForm';
+import PaymentMethodManager from '@/components/admin/PaymentMethodManager';
 import GeneralSettingsTab from '@/components/admin/payment/GeneralSettingsTab';
 import CurrencySettingsTab from '@/components/admin/payment/CurrencySettingsTab';
 import TaxSettingsTab from '@/components/admin/payment/TaxSettingsTab';
@@ -104,6 +105,7 @@ export default function AdminPaymentSettings() {
 
       {tab !== 'Sanal POS Ayarları' ? renderSettingsTab() : (
         <>
+          <PaymentMethodManager />
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             {/* Left: Provider list */}
             <div className="lg:col-span-3 bg-card border border-border rounded-xl p-3">

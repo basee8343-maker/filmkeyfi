@@ -37,12 +37,28 @@ export default async function (req) {
       return Response.json({ error: 'yetkili kullanıcılar ödeme yapamaz' }, { status: 403 });
     }
 
+    // Merkezi ödeme yöntemi kontrolü — PaymentMethod entity'sinden
+    const allMethods = await base44.asServiceRole.entities.PaymentMethod.list('-sort_order', 50).catch(() => []);
+    const shopierMethod = allMethods.find((m) => m.provider === 'shopier');
+    const manualMethod = allMethods.find((m) => m.provider === 'manual');
     const appConfigs = await base44.asServiceRole.entities.AppConfig.list(100).catch(() => []);
     let shopierSettings = {};
     try { shopierSettings = JSON.parse(appConfigs.find((item) => item.key === 'payment_shopier')?.value || '{}'); } catch {}
 
-    // Benzersiz sipariş ID
-    const shopierActive = shopierSettings.active === true;
+    // PaymentMethod entity'si varsa onun enabled durumunu kullan, yoksa AppConfig fallback
+    let shopierActive;
+    if (shopierMethod) {
+      shopierActive = shopierMethod.enabled === true;
+    } else {
+      shopierActive = shopierSettings.active === true;
+    }
+
+    let manualActive = manualMethod ? manualMethod.enabled === true : false;
+
+    // Hiçbir ödeme yöntemi aktif değilse ödemeyi tamamen reddet
+    if (!shopierActive && !manualActive) {
+      return Response.json({ error: 'Şu anda aktif bir ödeme yöntemi bulunmuyor. Lütfen daha sonra tekrar deneyin.' }, { status: 403 });
+    }
     const orderId = (shopierActive ? 'FK' : 'MANUEL') + Date.now() + Math.floor(Math.random() * 1000);
     if (!shopierActive) {
       const existingManual = await base44.asServiceRole.entities.Payment.filter({ user_id: user.id, product_id: productId, status: 'pending', provider: 'manual' }, '-created_date', 1);
