@@ -11,6 +11,7 @@ import { Image } from '@/components/ui/image';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
 import PartyControlBar from '@/components/player/PartyControlBar';
+import LiveKitDebugPanel from '@/components/player/LiveKitDebugPanel';
 
 export default function WatchParty() {
   const { id } = useParams();
@@ -32,6 +33,7 @@ export default function WatchParty() {
   const [unread, setUnread] = useState(0);
   const [viewerProfiles, setViewerProfiles] = useState({});
   const [joinError, setJoinError] = useState('');
+  const [voiceReady, setVoiceReady] = useState(false);
   const joinedRef = useRef(false);
   const ghostRef = useRef(false);
   const kickedRef = useRef(false);
@@ -39,7 +41,7 @@ export default function WatchParty() {
   const lastSyncRef = useRef({ is_playing: false, current_time: 0 });
   const playerWrapRef = useRef(null);
   const touchStart = useRef({ x: 0, y: 0 });
-  const voice = useVoiceChat({ roomId: id, user, participants: room?.participants, voiceEnabled: !!room?.voice_enabled });
+  const voice = useVoiceChat({ roomId: id, user, participants: room?.participants, voiceEnabled: !!room?.voice_enabled && voiceReady });
 
   useEffect(() => {
     base44.entities.Room.get(id).then(async (r) => {
@@ -59,6 +61,7 @@ export default function WatchParty() {
     base44.functions.invoke('room-presence', { action: 'join', room_id: id })
       .then((res) => {
         joinedRef.current = true;
+        setVoiceReady(true);
         if (res.data?.ghost) ghostRef.current = true;
       })
       .catch((e) => {
@@ -71,7 +74,7 @@ export default function WatchParty() {
   const submitPassword = async () => {
     try {
       await base44.functions.invoke('room-presence', { action: 'join', room_id: id, password: pwInput });
-      joinedRef.current = true; setNeedPassword(false); setPwInput('');
+      joinedRef.current = true; setVoiceReady(true); setNeedPassword(false); setPwInput('');
     } catch (e) {
       toast({ title: 'Hatalı şifre', description: e.response?.data?.error || e.message, variant: 'destructive' });
     }
@@ -138,6 +141,7 @@ export default function WatchParty() {
   const leaveRoom = async () => {
     if (!user || !joinedRef.current || kickedRef.current) return;
     joinedRef.current = false;
+    setVoiceReady(false);
     try { await base44.functions.invoke('room-presence', { action: 'leave', room_id: id }); } catch {}
   };
 
@@ -266,13 +270,14 @@ export default function WatchParty() {
                 const prof = viewerProfiles[p.user_id];
                 const avatar = p.avatar || prof?.avatar;
                 const speaking = p.user_id === user.id ? voice.localSpeaking : voice.speakingIds.includes(p.user_id);
+                const micActive = voice.participantMicStates[p.user_id] ?? false;
                 return (
                   <div key={p.user_id} className="flex items-center gap-2 text-sm">
                     <Link to={`/kullanici/${p.user_id}`} className="shrink-0">
                       {avatar ? <Image src={avatar} className={`w-7 h-7 rounded-full object-cover ${speaking ? 'speaking-glow' : ''}`} fittingType="fill" /> : <span className={`w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold ${speaking ? 'speaking-glow' : ''}`}>{(p.name || '?')[0]}</span>}
                     </Link>
                     <Link to={`/kullanici/${p.user_id}`} className="flex-1 truncate hover:underline">{p.name}{p.user_id === room.owner_id && <Crown className="w-3 h-3 text-amber-400 inline ml-1" />}</Link>
-                    {p.muted && <MicOff className="w-3.5 h-3.5 text-red-400 shrink-0" />}
+                    {micActive ? <Mic className="w-3.5 h-3.5 text-green-400 shrink-0" /> : <MicOff className="w-3.5 h-3.5 text-red-400 shrink-0" />}
                     {canMod && p.user_id !== user.id && room.voice_enabled && (
                       <button onClick={() => toggleMuteUser(p.user_id)} className={`p-1 rounded shrink-0 ${p.muted ? 'text-red-400' : 'text-green-400'}`} title={p.muted ? 'Mikrofonu aç' : 'Mikrofonu kapat'}>
                         {p.muted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
@@ -289,6 +294,7 @@ export default function WatchParty() {
         <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} />
       </div>
 
+      <LiveKitDebugPanel voice={voice} />
       <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} viewerCount={visibleParticipants.length} unread={unread} settingsOpen={showSettings} chatOpen={chatOpen} onBack={handleBack} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => setChatOpen(!chatOpen)} />
 
       <ConfirmDialog
