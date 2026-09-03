@@ -272,7 +272,7 @@ export default function RoleMessageEffect({ roleKey, msgEffect, msgColor, childr
       effect = { type: msgEffect, color: msgColor || effect?.color || '#8b5cf6', glow: effect?.glow || msgColor || '#8b5cf6' };
     }
   }
-  if (!effect) return <div className={className}>{children}</div>;
+  if (!effect) return <div className={`relative inline-block ${className}`}>{children}</div>;
 
   return (
     <div className={`relative inline-block ${className}`}>
