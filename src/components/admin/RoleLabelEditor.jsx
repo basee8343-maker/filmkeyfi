@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { ROLE_DEFINITIONS, setRoleLabelOverrides } from '@/lib/roles';
 
-export default function RoleLabelEditor() {
+export default function RoleLabelEditor({ onUpdated }) {
   const { toast } = useToast();
   const [labels, setLabels] = useState({});
   const [editing, setEditing] = useState({});
@@ -36,6 +36,7 @@ export default function RoleLabelEditor() {
       delete editing[roleKey];
       setEditing({ ...editing });
       toast({ title: 'Rol ismi kaydedildi' });
+      onUpdated?.();
     } catch (e) {
       toast({ title: 'Kaydetme başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' });
     }

@@ -38,6 +38,7 @@ export default function RoleFrameManager({ user, onUpdated }) {
   const setNameEffect = async (effect) => {
     try {
       await base44.functions.invoke('role-management', { action: 'set_name_effect', user_id: user.id, effect });
+      toast({ title: 'İsim animasyonu güncellendi' });
       onUpdated();
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
@@ -45,6 +46,7 @@ export default function RoleFrameManager({ user, onUpdated }) {
   const setMsgEffect = async (effect) => {
     try {
       await base44.functions.invoke('role-management', { action: 'set_msg_effect', user_id: user.id, effect });
+      toast({ title: 'Yazı çerçevesi güncellendi' });
       onUpdated();
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
