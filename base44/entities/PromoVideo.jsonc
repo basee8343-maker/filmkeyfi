@@ -8,9 +8,16 @@
     "file_url": {
       "type": "string"
     },
+    "clips": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "duration": {
       "type": "integer",
-      "default": 60
+      "default": 24
     },
     "status": {
       "type": "string",
@@ -31,8 +38,7 @@
     }
   },
   "required": [
-    "title",
-    "file_url"
+    "title"
   ],
   "rls": {
     "read": {},

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import PromoPlaylist from '@/components/PromoPlaylist';
 
 // Giriş ekranında yayınlanmış tanıtım videosunu arka plan oynatır.
-// Yayınlanmış video yoksa hiçbir şey render etmez (statik arka plan kalır).
+// Klipler sırayla oynar, bitince başa döner. Yayınlanan video yoksa null.
 export default function LoginPromoVideo() {
   const [video, setVideo] = useState(null);
 
@@ -14,16 +15,17 @@ export default function LoginPromoVideo() {
     return () => { active = false; };
   }, []);
 
-  if (!video?.file_url) return null;
+  const clips = video?.clips?.length ? video.clips : (video?.file_url ? [video.file_url] : null);
+  if (!clips) return null;
 
   return (
-    <video
-      src={video.file_url}
-      autoPlay
-      muted
-      loop
-      playsInline
-      className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
-    />
+    <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none select-none">
+      <PromoPlaylist
+        clips={clips}
+        muted
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+      <div className="absolute inset-0 bg-black/35" />
+    </div>
   );
 }
