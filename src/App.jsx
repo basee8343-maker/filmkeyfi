@@ -55,6 +55,7 @@ import BannedScreen from '@/pages/BannedScreen';
 import SecurityProtocol from '@/pages/SecurityProtocol';
 import Friends from '@/pages/Friends';
 import AdminFriendMessages from '@/pages/admin/AdminFriendMessages';
+import AdminPromoVideo from '@/pages/admin/AdminPromoVideo';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -133,6 +134,7 @@ const AuthenticatedApp = () => {
           <Route path="sikayetler" element={<AdminUserReports />} />
           <Route path="ayarlar" element={<AdminSettings />} />
           <Route path="ayalar" element={<AdminSettings />} />
+          <Route path="tanitim-videosu" element={<AdminPromoVideo />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
