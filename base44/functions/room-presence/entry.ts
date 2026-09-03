@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimit, safeErrorResponse, logSecurity } from '../../shared/security.ts';
-import { isModerator, isSiteOwner, immuneToModeration } from '../../shared/roles.ts';
+import { isModerator, isSiteOwner, immuneToModeration, getRoleInfo } from '../../shared/roles.ts';
 
 async function sha256Hex(salt, pw) {
   const data = new TextEncoder().encode(salt + pw);
@@ -85,9 +85,11 @@ export default async function(req) {
         }
         participants.push({ user_id: user.id, name, avatar: user.avatar || '', muted: false, speaking: false });
         await base44.asServiceRole.entities.Room.update(room_id, { participants });
+        const roleInfo = getRoleInfo(me);
+        const rolePrefix = roleInfo.label ? `${roleInfo.icon} ${roleInfo.label} ` : '';
         await base44.asServiceRole.entities.RoomMessage.create({
           room_id, user_id: user.id, user_name: name,
-          text: `${name} odaya katıldı.`, type: 'system'
+          text: `${rolePrefix}${name} odaya katıldı.`, type: 'system'
         });
       }
       await updatePresenceRoom(base44, user.id, room_id);
@@ -192,9 +194,11 @@ export default async function(req) {
     const participants = (room.participants || []).filter((p) => p.user_id !== user.id);
     if (participants.length === 0) {
       await base44.asServiceRole.entities.Room.update(room_id, { participants, status: 'closed', is_playing: false });
+      const roleInfoLeave = getRoleInfo(me);
+      const rolePrefixLeave = roleInfoLeave.label ? `${roleInfoLeave.icon} ${roleInfoLeave.label} ` : '';
       await base44.asServiceRole.entities.RoomMessage.create({
         room_id, user_id: user.id, user_name: name,
-        text: `${name} odadan ayrıldı.`, type: 'system'
+        text: `${rolePrefixLeave}${name} odadan ayrıldı.`, type: 'system'
       });
       return Response.json({ ok: true });
     }
@@ -211,9 +215,11 @@ export default async function(req) {
       is_playing: ownershipTransferred ? room.is_playing : (participants.length === 0 ? false : room.is_playing),
       last_sync: new Date().toISOString()
     });
+    const roleInfoLeave2 = getRoleInfo(me);
+    const rolePrefixLeave2 = roleInfoLeave2.label ? `${roleInfoLeave2.icon} ${roleInfoLeave2.label} ` : '';
     await base44.asServiceRole.entities.RoomMessage.create({
       room_id, user_id: user.id, user_name: name,
-      text: `${name} odadan ayrıldı.`, type: 'system'
+      text: `${rolePrefixLeave2}${name} odadan ayrıldı.`, type: 'system'
     });
     if (ownershipTransferred) {
       await base44.asServiceRole.entities.RoomMessage.create({

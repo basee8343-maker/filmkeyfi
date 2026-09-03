@@ -28,7 +28,7 @@ export default function UserBadge({ userId, name, avatar, memberId, size = 'sm',
   return (
     <Link to={userId ? `/kullanici/${userId}` : '#'} className={`inline-flex items-center gap-2 min-w-0 group hover:opacity-90 ${className}`}>
       {hasFrame
-        ? <ProfileFrame frame={profileFrame} size={size}>{avatarEl}</ProfileFrame>
+        ? <ProfileFrame frame={profileFrame} size={size} avatar={avatar} name={name}>{avatarEl}</ProfileFrame>
         : avatarEl}
       <div className="min-w-0">
         <p className="font-medium text-sm truncate inline-flex items-center gap-1">

@@ -7,6 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Image } from '@/components/ui/image';
 import ChatUserMenu from '@/components/player/ChatUserMenu';
 import ReportDialog from '@/components/ReportDialog';
+import RoleBadge from '@/components/RoleBadge';
 import useMessageProfiles from '@/hooks/useMessageProfiles';
 import { mergeMessages, upsertMessage } from '@/lib/realtimeMessages';
 
@@ -118,8 +119,9 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                    {(profiles[m.user_id]?.avatar || m.user_avatar) ? <Image src={profiles[m.user_id]?.avatar || m.user_avatar} className="w-7 h-7 rounded-full object-cover" fittingType="fill" /> : <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold">{(m.user_name || '?')[0]}</span>}
                  </Link>
                  <div className="min-w-0 flex-1">
-                   <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-1.5">
                      <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="text-xs font-semibold truncate hover:underline">{m.user_name}{user?.id === m.user_id && ' (Sen)'}</Link>
+                     {profiles[m.user_id] && (profiles[m.user_id].display_role || profiles[m.user_id].custom_role?.name) && <RoleBadge user={profiles[m.user_id]} size="sm" showLabel={false} />}
                    </div>
                    <p className="text-sm break-words bg-secondary/50 rounded-lg px-2.5 py-1.5 inline-block">{m.text}</p>
                  </div>

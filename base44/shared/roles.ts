@@ -15,9 +15,9 @@ export const ROLE_DEFINITIONS: Record<string, any> = {
 export const FRAME_DEFINITIONS: Record<string, any> = {
   '': { label: 'Yok', color: '', gradient: '' },
   'lion': { label: 'Aslan 🦁', color: '#d97706', gradient: 'linear-gradient(135deg, #d97706, #fbbf24)' },
-  'galatasaray': { label: 'Galatasaray ⚽', color: '#fbbf24', gradient: 'linear-gradient(135deg, #a8180f, #fbbf24)' },
-  'fenerbahce': { label: 'Fenerbahçe ⚽', color: '#3b82f6', gradient: 'linear-gradient(135deg, #1e3a8a, #facc15)' },
-  'besiktas': { label: 'Beşiktaş ⚽', color: '#e5e7eb', gradient: 'linear-gradient(135deg, #1a1a1a, #e5e7eb)' },
+  'galatasaray': { label: 'Galatasaray ⚽', color: '#ED1C24', gradient: 'linear-gradient(135deg, #a8180f, #fbbf24)', image: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/edb146528_IMG_0545.jpeg' },
+  'fenerbahce': { label: 'Fenerbahçe ⚽', color: '#002244', gradient: 'linear-gradient(135deg, #1e3a8a, #facc15)', image: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ac6a6ab2e_IMG_0547.jpeg' },
+  'besiktas': { label: 'Beşiktaş ⚽', color: '#000000', gradient: 'linear-gradient(135deg, #1a1a1a, #e5e7eb)', image: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/e106215f9_IMG_0546.jpeg' },
   'trabzonspor': { label: 'Trabzonspor ⚽', color: '#7c3aed', gradient: 'linear-gradient(135deg, #5b21b6, #a855f7)' },
   'queen_admin': { label: 'Kraliçe Çerçevesi 👑', color: '#ec4899', gradient: 'linear-gradient(135deg, #ec4899, #f472b6, #fbcfe8)' },
   'admin_helper': { label: 'Yardımcı Çerçevesi 🛡️', color: '#06b6d4', gradient: 'linear-gradient(135deg, #06b6d4, #67e8f9, #a5f3fc)' },

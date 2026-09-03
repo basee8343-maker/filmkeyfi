@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { safeErrorResponse } from '../../shared/security.ts';
-import { isSiteOwner, ROLE_DEFINITIONS, FRAME_DEFINITIONS } from '../../shared/roles.ts';
+import { isSiteOwner, ROLE_DEFINITIONS, FRAME_DEFINITIONS, getRoleInfo } from '../../shared/roles.ts';
 
 export default async function(req) {
   try {
@@ -31,6 +31,16 @@ export default async function(req) {
         action: 'Rol atandı', target: target.email || user_id,
         details: role || 'rol kaldırıldı'
       }).catch(() => {});
+      if (role) {
+        const ri = ROLE_DEFINITIONS[role];
+        if (ri) {
+          await base44.asServiceRole.entities.Notification.create({
+            user_id, title: `${ri.icon} Yeni Rolünüz: ${ri.label}`,
+            body: 'Tebrikler! Yeni rolünüz profilinizde ve odalarda görünüyor.',
+            type: 'role'
+          }).catch(() => {});
+        }
+      }
       return Response.json({ ok: true });
     }
 
@@ -52,6 +62,16 @@ export default async function(req) {
         action: 'Çerçeve atandı', target: target.email || user_id,
         details: frame || 'çerçeve kaldırıldı'
       }).catch(() => {});
+      if (frame) {
+        const fi = FRAME_DEFINITIONS[frame];
+        if (fi) {
+          await base44.asServiceRole.entities.Notification.create({
+            user_id, title: `🖼️ Yeni Çerçeveniz: ${fi.label}`,
+            body: 'Profil çerçeveniz güncellendi.',
+            type: 'role'
+          }).catch(() => {});
+        }
+      }
       return Response.json({ ok: true });
     }
 
@@ -78,6 +98,11 @@ export default async function(req) {
         admin_id: me.id, admin_name: me.username || me.full_name,
         action: 'Özel rol atandı', target: target.email || user_id,
         details: custom_role.name
+      }).catch(() => {});
+      await base44.asServiceRole.entities.Notification.create({
+        user_id, title: `${custom_role.icon} Yeni Özel Rolünüz: ${custom_role.name}`,
+        body: 'Tebrikler! Özel rolünüz profilinizde ve odalarda görünüyor.',
+        type: 'role'
       }).catch(() => {});
       return Response.json({ ok: true });
     }

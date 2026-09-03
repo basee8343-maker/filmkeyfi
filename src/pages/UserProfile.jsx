@@ -55,7 +55,7 @@ export default function UserProfile() {
       <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground mb-4"><ArrowLeft className="w-4 h-4" /> Geri</button>
       {err ? <p className="text-center text-destructive py-10">{err}</p> : profile && (
         <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center">
-          <ProfileFrame frame={profile.profile_frame} size="lg">
+          <ProfileFrame frame={profile.profile_frame} size="lg" avatar={profile.avatar} name={profile.username || profile.full_name}>
             {profile.avatar ? <Image src={profile.avatar} className="w-28 h-28 rounded-full object-cover" fittingType="fill" /> :
               <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-4xl font-bold">{(profile.username || profile.full_name || '?')[0]}</div>}
           </ProfileFrame>

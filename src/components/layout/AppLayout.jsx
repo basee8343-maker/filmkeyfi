@@ -7,6 +7,7 @@ import Navbar from '@/components/layout/Navbar';
 import BottomNav from '@/components/layout/BottomNav';
 import MaintenanceMode from '@/pages/MaintenanceMode';
 import useFriendPresence from '@/hooks/useFriendPresence';
+import useRoleCelebration from '@/hooks/useRoleCelebration';
 
 // Abonelik gerektirmeyen sayfalar
 const EXEMPT_PATHS = ['/abonelik', '/destek', '/bildirimler', '/odeme', '/güvenlik-protokolü', '/bakim'];
@@ -16,6 +17,7 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const { user, loading } = useCurrentUser();
   useFriendPresence(user, true);
+  useRoleCelebration();
   const { publicSettings } = useAuth();
   const isRoom = pathname.startsWith('/oda/');
 

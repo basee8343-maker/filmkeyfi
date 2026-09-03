@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import confetti from 'canvas-confetti';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { ROLE_DEFINITIONS, FRAME_DEFINITIONS } from '@/lib/roles';
@@ -13,6 +14,10 @@ export default function RoleFrameManager({ user, onUpdated }) {
     try {
       await base44.functions.invoke('role-management', { action: 'assign_role', user_id: user.id, role });
       toast({ title: role ? 'Rol atandı' : 'Rol kaldırıldı' });
+      if (role && ROLE_DEFINITIONS[role]) {
+        const ri = ROLE_DEFINITIONS[role];
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: [ri.color, '#fbbf24', '#ffffff'], zIndex: 9999 });
+      }
       onUpdated();
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
@@ -21,6 +26,9 @@ export default function RoleFrameManager({ user, onUpdated }) {
     try {
       await base44.functions.invoke('role-management', { action: 'assign_frame', user_id: user.id, frame });
       toast({ title: frame ? 'Çerçeve atandı' : 'Çerçeve kaldırıldı' });
+      if (frame) {
+        confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ['#fbbf24', '#ffffff', '#ec4899'], zIndex: 9999 });
+      }
       onUpdated();
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
@@ -29,6 +37,7 @@ export default function RoleFrameManager({ user, onUpdated }) {
     try {
       await base44.functions.invoke('role-management', { action: 'create_custom_role', user_id: user.id, ...customRole });
       toast({ title: 'Özel rol atandı' });
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: [customRole.color, '#fbbf24', '#ffffff'], zIndex: 9999 });
       setShowCustomRole(false);
       setCustomRole({ name: '', icon: '✨', color: '#8b5cf6', neon: false });
       onUpdated();
