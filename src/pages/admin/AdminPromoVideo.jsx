@@ -8,15 +8,15 @@ import { Plus, Trash2, Download, Eye, EyeOff, Loader2, Video, CheckCircle2, Refr
 const SCENES = [
   {
     label: 'Sahne 1: Keşfet',
-    prompt: 'Cinematic vertical 9:16 shot of a premium dark-themed movie streaming app on a smartphone, scrolling through a glossy grid of movie posters with red and purple neon accents, smooth scrolling motion, modern UI, dramatic cinematic lighting, high quality, 4k',
+    prompt: 'Cinematic vertical phone screen showing a dark premium streaming app user interface, smooth scrolling through a colorful grid of film thumbnail artwork with red and purple neon glow, modern minimal design, high quality 4k, no real people, no logos',
   },
   {
     label: 'Sahne 2: Oda & Sohbet',
-    prompt: 'Cinematic 9:16 shot of a watch party room interface on a phone, multiple user avatars joining with glowing neon entrance animations, animated chat bubbles popping up, role badges with flame and lightning effects, premium dark UI, smooth transitions, high quality',
+    prompt: 'Cinematic vertical phone screen showing a group watch party room interface, colorful user avatar icons joining with glowing neon animations, floating chat message bubbles, colorful emoji reactions, premium dark UI, smooth motion, no real people, no logos',
   },
   {
-    label: 'Sahne 3: Film & Canlı Sohbet',
-    prompt: 'Cinematic 9:16 shot of a movie playing on a phone screen with a live chat overlay, users reacting with emoji animations, microphone icons glowing, cinematic film footage in background, premium streaming app UI, smooth motion, high quality',
+    label: 'Sahne 3: Canlı Sohbet',
+    prompt: 'Cinematic vertical phone screen showing a video player with a live chat sidebar, glowing microphone icons, floating heart and emoji reactions, premium dark streaming app interface, smooth motion, high quality, no real people, no logos',
   },
 ];
 
