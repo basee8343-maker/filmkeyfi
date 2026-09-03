@@ -2,11 +2,16 @@ import { useEffect, useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { parseRoleMetadata, ROLE_DEFINITIONS, getRoleLabelOverride } from '@/lib/roles';
 import RoleCharacter from '@/components/role/RoleCharacter';
+import FounderVideoOverlay from '@/components/player/FounderVideoOverlay';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function RoleEntrance({ roomId }) {
   const [queue, setQueue] = useState([]);
   const [current, setCurrent] = useState(null);
   const timerRef = useRef(null);
+  const { publicSettings } = useAuth();
+  const founderEntryVideo = publicSettings?.founder_entry_video || '';
+  const founderExitVideo = publicSettings?.founder_exit_video || '';
 
   useEffect(() => {
     const unsub = base44.entities.RoomMessage.subscribe((event) => {
@@ -48,11 +53,18 @@ export default function RoleEntrance({ roomId }) {
     const next = queue[0];
     setQueue((q) => q.slice(1));
     setCurrent(next);
-    const duration = next.isEntry ? 4500 : 4000;
+    const isFounderVideo = next.roleKey === 'founder' && (next.isEntry ? founderEntryVideo : founderExitVideo);
+    const duration = isFounderVideo ? 6000 : (next.isEntry ? 4500 : 4000);
     timerRef.current = setTimeout(() => setCurrent(null), duration);
-  }, [current, queue]);
+  }, [current, queue, founderEntryVideo, founderExitVideo]);
 
   if (!current) return null;
+
+  // Kurucu rolü için gerçek AI videosu oynat
+  const founderVideoUrl = current.isEntry ? founderEntryVideo : founderExitVideo;
+  if (current.roleKey === 'founder' && founderVideoUrl) {
+    return <FounderVideoOverlay url={founderVideoUrl} isEntry={current.isEntry} />;
+  }
 
   const action = current.isEntry ? 'odaya katıldı' : 'odadan ayrıldı';
   const overlayDuration = current.isEntry ? '4.5s' : '4s';

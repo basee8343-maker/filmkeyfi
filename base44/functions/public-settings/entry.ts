@@ -15,6 +15,8 @@ export default async function (req) {
       shopier_enabled: shopier.active === true,
       payment_required: get('payment_required', 'true') === 'true',
       payment_methods: methods.map((m) => ({ id: m.id, provider: m.provider, name: m.display_name, description: m.description || '' })),
+      founder_entry_video: get('founder_entry_video', ''),
+      founder_exit_video: get('founder_exit_video', ''),
     });
   } catch (e) {
     return Response.json({ maintenance_mode: false, registration_open: true, app_theme: 'auto', shopier_enabled: false, payment_required: true, payment_methods: [] });
