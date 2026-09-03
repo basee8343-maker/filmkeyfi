@@ -11,8 +11,9 @@ import RoleBadge from '@/components/RoleBadge';
 import ProfileFrame from '@/components/ProfileFrame';
 import useMessageProfiles from '@/hooks/useMessageProfiles';
 import { mergeMessages, upsertMessage } from '@/lib/realtimeMessages';
-import { parseRoleMetadata } from '@/lib/roles';
+import { parseRoleMetadata, getRoleInfo } from '@/lib/roles';
 import RoleMessageEffect from '@/components/role/RoleMessageEffect';
+import RoleNameEffect from '@/components/role/RoleNameEffect';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 

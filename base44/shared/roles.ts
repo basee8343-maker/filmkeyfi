@@ -6,42 +6,68 @@ export const ROLE_DEFINITIONS: Record<string, any> = {
   'founder': {
     label: 'ADMİN / KURUCU', icon: '🔥', color: '#ff4500', neon: true, priority: 100,
     entry_animation: 'flame-entry', exit_animation: 'flame-exit',
-    show_in_room: true, moderator: true,
+    show_in_room: true, moderator: true, hide_username_entry: true,
+    name_effect: 'flame',
   },
   'queen_admin': {
     label: 'ADMİN KRALİÇESİ', icon: '👑', color: '#ec4899', neon: true, priority: 95,
     entry_animation: 'queen-entry', exit_animation: 'queen-exit',
-    show_in_room: true, moderator: true,
+    show_in_room: true, moderator: true, hide_username_entry: true,
+    name_effect: 'heart',
   },
   'admin_helper': {
     label: 'ADMİN YARDIMCISI', icon: '⚡', color: '#3b82f6', neon: true, priority: 90,
     entry_animation: 'lightning-entry', exit_animation: 'lightning-exit',
-    show_in_room: true, moderator: true,
+    show_in_room: true, moderator: true, hide_username_entry: true,
+    name_effect: 'lightning',
+  },
+  'can_ablam': {
+    label: 'CAN ABLAM', icon: '👑', color: '#ff1744', neon: true, priority: 88,
+    entry_animation: 'queen-entry', exit_animation: 'queen-exit',
+    show_in_room: true, moderator: false, hide_username_entry: true,
+    name_effect: 'diamond',
+  },
+  'can_abim': {
+    label: 'CAN ABİM', icon: '🚗', color: '#00e5ff', neon: true, priority: 87,
+    entry_animation: 'car-entry', exit_animation: 'car-exit',
+    show_in_room: true, moderator: false, hide_username_entry: true,
+    name_effect: 'lightning',
+  },
+  'nargileciler': {
+    label: 'NARGİLECİLER', icon: '🪔', color: '#4caf50', neon: true, priority: 86,
+    entry_animation: 'nargile-entry', exit_animation: 'nargile-exit',
+    show_in_room: true, moderator: false, hide_username_entry: true,
+    name_effect: 'smoke',
   },
   'prince': {
     label: 'PRENS', icon: '👑', color: '#fbbf24', neon: true, priority: 80,
     entry_animation: 'prince-entry', exit_animation: 'prince-exit',
     show_in_room: true, moderator: false,
+    name_effect: 'gold',
   },
   'princess': {
     label: 'PRENSES', icon: '👸', color: '#f472b6', neon: true, priority: 75,
     entry_animation: 'princess-entry', exit_animation: 'princess-exit',
     show_in_room: true, moderator: false,
+    name_effect: 'heart',
   },
   'vip1': {
     label: 'VIP 1', icon: '💎', color: '#06b6d4', neon: true, priority: 70,
     entry_animation: 'diamond-entry', exit_animation: 'diamond-exit',
     show_in_room: false, moderator: false,
+    name_effect: 'diamond',
   },
   'vip2': {
     label: 'VIP 2', icon: '💜', color: '#a855f7', neon: true, priority: 65,
     entry_animation: 'purple-entry', exit_animation: 'purple-exit',
     show_in_room: false, moderator: false,
+    name_effect: 'star',
   },
   'vip3': {
     label: 'VIP 3', icon: '🌟', color: '#facc15', neon: true, priority: 60,
     entry_animation: 'star-entry', exit_animation: 'star-exit',
     show_in_room: false, moderator: false,
+    name_effect: 'star',
   },
   'member': {
     label: 'ÜYE', icon: '👤', color: '#94a3b8', neon: false, priority: 10,
@@ -156,10 +182,23 @@ export function immuneToModeration(user: any): boolean {
   return false;
 }
 
-export function getRoleInfo(user: any): any {
+// Fetch custom role label overrides from AppConfig (key: "role_labels")
+// Returns a map of { roleKey: customLabel }
+export async function getRoleLabelOverrides(base44: any): Promise<Record<string, string>> {
+  try {
+    const records = await base44.asServiceRole.entities.AppConfig.filter({ key: 'role_labels' }, '-created_date', 1).catch(() => []);
+    if (records[0]?.value) {
+      return JSON.parse(records[0].value);
+    }
+  } catch {}
+  return {};
+}
+
+export function getRoleInfo(user: any, labelOverrides: Record<string, string> = {}): any {
   const predefined = ROLE_DEFINITIONS[user?.display_role || ''];
   if (predefined && predefined.label) {
-    return { ...predefined, key: user.display_role, custom: false };
+    const overrideLabel = labelOverrides[user.display_role];
+    return { ...predefined, label: overrideLabel || predefined.label, key: user.display_role, custom: false };
   }
   if (user?.custom_role?.name) {
     return {
@@ -173,6 +212,8 @@ export function getRoleInfo(user: any): any {
       exit_animation: 'member-exit',
       show_in_room: user.custom_role.show_in_room || false,
       moderator: user.custom_role.moderator || false,
+      hide_username_entry: user.custom_role.hide_username_entry || false,
+      name_effect: user.custom_role.name_effect || null,
       priority: 0,
       custom: true,
     };

@@ -639,4 +639,122 @@
     0% { transform: translateY(30px) scale(0.5); opacity: 0; }
     100% { transform: translateY(0) scale(1); opacity: 1; }
   }
+
+  /* === ANİMASYONLU İSİM RENK EFEKTLERİ === */
+  @keyframes name-flame-text {
+    0% { color: #ff4500; text-shadow: 0 0 4px #ff6b00, 0 0 8px #ff4500; }
+    25% { color: #ff8800; text-shadow: 0 0 6px #ffaa00, 0 0 12px #ff6b00; }
+    50% { color: #ffdd00; text-shadow: 0 0 8px #ff8800, 0 0 16px #ff4500; }
+    75% { color: #ff8800; text-shadow: 0 0 6px #ffaa00, 0 0 12px #ff6b00; }
+    100% { color: #ff4500; text-shadow: 0 0 4px #ff6b00, 0 0 8px #ff4500; }
+  }
+  .name-effect-flame { animation: name-flame-text 2s ease-in-out infinite; }
+
+  @keyframes name-lightning-text {
+    0%, 100% { color: #3b82f6; text-shadow: 0 0 4px #60a5fa, 0 0 8px #3b82f6; }
+    10% { color: #dbeafe; text-shadow: 0 0 10px #fff, 0 0 20px #60a5fa; }
+    15% { color: #3b82f6; text-shadow: 0 0 4px #60a5fa, 0 0 8px #3b82f6; }
+    50% { color: #60a5fa; text-shadow: 0 0 6px #93c5fd, 0 0 12px #3b82f6; }
+    55% { color: #fff; text-shadow: 0 0 12px #fff, 0 0 24px #60a5fa; }
+    60% { color: #3b82f6; text-shadow: 0 0 4px #60a5fa, 0 0 8px #3b82f6; }
+  }
+  .name-effect-lightning { animation: name-lightning-text 1.5s ease-in-out infinite; }
+
+  @keyframes name-heart-text {
+    0%, 100% { color: #ec4899; text-shadow: 0 0 4px #f472b6, 0 0 8px #ec4899; }
+    50% { color: #f9a8d4; text-shadow: 0 0 8px #fff0fa, 0 0 16px #ec4899; }
+  }
+  .name-effect-heart { animation: name-heart-text 2s ease-in-out infinite; }
+
+  @keyframes name-diamond-text {
+    0% { color: #ff1744; text-shadow: 0 0 4px #ff5577, 0 0 8px #ff1744, 0 0 1px #fff; }
+    25% { color: #ffffff; text-shadow: 0 0 8px #fff, 0 0 16px #ff1744, 0 0 2px #fff; }
+    50% { color: #ff5577; text-shadow: 0 0 6px #ff1744, 0 0 12px #fff, 0 0 1px #fff; }
+    75% { color: #ffffff; text-shadow: 0 0 8px #fff, 0 0 16px #ff1744, 0 0 2px #fff; }
+    100% { color: #ff1744; text-shadow: 0 0 4px #ff5577, 0 0 8px #ff1744, 0 0 1px #fff; }
+  }
+  .name-effect-diamond { animation: name-diamond-text 2.5s ease-in-out infinite; }
+
+  @keyframes name-star-text {
+    0%, 100% { color: #facc15; text-shadow: 0 0 4px #fde047, 0 0 8px #facc15; }
+    50% { color: #fef08a; text-shadow: 0 0 8px #fff, 0 0 16px #facc15; }
+  }
+  .name-effect-star { animation: name-star-text 2s ease-in-out infinite; }
+
+  @keyframes name-gold-text {
+    0%, 100% { color: #fbbf24; text-shadow: 0 0 4px #fcd34d, 0 0 8px #fbbf24; }
+    50% { color: #fcd34d; text-shadow: 0 0 8px #fef3c7, 0 0 16px #fbbf24; }
+  }
+  .name-effect-gold { animation: name-gold-text 2s ease-in-out infinite; }
+
+  @keyframes name-smoke-text {
+    0%, 100% { color: #4caf50; text-shadow: 0 0 4px #81c784, 0 0 8px #4caf50; }
+    33% { color: #81c784; text-shadow: 0 0 6px #a5d6a7, 0 0 12px #4caf50; }
+    66% { color: #66bb6a; text-shadow: 0 0 5px #c8e6c9, 0 0 10px #4caf50; }
+  }
+  .name-effect-smoke { animation: name-smoke-text 3s ease-in-out infinite; }
+
+  /* === CAN ABİM ARABA ANİMASYONU === */
+  @keyframes car-drive-across {
+    0% { transform: translateX(-120%) scaleX(1); }
+    48% { transform: translateX(0%) scaleX(1); }
+    52% { transform: translateX(0%) scaleX(1); }
+    100% { transform: translateX(120%) scaleX(-1); }
+  }
+  @keyframes car-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  @keyframes car-lightning-strike {
+    0%, 40%, 100% { opacity: 0; }
+    45%, 50% { opacity: 1; }
+    47% { opacity: 0.3; }
+    55%, 60% { opacity: 0.8; }
+    57% { opacity: 0.2; }
+  }
+  @keyframes car-speed-lines {
+    0% { transform: translateX(100%); opacity: 0; }
+    50% { opacity: 0.8; }
+    100% { transform: translateX(-100%); opacity: 0; }
+  }
+  @keyframes car-exhaust {
+    0% { transform: translateX(0) scale(0.5); opacity: 0; }
+    30% { opacity: 0.6; }
+    100% { transform: translateX(-40px) scale(1.5); opacity: 0; }
+  }
+
+  /* === NARGİLECİLER ANİMASYONU === */
+  @keyframes nargile-smoke-rise {
+    0% { transform: translateY(0) scale(0.3); opacity: 0; }
+    20% { opacity: 0.7; }
+    100% { transform: translateY(-80px) scale(2) translateX(15px); opacity: 0; }
+  }
+  @keyframes nargile-smoke-rise-2 {
+    0% { transform: translateY(0) scale(0.3); opacity: 0; }
+    20% { opacity: 0.6; }
+    100% { transform: translateY(-70px) scale(2) translateX(-12px); opacity: 0; }
+  }
+  @keyframes nargile-bubble {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+  @keyframes nargile-person-breathe {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+  }
+  @keyframes nargile-hose-sway {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(2deg); }
+  }
+
+  /* === CAN ABLAM ELMAS TAC ANİMASYONU === */
+  @keyframes diamond-crown-sparkle {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+  @keyframes diamond-shimmer {
+    0% { filter: brightness(1) drop-shadow(0 0 4px #fff); }
+    50% { filter: brightness(1.5) drop-shadow(0 0 12px #fff) drop-shadow(0 0 8px #ff1744); }
+    100% { filter: brightness(1) drop-shadow(0 0 4px #fff); }
+  }
 }
