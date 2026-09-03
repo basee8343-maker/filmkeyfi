@@ -41,12 +41,11 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
     const isExit = remaining.includes('odadan ayrıldı');
     if (!isEntry && !isExit) return;
 
-    processedRef.current.add(msg.id);
-
     // Çerçeve varsa: frame overlay kullan
     if (hasFrame) {
       const frame = frameCache[frameParsed.frameId];
-      if (!frame) return; // çerçeve cache'de yoksa atla
+      if (!frame) return; // çerçeve cache'de yoksa — processedRef'e ekleme, cache dolunca tekrar işlensin
+      processedRef.current.add(msg.id);
       const title = frameParsed.title || '';
       let displayName = remaining.replace('odaya katıldı', '').replace('odadan ayrıldı', '').replace(/[.\s]/g, '').trim();
       if (title && displayName.startsWith(title)) displayName = displayName.slice(title.length).trim();
@@ -61,6 +60,8 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
       }]);
       return;
     }
+
+    processedRef.current.add(msg.id);
 
     // Çerçeve yoksa: rol karakter animasyonu (video yok)
     const roleKey = roleParsed.roleKey || 'custom';
