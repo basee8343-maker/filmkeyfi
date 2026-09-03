@@ -81,6 +81,44 @@ export const ROLE_DEFINITIONS = {
   },
 };
 
+export const MSG_EFFECTS = {
+  founder: 'flame',
+  queen_admin: 'heart',
+  admin_helper: 'lightning',
+  can_ablam: 'diamond',
+  can_abim: 'lightning',
+  nargileciler: 'smoke',
+  prince: 'gold',
+  princess: 'heart',
+  vip1: 'diamond',
+  vip2: 'star',
+  vip3: 'star',
+};
+
+export const NAME_EFFECT_OPTIONS = [
+  { key: '', label: 'Yok / Varsayılan' },
+  { key: 'flame', label: 'Alev' },
+  { key: 'lightning', label: 'Şimşek' },
+  { key: 'heart', label: 'Kalp' },
+  { key: 'diamond', label: 'Elmas' },
+  { key: 'star', label: 'Yıldız' },
+  { key: 'gold', label: 'Altın' },
+  { key: 'smoke', label: 'Duman' },
+  { key: 'solid', label: 'Düz Renk' },
+];
+
+export const MSG_EFFECT_OPTIONS = [
+  { key: '', label: 'Yok / Varsayılan' },
+  { key: 'flame', label: 'Alev Çerçeve' },
+  { key: 'heart', label: 'Kalp Çerçeve' },
+  { key: 'lightning', label: 'Şimşek Çerçeve' },
+  { key: 'diamond', label: 'Elmas Çerçeve' },
+  { key: 'smoke', label: 'Duman Çerçeve' },
+  { key: 'gold', label: 'Altın Çerçeve' },
+  { key: 'star', label: 'Yıldız Çerçeve' },
+  { key: 'solid', label: 'Düz Çerçeve' },
+];
+
 export const FRAME_DEFINITIONS = {
   '': { label: 'Yok', color: '', gradient: '' },
   'galatasaray': {
@@ -207,7 +245,15 @@ export function getRoleInfo(user) {
   const predefined = ROLE_DEFINITIONS[user?.display_role || ''];
   if (predefined && predefined.label) {
     const overrideLabel = ROLE_LABEL_OVERRIDES[user.display_role];
-    return { ...predefined, label: overrideLabel || predefined.label, key: user.display_role, custom: false };
+    const baseMsgEffect = MSG_EFFECTS[user.display_role] || null;
+    return {
+      ...predefined,
+      label: overrideLabel || predefined.label,
+      key: user.display_role,
+      custom: false,
+      name_effect: user?.name_effect || predefined.name_effect || null,
+      msg_effect: user?.msg_effect || baseMsgEffect || null,
+    };
   }
   if (user?.custom_role?.name) {
     return {
@@ -222,10 +268,14 @@ export function getRoleInfo(user) {
       show_in_room: user.custom_role.show_in_room || false,
       moderator: user.custom_role.moderator || false,
       hide_username_entry: user.custom_role.hide_username_entry || false,
-      name_effect: user.custom_role.name_effect || null,
+      name_effect: user?.name_effect || user.custom_role.name_effect || null,
+      msg_effect: user?.msg_effect || user.custom_role.msg_effect || null,
       priority: 0,
       custom: true,
     };
   }
-  return { ...ROLE_DEFINITIONS[''], key: '', custom: false };
+  const result = { ...ROLE_DEFINITIONS[''], key: '', custom: false };
+  if (user?.name_effect) result.name_effect = user.name_effect;
+  if (user?.msg_effect) result.msg_effect = user.msg_effect;
+  return result;
 }

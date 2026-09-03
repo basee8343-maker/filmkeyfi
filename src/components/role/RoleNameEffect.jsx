@@ -11,8 +11,14 @@ const NAME_EFFECT_CLASSES = {
   smoke: 'name-effect-smoke',
 };
 
-export default function RoleNameEffect({ nameEffect, children, className = '', style = {} }) {
-  if (!nameEffect || !NAME_EFFECT_CLASSES[nameEffect]) {
+export default function RoleNameEffect({ nameEffect, color, children, className = '', style = {} }) {
+  if (!nameEffect || nameEffect === 'solid') {
+    if (nameEffect === 'solid' && color) {
+      return <span className={className} style={{ color, ...style }}>{children}</span>;
+    }
+    return <span className={className} style={style}>{children}</span>;
+  }
+  if (!NAME_EFFECT_CLASSES[nameEffect]) {
     return <span className={className} style={style}>{children}</span>;
   }
   return (

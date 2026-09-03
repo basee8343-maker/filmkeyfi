@@ -747,6 +747,16 @@
     50% { transform: rotate(2deg); }
   }
 
+  /* === CAN ABİM ASLAN ANİMASYONU === */
+  @keyframes lion-mane-flow {
+    0%, 100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+    50% { transform: scale(1.06) rotate(2deg); filter: brightness(1.2); }
+  }
+  @keyframes lion-tail-sway {
+    0%, 100% { transform: rotate(-6deg); }
+    50% { transform: rotate(6deg); }
+  }
+
   /* === CAN ABLAM ELMAS TAC ANİMASYONU === */
   @keyframes diamond-crown-sparkle {
     0%, 100% { opacity: 0.6; transform: scale(1); }

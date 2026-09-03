@@ -248,8 +248,30 @@ function StarEffect({ color, glow }) {
   );
 }
 
-export default function RoleMessageEffect({ roleKey, children, className = '' }) {
-  const effect = ROLE_EFFECTS[roleKey];
+function SolidEffect({ color, glow }) {
+  return (
+    <>
+      <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
+        border: `2px solid ${color}`,
+        borderRadius: '0.5rem',
+      }} />
+      <div className="absolute inset-0 rounded-lg pointer-events-none" style={{
+        boxShadow: `0 0 8px 0px ${color}66`,
+        borderRadius: '0.5rem',
+      }} />
+    </>
+  );
+}
+
+export default function RoleMessageEffect({ roleKey, msgEffect, msgColor, children, className = '' }) {
+  let effect = ROLE_EFFECTS[roleKey];
+  if (msgEffect) {
+    if (msgEffect === 'solid') {
+      effect = { type: 'solid', color: msgColor || '#8b5cf6', glow: msgColor || '#8b5cf6' };
+    } else {
+      effect = { type: msgEffect, color: msgColor || effect?.color || '#8b5cf6', glow: effect?.glow || msgColor || '#8b5cf6' };
+    }
+  }
   if (!effect) return <div className={className}>{children}</div>;
 
   return (
@@ -261,6 +283,7 @@ export default function RoleMessageEffect({ roleKey, children, className = '' })
       {effect.type === 'smoke' && <SmokeEffect color={effect.color} glow={effect.glow} />}
       {effect.type === 'gold' && <GoldEffect color={effect.color} glow={effect.glow} />}
       {effect.type === 'star' && <StarEffect color={effect.color} glow={effect.glow} />}
+      {effect.type === 'solid' && <SolidEffect color={effect.color} glow={effect.glow} />}
       <div className="relative z-[1]">{children}</div>
     </div>
   );

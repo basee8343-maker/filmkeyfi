@@ -342,6 +342,7 @@ function CanAblamCharacter({ color = '#ff1744' }) {
 }
 
 function CanAbimCharacter({ color = '#00e5ff' }) {
+  // ASLAN (lion) — araba animasyonu aslan ile değiştirildi
   return (
     <svg viewBox="0 0 320 340" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
       <defs>
@@ -350,18 +351,13 @@ function CanAbimCharacter({ color = '#00e5ff' }) {
           <stop offset="60%" stopColor={color} stopOpacity="0.1" />
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="abimCarBody" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#1a1a2e" />
-          <stop offset="50%" stopColor="#16213e" />
-          <stop offset="100%" stopColor="#0a0a1a" />
-        </linearGradient>
-        <linearGradient id="abimCarAccent" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id="abimMane" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} />
           <stop offset="100%" stopColor="#00b8d4" />
         </linearGradient>
-        <linearGradient id="abimWindow" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.6" />
-          <stop offset="100%" stopColor="#0a0a1a" stopOpacity="0.9" />
+        <linearGradient id="abimBody" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1a1a2e" />
+          <stop offset="100%" stopColor="#0a0a1a" />
         </linearGradient>
         <linearGradient id="abimBolt" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#ffffff" />
@@ -381,74 +377,69 @@ function CanAbimCharacter({ color = '#00e5ff' }) {
       <g style={{ animation: 'car-lightning-strike 2.5s ease-in-out infinite' }}>
         <path d="M 80 20 L 95 50 L 85 50 L 105 80 L 90 55 L 100 55 L 80 20 Z" fill="url(#abimBolt)" style={{ filter: 'drop-shadow(0 0 8px #fff) drop-shadow(0 0 4px #00e5ff)' }} />
       </g>
-      <g style={{ animation: 'car-lightning-strike 2.5s ease-in-out 0.8s infinite' }}>
+      <g style={{ animation: 'car-lightning-strike 2.5s ease-in-out 1.2s infinite' }}>
         <path d="M 240 20 L 255 50 L 245 50 L 265 80 L 250 55 L 260 55 L 240 20 Z" fill="url(#abimBolt)" style={{ filter: 'drop-shadow(0 0 8px #fff) drop-shadow(0 0 4px #00e5ff)' }} />
       </g>
-      <g style={{ animation: 'car-lightning-strike 2.5s ease-in-out 1.5s infinite' }}>
-        <path d="M 160 10 L 170 35 L 163 35 L 178 60 L 168 38 L 175 38 L 160 10 Z" fill="url(#abimBolt)" style={{ filter: 'drop-shadow(0 0 8px #fff) drop-shadow(0 0 4px #00e5ff)' }} />
+
+      {/* Ground */}
+      <ellipse cx="160" cy="300" rx="100" ry="8" fill="#000" opacity="0.4" />
+
+      {/* Lion body */}
+      <g className="char-body-breathe" filter="url(#abimGlow)">
+        {/* Tail */}
+        <g style={{ animation: 'lion-tail-sway 2s ease-in-out infinite', transformOrigin: '230px 250px' }}>
+          <path d="M 230 250 Q 260 240 270 215 Q 275 205 268 200 Q 272 210 262 218" stroke={color} strokeWidth="4" fill="none" strokeLinecap="round" />
+          <circle cx="268" cy="200" r="6" fill="url(#abimMane)" />
+        </g>
+
+        {/* Body */}
+        <ellipse cx="170" cy="255" rx="55" ry="38" fill="url(#abimBody)" stroke={color} strokeWidth="2.5" />
+
+        {/* Legs */}
+        <rect x="130" y="275" width="14" height="25" rx="6" fill="url(#abimBody)" stroke={color} strokeWidth="2" />
+        <rect x="155" y="278" width="14" height="22" rx="6" fill="url(#abimBody)" stroke={color} strokeWidth="2" />
+        <rect x="185" y="278" width="14" height="22" rx="6" fill="url(#abimBody)" stroke={color} strokeWidth="2" />
+        <rect x="210" y="275" width="14" height="25" rx="6" fill="url(#abimBody)" stroke={color} strokeWidth="2" />
+
+        {/* Mane — spiky ring around head */}
+        <g style={{ animation: 'lion-mane-flow 3s ease-in-out infinite', transformOrigin: '120px 200px' }}>
+          {Array.from({ length: 16 }).map((_, i) => {
+            const angle = (i * 360) / 16;
+            const rad = (angle * Math.PI) / 180;
+            const cx = 120 + Math.cos(rad) * 42;
+            const cy = 200 + Math.sin(rad) * 42;
+            const tx = 120 + Math.cos(rad) * 58;
+            const ty = 200 + Math.sin(rad) * 58;
+            return <path key={i} d={`M ${120 + Math.cos(rad) * 28} ${200 + Math.sin(rad) * 28} L ${tx} ${ty} L ${120 + Math.cos(rad + 0.2) * 28} ${200 + Math.sin(rad + 0.2) * 28} Z`} fill="url(#abimMane)" stroke={color} strokeWidth="1" opacity="0.9" />;
+          })}
+          <circle cx="120" cy="200" r="34" fill="url(#abimMane)" opacity="0.85" />
+        </g>
+
+        {/* Head */}
+        <circle cx="120" cy="200" r="26" fill="url(#abimBody)" stroke={color} strokeWidth="2.5" />
+
+        {/* Ears */}
+        <circle cx="100" cy="182" r="7" fill="url(#abimBody)" stroke={color} strokeWidth="2" />
+        <circle cx="140" cy="182" r="7" fill="url(#abimBody)" stroke={color} strokeWidth="2" />
+
+        {/* Eyes — glowing */}
+        <circle cx="110" cy="197" r="3.5" fill={color} className="char-eye-glow" style={{ filter: `drop-shadow(0 0 6px ${color})` }} />
+        <circle cx="130" cy="197" r="3.5" fill={color} className="char-eye-glow" style={{ filter: `drop-shadow(0 0 6px ${color})` }} />
+
+        {/* Nose + snout */}
+        <path d="M 120 207 L 114 213 L 126 213 Z" fill={color} />
+        <path d="M 120 213 L 120 220 M 114 220 Q 120 224 126 220" stroke={color} strokeWidth="1.5" fill="none" strokeLinecap="round" />
+
+        {/* Mouth — roaring */}
+        <path d="M 108 222 Q 120 232 132 222" stroke={color} strokeWidth="2" fill="none" strokeLinecap="round" />
       </g>
 
-      {/* Speed lines behind car */}
+      {/* Electric sparks around mane */}
       <g>
         {[0, 1, 2, 3].map((i) => (
-          <line key={i} x1="20" y1={140 + i * 20} x2="80" y2={140 + i * 20} stroke={color} strokeWidth="2" opacity="0.6" style={{ animation: `car-speed-lines 0.8s linear ${i * 0.15}s infinite` }} />
+          <circle key={i} cx={80 + i * 25} cy={170 + (i % 2) * 20} r="2" fill={color} style={{ animation: `msg-electric-spark 1.5s ease-out ${i * 0.3}s infinite`, filter: `drop-shadow(0 0 4px ${color})` }} />
         ))}
       </g>
-
-      {/* Car — side view, driving */}
-      <g style={{ animation: 'car-bounce 0.3s ease-in-out infinite' }}>
-        {/* Car shadow */}
-        <ellipse cx="160" cy="265" rx="90" ry="8" fill="#000" opacity="0.4" />
-
-        {/* Car body */}
-        <g filter="url(#abimGlow)">
-          {/* Lower body */}
-          <path d="M 70 240 L 70 220 Q 70 210 80 205 L 100 200 Q 110 195 120 185 L 200 185 Q 210 195 220 200 L 240 205 Q 250 210 250 220 L 250 240 L 240 250 L 80 250 Z" fill="url(#abimCarBody)" stroke={color} strokeWidth="2" />
-          {/* Roof */}
-          <path d="M 120 185 Q 130 160 145 158 L 175 158 Q 190 160 200 185 Z" fill="url(#abimCarBody)" stroke={color} strokeWidth="2" />
-          {/* Windows */}
-          <path d="M 128 183 Q 135 165 148 163 L 172 163 Q 185 165 192 183 Z" fill="url(#abimWindow)" />
-          {/* Window divider */}
-          <line x1="160" y1="163" x2="160" y2="183" stroke={color} strokeWidth="1.5" opacity="0.5" />
-          {/* Accent stripe */}
-          <rect x="75" y="225" width="170" height="4" fill="url(#abimCarAccent)" rx="2" />
-          {/* Headlight */}
-          <circle cx="245" cy="220" r="5" fill={color} className="char-eye-glow" style={{ filter: `drop-shadow(0 0 8px ${color})` }} />
-          {/* Taillight */}
-          <circle cx="75" cy="220" r="4" fill="#ff1744" style={{ filter: 'drop-shadow(0 0 6px #ff1744)' }} />
-        </g>
-
-        {/* Wheels */}
-        <g>
-          <circle cx="110" cy="250" r="20" fill="#0a0a1a" stroke={color} strokeWidth="2.5" />
-          <circle cx="110" cy="250" r="10" fill="#1a1a2e" stroke={color} strokeWidth="1.5" />
-          <circle cx="110" cy="250" r="3" fill={color} />
-          {/* Spokes */}
-          {[0, 60, 120, 180, 240, 300].map((angle) => {
-            const rad = (angle * Math.PI) / 180;
-            return <line key={angle} x1="110" y1="250" x2={110 + Math.cos(rad) * 9} y2={250 + Math.sin(rad) * 9} stroke={color} strokeWidth="1" opacity="0.6" />;
-          })}
-        </g>
-        <g>
-          <circle cx="210" cy="250" r="20" fill="#0a0a1a" stroke={color} strokeWidth="2.5" />
-          <circle cx="210" cy="250" r="10" fill="#1a1a2e" stroke={color} strokeWidth="1.5" />
-          <circle cx="210" cy="250" r="3" fill={color} />
-          {[0, 60, 120, 180, 240, 300].map((angle) => {
-            const rad = (angle * Math.PI) / 180;
-            return <line key={angle} x1="210" y1="250" x2={210 + Math.cos(rad) * 9} y2={250 + Math.sin(rad) * 9} stroke={color} strokeWidth="1" opacity="0.6" />;
-          })}
-        </g>
-      </g>
-
-      {/* Exhaust smoke */}
-      <g>
-        {[0, 1, 2].map((i) => (
-          <circle key={i} cx="65" cy="235" r="4" fill={color} opacity="0.4" style={{ animation: `car-exhaust 1s ease-out ${i * 0.3}s infinite` }} />
-        ))}
-      </g>
-
-      {/* Ground line */}
-      <line x1="20" y1="275" x2="300" y2="275" stroke={color} strokeWidth="1" opacity="0.3" strokeDasharray="10 6" />
     </svg>
   );
 }

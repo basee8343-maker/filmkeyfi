@@ -2,7 +2,7 @@ import { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
-import { ROLE_DEFINITIONS, FRAME_DEFINITIONS, BAN_REASONS, getRoleInfo } from '@/lib/roles';
+import { ROLE_DEFINITIONS, FRAME_DEFINITIONS, BAN_REASONS, getRoleInfo, NAME_EFFECT_OPTIONS, MSG_EFFECT_OPTIONS } from '@/lib/roles';
 
 export default function RoleFrameManager({ user, onUpdated }) {
   const { toast } = useToast();
@@ -31,6 +31,20 @@ export default function RoleFrameManager({ user, onUpdated }) {
     try {
       await base44.functions.invoke('role-management', { action: 'assign_frame', user_id: user.id, frame });
       if (frame) confetti({ particleCount: 60, spread: 50, origin: { y: 0.6 }, colors: ['#fbbf24', '#ffffff', '#ec4899'], zIndex: 9999 });
+      onUpdated();
+    } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+
+  const setNameEffect = async (effect) => {
+    try {
+      await base44.functions.invoke('role-management', { action: 'set_name_effect', user_id: user.id, effect });
+      onUpdated();
+    } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+
+  const setMsgEffect = async (effect) => {
+    try {
+      await base44.functions.invoke('role-management', { action: 'set_msg_effect', user_id: user.id, effect });
       onUpdated();
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
@@ -72,6 +86,18 @@ export default function RoleFrameManager({ user, onUpdated }) {
         <option value="">Çerçeve: Yok</option>
         {Object.entries(FRAME_DEFINITIONS).filter(([k]) => k).map(([key, info]) => (
           <option key={key} value={key}>{info.label}</option>
+        ))}
+      </select>
+      <select value={user.name_effect || ''} onChange={(e) => setNameEffect(e.target.value)} className={selectClass} title="İsim animasyonu">
+        <option value="">İsim Anim: Varsayılan</option>
+        {NAME_EFFECT_OPTIONS.filter((o) => o.key).map((o) => (
+          <option key={o.key} value={o.key}>{o.label}</option>
+        ))}
+      </select>
+      <select value={user.msg_effect || ''} onChange={(e) => setMsgEffect(e.target.value)} className={selectClass} title="Mesaj çerçeve efekti">
+        <option value="">Yazı Çerçeve: Varsayılan</option>
+        {MSG_EFFECT_OPTIONS.filter((o) => o.key).map((o) => (
+          <option key={o.key} value={o.key}>{o.label}</option>
         ))}
       </select>
       {isBanned ? (

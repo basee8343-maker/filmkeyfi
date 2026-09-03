@@ -173,6 +173,32 @@ export default async function(req) {
       return Response.json({ ok: true });
     }
 
+    if (action === 'set_name_effect') {
+      const { effect } = body;
+      const valid = ['', 'flame', 'lightning', 'heart', 'diamond', 'star', 'gold', 'smoke', 'solid'];
+      if (!valid.includes(effect)) return Response.json({ error: 'geçersiz efekt' }, { status: 400 });
+      await base44.asServiceRole.entities.User.update(user_id, { name_effect: effect });
+      await base44.asServiceRole.entities.AdminLog.create({
+        admin_id: me.id, admin_name: adminName,
+        action: 'İsim animasyonu ayarlandı', target: target.email || user_id,
+        details: effect || 'varsayılan'
+      }).catch(() => {});
+      return Response.json({ ok: true });
+    }
+
+    if (action === 'set_msg_effect') {
+      const { effect } = body;
+      const valid = ['', 'flame', 'lightning', 'heart', 'diamond', 'star', 'gold', 'smoke', 'solid'];
+      if (!valid.includes(effect)) return Response.json({ error: 'geçersiz efekt' }, { status: 400 });
+      await base44.asServiceRole.entities.User.update(user_id, { msg_effect: effect });
+      await base44.asServiceRole.entities.AdminLog.create({
+        admin_id: me.id, admin_name: adminName,
+        action: 'Mesaj çerçevesi ayarlandı', target: target.email || user_id,
+        details: effect || 'varsayılan'
+      }).catch(() => {});
+      return Response.json({ ok: true });
+    }
+
     return Response.json({ error: 'geçersiz işlem' }, { status: 400 });
   } catch (e) {
     return safeErrorResponse(e);

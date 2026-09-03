@@ -54,6 +54,14 @@
       "type": "string",
       "default": ""
     },
+    "name_effect": {
+      "type": "string",
+      "default": ""
+    },
+    "msg_effect": {
+      "type": "string",
+      "default": ""
+    },
     "is_banned": {
       "type": "boolean",
       "default": false
