@@ -39,16 +39,27 @@ export default function AppLayout() {
     }
   }, [loading, user, pathname, isRoom]);
 
+  // Ban kontrolü — engellenmiş kullanıcıları ban ekranına yönlendir
+  useEffect(() => {
+    if (user?.is_banned && pathname !== '/engellendiniz') {
+      window.location.href = '/engellendiniz';
+    }
+  }, [user?.is_banned, pathname]);
+
   // Gerçek zamanlı askıya alma tespiti
   useEffect(() => {
     if (!user) return;
-    const unsub = base44.entities.Notification.subscribe((ev) => {
+    const unsubNotif = base44.entities.Notification.subscribe((ev) => {
       if (ev.type === 'create' && ev.data?.user_id === user.id && ev.data?.type === 'suspended') {
-        base44.auth.logout();
-        window.location.href = '/login?banned=1';
+        window.location.href = '/engellendiniz';
       }
     });
-    return unsub;
+    const unsubUser = base44.entities.User.subscribe((ev) => {
+      if (ev.type === 'update' && ev.data?.id === user.id && ev.data?.is_banned) {
+        window.location.href = '/engellendiniz';
+      }
+    });
+    return () => { unsubNotif(); unsubUser(); };
   }, [user?.id]);
 
   // Sosyal girişle yeni kayıt olan kullanıcı için admin bildirimi (email kaydı zaten Register'da gönderir, dedup ref_id ile engeller)

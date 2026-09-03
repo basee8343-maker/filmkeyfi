@@ -18,6 +18,7 @@ export default function AdminUsers({ pendingOnly = false }) {
   const [idQuery, setIdQuery] = useState('');
   const [nameQuery, setNameQuery] = useState('');
   const [paidUserIds, setPaidUserIds] = useState(new Set());
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
 
   const filtered = users.filter((u) => {
     if (idQuery.trim() && u.member_id !== idQuery.trim()) return false;
@@ -36,6 +37,9 @@ export default function AdminUsers({ pendingOnly = false }) {
     // Tamamlanmış ödemeleri yükle — "Onayla" butonunu gizlemek için
     base44.entities.Payment.filter({ status: 'completed' }, '-created_date', 500).then((pays) => {
       setPaidUserIds(new Set(pays.map((p) => p.user_id)));
+    }).catch(() => {});
+    base44.entities.UserPresence.filter({ online: true }, '-created_date', 500).then((presences) => {
+      setOnlineUsers(new Set(presences.map((p) => p.user_id)));
     }).catch(() => {});
   };
   useEffect(() => {
@@ -155,6 +159,8 @@ export default function AdminUsers({ pendingOnly = false }) {
                 </div>
                 <span className={`text-xs px-2 py-1 rounded ${isActive ? 'bg-green-500/20 text-green-400' : u.membership_status === 'pending' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>{isActive ? 'Aktif' : u.membership_status === 'pending' ? 'Beklemede' : 'Askıya Alındı'}</span>
                 {paidUserIds.has(u.id) && <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 font-semibold">ÖDENDİ</span>}
+                {onlineUsers.has(u.id) ? <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400">Online</span> : <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">Offline</span>}
+                {u.is_banned && <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 font-semibold" title={u.ban_reason}>🚫 ENGELLİ</span>}
                 {!pendingOnly && <RoleFrameManager user={u} onUpdated={load} />}
                 <div className="flex flex-wrap gap-1.5">
                 {!pendingOnly && <button onClick={() => setDetail(u)} className={`${btn} bg-secondary hover:bg-secondary/70`}>GÖRÜNTÜLE</button>}
@@ -186,6 +192,11 @@ export default function AdminUsers({ pendingOnly = false }) {
               <p><span className="text-muted-foreground">Üyelik başlangıcı:</span> {detail.membership_start ? new Date(detail.membership_start).toLocaleDateString('tr-TR') : '-'}</p>
               <p><span className="text-muted-foreground">Üyelik bitişi:</span> {detail.membership_end ? new Date(detail.membership_end).toLocaleDateString('tr-TR') : '-'}</p>
               <p><span className="text-muted-foreground">Kalan gün:</span> {detail.membership_end ? Math.max(0, Math.ceil((new Date(detail.membership_end) - new Date()) / 86400000)) : '-'}</p>
+              {detail.is_banned && <>
+                <p className="text-red-400 font-semibold mt-2">🚫 ENGELLİ</p>
+                {detail.ban_reason && <p><span className="text-muted-foreground">Engel nedeni:</span> {detail.ban_reason}</p>}
+                {detail.ban_description && <p><span className="text-muted-foreground">Açıklama:</span> {detail.ban_description}</p>}
+              </>}
             </div>
             <button onClick={() => setDetail(null)} className="mt-4 bg-secondary px-4 py-2 rounded-lg text-sm w-full">Kapat</button>
           </div>

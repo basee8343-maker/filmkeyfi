@@ -101,6 +101,10 @@ export const AuthProvider = ({ children }) => {
       // Now check if the user is authenticated
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
+      if (currentUser.is_banned) {
+        window.location.href = '/engellendiniz';
+        return;
+      }
       if (currentUser.role === 'banned' || currentUser.membership_status === 'suspended') {
         await base44.auth.logout();
         window.location.href = '/login?banned=1';

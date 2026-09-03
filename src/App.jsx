@@ -51,6 +51,7 @@ import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
 import PendingApproval from '@/pages/PendingApproval';
+import BannedScreen from '@/pages/BannedScreen';
 import SecurityProtocol from '@/pages/SecurityProtocol';
 import Friends from '@/pages/Friends';
 import AdminFriendMessages from '@/pages/admin/AdminFriendMessages';
@@ -86,6 +87,7 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/onay-bekleniyor" element={<PendingApproval />} />
+      <Route path="/engellendiniz" element={<BannedScreen />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
