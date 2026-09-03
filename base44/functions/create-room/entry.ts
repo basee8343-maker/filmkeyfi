@@ -32,10 +32,15 @@ export default async function(req) {
     const salt = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
     const hashed = password ? (salt + ':' + await sha256Hex(salt, String(password).slice(0, 100))) : '';
 
+    // Assign sequential room number
+    const existingRooms = await base44.asServiceRole.entities.Room.list(500).catch(() => []);
+    const room_number = existingRooms.reduce((max, r) => Math.max(max, r.room_number || 0), 0) + 1;
+
     const room = await base44.asServiceRole.entities.Room.create({
       name, movie_id, movie_title: movie_title || '',
       owner_id: user.id, owner_name,
       password: hashed,
+      room_number,
       max_users: mu,
       chat_enabled: chat_enabled !== false,
       voice_enabled: !!voice_enabled,

@@ -19,13 +19,17 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json();
     const { action, room_id, password, target_id } = body || {};
-    if (!room_id || !['join', 'leave', 'kick', 'set-password', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat', 'change-movie'].includes(action)) {
+    if (!room_id || !['get', 'join', 'leave', 'kick', 'set-password', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat', 'change-movie'].includes(action)) {
       return Response.json({ error: 'invalid request' }, { status: 400 });
     }
     const name = user.username || user.full_name || 'Kullanıcı';
     const room = await base44.asServiceRole.entities.Room.get(room_id);
     if (!room) return Response.json({ error: 'oda bulunamadı' }, { status: 404 });
     if (room.status === 'closed') return Response.json({ error: 'closed' }, { status: 403 });
+
+    if (action === 'get') {
+      return Response.json({ room });
+    }
 
     const me = await base44.asServiceRole.entities.User.get(user.id);
     const isAdmin = me.role === 'admin';

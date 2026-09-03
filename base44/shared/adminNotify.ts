@@ -44,11 +44,9 @@ export async function notifyAdmins(base44: any, opts: {
     }).catch(() => {});
   }
 
-  // Send Web Push to admin devices
-  const pushed = await sendPushToAdmins(base44, cleanTitle, cleanBody, cleanLink);
+  // Send Web Push and Telegram in background — don't block the response
+  sendPushToAdmins(base44, cleanTitle, cleanBody, cleanLink).catch(() => {});
+  sendTelegram(base44, event, telegram_data || {}, dedupRefId).catch(() => {});
 
-  // Send Telegram message
-  const telegram = await sendTelegram(base44, event, telegram_data || {}, dedupRefId);
-
-  return { ok: true, admins: adminUsers.length, pushed, telegram };
+  return { ok: true, admins: adminUsers.length };
 }

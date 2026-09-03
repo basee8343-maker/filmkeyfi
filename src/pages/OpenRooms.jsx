@@ -1,14 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { DoorOpen, Users, Lock, Loader2 } from 'lucide-react';
+import { DoorOpen, Users, Lock, Loader2, Instagram, EyeOff } from 'lucide-react';
 import { Image } from '@/components/ui/image';
+import { useCurrentUser } from '@/lib/useCurrentUser';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function OpenRooms() {
+  const { user } = useCurrentUser();
+  const { toast } = useToast();
   const [rooms, setRooms] = useState([]);
   const [movies, setMovies] = useState({});
   const [owners, setOwners] = useState({});
   const [loading, setLoading] = useState(true);
+
+  const shareRoom = useCallback(async (e, room) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const shareUrl = `${window.location.origin}/oda/${room.id}`;
+    const shareText = `🎬 ${room.name} - FilmKeyfi Watch Party'ne katıl!`;
+    if (navigator.share) {
+      try { await navigator.share({ title: room.name, text: shareText, url: shareUrl }); } catch {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        toast({ title: 'Bağlantı kopyalandı', description: 'Instagram veya başka platformda paylaşabilirsiniz.' });
+      } catch {
+        window.open(shareUrl, '_blank');
+      }
+    }
+  }, [toast]);
 
   const fetchOwners = async (rs) => {
     const ids = [...new Set(rs.map((r) => r.owner_id).filter(Boolean))];
@@ -19,13 +40,14 @@ export default function OpenRooms() {
   };
 
   useEffect(() => {
+    const isAdmin = user?.role === 'admin';
     const load = async () => {
       try {
         const [r, m] = await Promise.all([
           base44.entities.Room.filter({ status: 'active' }, '-created_date', 200).catch(() => []),
           base44.entities.Movie.list(500).catch(() => []),
         ]);
-        const visible = r.filter((x) => !x.hidden && (x.participants?.length || 0) > 0);
+        const visible = r.filter((x) => (isAdmin || !x.hidden) && (x.participants?.length || 0) > 0);
         setRooms(visible);
         const map = {}; m.forEach((mv) => { map[mv.id] = mv; });
         setMovies(map);
@@ -34,15 +56,16 @@ export default function OpenRooms() {
     };
     load();
     const unsub = base44.entities.Room.subscribe((ev) => {
-      if (ev.type === 'create' && ev.data?.status === 'active' && !ev.data.hidden && (ev.data.participants?.length || 0) > 0) {
+      const isAdmin2 = user?.role === 'admin';
+      if (ev.type === 'create' && ev.data?.status === 'active' && (isAdmin2 || !ev.data.hidden) && (ev.data.participants?.length || 0) > 0) {
         setRooms((p) => [ev.data, ...p.filter((x) => x.id !== ev.data.id)]);
         fetchOwners([ev.data]);
       }
-      if (ev.type === 'update') setRooms((p) => p.map((x) => (x.id === ev.data.id ? ev.data : x)).filter((x) => x.status === 'active' && !x.hidden && (x.participants?.length || 0) > 0));
+      if (ev.type === 'update') setRooms((p) => p.map((x) => (x.id === ev.data.id ? ev.data : x)).filter((x) => x.status === 'active' && (isAdmin2 || !x.hidden) && (x.participants?.length || 0) > 0));
       if (ev.type === 'delete') setRooms((p) => p.filter((x) => x.id !== ev.id));
     });
     return unsub;
-  }, []);
+  }, [user?.role]);
 
   return (
     <div className="px-4 sm:px-6 py-6 max-w-5xl mx-auto">
@@ -65,8 +88,19 @@ export default function OpenRooms() {
                    {mv?.poster ? <Image src={mv.poster} className="w-full h-full" fittingType="fill" /> :
                      <div className="w-full h-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center text-3xl">🎬</div>}
                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
-                   {r.password && <span className="absolute top-1 right-1 bg-black/70 rounded-full p-1.5"><Lock className="w-3.5 h-3.5 text-amber-400" /></span>}
-                   <span className="absolute top-1 left-1 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">Oda {i + 1}</span>
+                   {r.password && (
+                     <span className="absolute top-1 right-1 bg-black/80 rounded-full p-1.5 border border-amber-400/60 flex items-center gap-1">
+                       <Lock className="w-3.5 h-3.5 text-amber-400" />
+                       <span className="text-[9px] text-amber-400 font-bold">KİLİTLİ</span>
+                     </span>
+                   )}
+                   {r.hidden && (
+                     <span className="absolute top-1 left-1 bg-black/80 rounded-full p-1.5 border border-blue-400/60 flex items-center gap-1">
+                       <EyeOff className="w-3.5 h-3.5 text-blue-400" />
+                       <span className="text-[9px] text-blue-400 font-bold">GİZLİ</span>
+                     </span>
+                   )}
+                   <span className="absolute bottom-1 left-1 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">Oda {r.room_number || i + 1}</span>
                    <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1"><Users className="w-3 h-3" /> {r.participants?.length || 0}/{r.max_users}</div>
                  </div>
                  <p className="mt-2 text-sm font-semibold text-center truncate max-w-full">{r.name}</p>
@@ -80,7 +114,10 @@ export default function OpenRooms() {
                      </Link>
                    );
                  })()}
-                 <Link to={`/oda/${r.id}`} className="bg-primary text-primary-foreground text-sm font-semibold px-5 py-1.5 rounded-full hover:bg-primary/90">Katıl</Link>
+                 <div className="flex gap-2 items-center">
+                   <Link to={`/oda/${r.id}`} className="bg-primary text-primary-foreground text-sm font-semibold px-5 py-1.5 rounded-full hover:bg-primary/90">Katıl</Link>
+                   <button onClick={(e) => shareRoom(e, r)} className="flex items-center justify-center w-8 h-8 rounded-full bg-secondary hover:bg-primary/20 text-foreground hover:text-primary transition-colors border border-border" title="Instagram'da paylaş"><Instagram className="w-4 h-4" /></button>
+                 </div>
                </div>
              );
            })}

@@ -85,7 +85,7 @@ async function logTelegram(base44: any, log: any) {
 }
 
 // Send a Telegram message for a specific event. Bypasses event toggle for 'test' events.
-export async function sendTelegram(base44: any, event: string, data: Record<string, any>, refId?: string) {
+async function sendTelegramOnce(base44: any, event: string, data: Record<string, any>, refId?: string) {
   const settings = await getTelegramSettings(base44);
 
   if (!settings.enabled && event !== 'test') return { sent: false, reason: 'disabled' };
@@ -125,6 +125,16 @@ export async function sendTelegram(base44: any, event: string, data: Record<stri
     await logTelegram(base44, { event_type: event, recipient: settings.chat_id, message, status: 'failed', error, ref_id: refId, user_name: data?.username || '' });
     return { sent: false, reason: 'network_error', error };
   }
+}
+
+export async function sendTelegram(base44: any, event: string, data: Record<string, any>, refId?: string) {
+  let result = await sendTelegramOnce(base44, event, data, refId);
+  // Retry once on send failure (not on config/disabled issues)
+  if (!result.sent && !['disabled', 'event_disabled', 'not_configured', 'no_template'].includes(result.reason)) {
+    await new Promise(r => setTimeout(r, 1000));
+    result = await sendTelegramOnce(base44, event, data, refId);
+  }
+  return result;
 }
 
 // Retry a failed Telegram log entry by its ID
