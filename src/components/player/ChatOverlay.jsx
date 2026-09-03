@@ -29,6 +29,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   const [reportTarget, setReportTarget] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [menuProfile, setMenuProfile] = useState(null);
+  const [lightbox, setLightbox] = useState(null);
   const scrollRef = useRef(null);
   const profiles = useMessageProfiles(messages.map((message) => message.user_id));
 
@@ -102,10 +103,10 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file: f });
-      await base44.entities.Report.create({ reporter_id: user.id, reporter_name: user.username || user.full_name || 'Kullanıcı', target_id: user.id, target_name: user.username || user.full_name || 'Kullanıcı', context: 'room', context_id: roomId, reason: 'Görsel onay', file_url, status: 'pending' });
-      toast({ title: 'Görsel yönetici onayına iletildi' });
-    } catch { toast({ title: 'Yükleme hatası', variant: 'destructive' }); }
-    finally { setUploading(false); e.target.value = ''; }
+      await base44.functions.invoke('send-chat-image', { file_url, context: 'room', context_id: roomId, text: '' });
+    } catch (err) {
+      toast({ title: 'Görsel gönderilemedi', description: err.response?.data?.error || err.message, variant: 'destructive' });
+    } finally { setUploading(false); e.target.value = ''; }
   };
 
   const copyMemberId = async () => {
@@ -179,8 +180,9 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                     {profiles[m.user_id] && (profiles[m.user_id].display_role || profiles[m.user_id].custom_role?.name) && <RoleBadge user={profiles[m.user_id]} size="sm" showLabel={false} />}
                   </div>
                   <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')} msgEffect={getRoleInfo(profiles[m.user_id] || m)?.msg_effect} msgColor={getRoleInfo(profiles[m.user_id] || m)?.color}>
-                    <p className="text-sm break-words bg-secondary/50 rounded-lg px-2.5 py-1.5 inline-block">{m.text}</p>
-                  </RoleMessageEffect>
+                     {m.file_url && <Image src={m.file_url} alt="foto" className="rounded-lg max-w-[180px] max-h-44 object-cover mb-1 cursor-pointer block" fittingType="fit" onClick={() => setLightbox(m.file_url)} />}
+                     {m.text && <p className="text-sm break-words bg-secondary/50 rounded-lg px-2.5 py-1.5 inline-block">{m.text}</p>}
+                   </RoleMessageEffect>
                  </div>
                  {(isOwner || user?.id === m.user_id) && (
                    <button onClick={() => del(m.id)} className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive" title={isOwner && user?.id !== m.user_id ? 'Sahip: herkesten sil' : 'Sil'}><Trash2 className="w-3.5 h-3.5" /></button>
@@ -233,6 +235,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
         </div>
       )}
       {reportTarget && <ReportDialog targetId={reportTarget.userId} targetName={reportTarget.userName} context="room" contextId={roomId} onClose={() => setReportTarget(null)} />}
+      {lightbox && <div onClick={() => setLightbox(null)} className="fixed inset-0 z-[110] bg-black/90 flex items-center justify-center p-4"><button className="absolute top-4 right-4 text-white p-2"><X className="w-6 h-6" /></button><Image src={lightbox} className="max-w-full max-h-full rounded-lg" fittingType="fit" /></div>}
     </div>
   );
 }

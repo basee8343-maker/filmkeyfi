@@ -33,6 +33,9 @@
     "text": {
       "type": "string",
       "maxLength": 2000
+    },
+    "file_url": {
+      "type": "string"
     }
   },
   "required": [
