@@ -8,6 +8,7 @@ import BottomNav from '@/components/layout/BottomNav';
 import MaintenanceMode from '@/pages/MaintenanceMode';
 import useFriendPresence from '@/hooks/useFriendPresence';
 import useRoleCelebration from '@/hooks/useRoleCelebration';
+import RoleCelebrationOverlay from '@/components/role/RoleCelebrationOverlay';
 
 // Abonelik gerektirmeyen sayfalar
 const EXEMPT_PATHS = ['/abonelik', '/destek', '/bildirimler', '/odeme', '/güvenlik-protokolü', '/bakim'];
@@ -19,6 +20,7 @@ export default function AppLayout() {
   useFriendPresence(user, true);
   useRoleCelebration();
   const { publicSettings } = useAuth();
+  // RoleCelebrationOverlay renders a full-screen animated character when role changes
   const isRoom = pathname.startsWith('/oda/');
 
   // Bakım modu: admin olmayan kullanıcılar bakım ekranı görür
@@ -78,10 +80,11 @@ export default function AppLayout() {
   }, [user?.id]);
 
   if (isRoom) {
-    return <div className="min-h-screen bg-background"><Outlet /></div>;
+    return <div className="min-h-screen bg-background"><RoleCelebrationOverlay /><Outlet /></div>;
   }
   return (
     <div className="min-h-screen bg-background">
+      <RoleCelebrationOverlay />
       <Navbar />
       <main className="pt-[calc(4rem+max(env(safe-area-inset-top),1.5rem))] pb-20 lg:pt-16 lg:pb-8 max-w-[1600px] mx-auto">
         <Outlet />

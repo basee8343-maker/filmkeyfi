@@ -497,4 +497,146 @@
     animation: frame-sparkle-orbit 3s linear infinite;
     pointer-events: none;
   }
+
+  /* === ROL KARAKTER ANİMASYONLARI === */
+  @keyframes char-aura-pulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.08); }
+  }
+  @keyframes char-body-breathe {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-4px) scale(1.02); }
+  }
+  @keyframes char-queen-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @keyframes char-crown-glow {
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 4px currentColor); }
+    50% { filter: brightness(1.3) drop-shadow(0 0 12px currentColor); }
+  }
+  @keyframes char-flame-flicker {
+    0%, 100% { transform: scaleY(1) scaleX(1); opacity: 1; }
+    25% { transform: scaleY(1.15) scaleX(0.9); opacity: 0.85; }
+    50% { transform: scaleY(0.95) scaleX(1.1); opacity: 1; }
+    75% { transform: scaleY(1.1) scaleX(0.95); opacity: 0.9; }
+  }
+  @keyframes char-eye-glow {
+    0%, 100% { opacity: 0.7; filter: brightness(1); }
+    50% { opacity: 1; filter: brightness(1.5); }
+  }
+  @keyframes char-chest-flame {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.1); opacity: 1; }
+  }
+  @keyframes char-chest-bolt {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+  @keyframes char-side-flames {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+  }
+  @keyframes char-heart-float {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { transform: translateY(-20px) scale(1); opacity: 1; }
+    100% { transform: translateY(-120px) scale(0.6); opacity: 0; }
+  }
+  @keyframes char-lightning-flash {
+    0%, 100% { opacity: 0.3; }
+    10% { opacity: 1; }
+    15% { opacity: 0.5; }
+    20% { opacity: 1; }
+    25% { opacity: 0.3; }
+    50% { opacity: 0.8; }
+    55% { opacity: 0.3; }
+  }
+  @keyframes char-hair-sway {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(3deg); }
+  }
+  @keyframes char-dress-sway {
+    0%, 100% { transform: skewX(0deg); }
+    50% { transform: skewX(2deg); }
+  }
+  @keyframes char-sparkle {
+    0%, 100% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+  @keyframes char-flame-particle {
+    0% { transform: translateY(0) scale(1); opacity: 0; }
+    15% { opacity: 1; }
+    100% { transform: translateY(-60px) scale(0.3); opacity: 0; }
+  }
+  @keyframes char-electric-particle {
+    0% { transform: translateY(0) scale(1); opacity: 0; }
+    15% { opacity: 1; }
+    50% { transform: translateY(-15px) translateX(5px) scale(1.3); }
+    100% { transform: translateY(-40px) scale(0.3); opacity: 0; }
+  }
+
+  /* === ROL MESAJ EFEKT ANİMASYONLARI === */
+  @keyframes msg-flame-border {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 0% 300%; }
+  }
+  @keyframes msg-flame-glow {
+    from { opacity: 0.6; }
+    to { opacity: 1; }
+  }
+  @keyframes msg-flame-particle {
+    0% { transform: translateY(0) scale(1); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translateY(-25px) scale(0.3); opacity: 0; }
+  }
+  @keyframes msg-heart-border {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes msg-heart-glow {
+    from { opacity: 0.6; }
+    to { opacity: 1; }
+  }
+  @keyframes msg-heart-particle {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { transform: translateY(-5px) scale(1); opacity: 1; }
+    100% { transform: translateY(-25px) scale(0.4); opacity: 0; }
+  }
+  @keyframes msg-lightning-border {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 300% 0%; }
+  }
+  @keyframes msg-lightning-glow {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  @keyframes msg-electric-spark {
+    0% { transform: translateY(0) scale(1); opacity: 0; }
+    20% { opacity: 1; }
+    50% { transform: translateY(-8px) translateX(3px) scale(1.3); }
+    100% { transform: translateY(-15px) scale(0.3); opacity: 0; }
+  }
+
+  /* === CELEBRATION OVERLAY === */
+  @keyframes celebration-overlay-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes celebration-overlay-fade {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes celebration-char-in {
+    0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+    60% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+    80% { transform: scale(0.95) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+  @keyframes celebration-text-appear {
+    0% { transform: translateY(30px) scale(0.5); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
 }
