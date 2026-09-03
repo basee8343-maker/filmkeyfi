@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import { useTheme } from '@/lib/ThemeContext';
 import { Wrench, UserPlus, Palette, Sun, Moon } from 'lucide-react';
+import RoleLabelEditor from '@/components/admin/RoleLabelEditor';
 
 function Toggle({ on, onChange, disabled }) {
   return (
@@ -99,6 +100,8 @@ export default function AdminSettings() {
             ))}
           </div>
         </div>
+
+        <RoleLabelEditor />
       </div>
     </div>
   );
