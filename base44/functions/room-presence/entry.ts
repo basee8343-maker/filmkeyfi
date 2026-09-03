@@ -86,10 +86,11 @@ export default async function(req) {
         participants.push({ user_id: user.id, name, avatar: user.avatar || '', muted: false, speaking: false });
         await base44.asServiceRole.entities.Room.update(room_id, { participants });
         const roleInfo = getRoleInfo(me);
-        const rolePrefix = roleInfo.label ? `${roleInfo.icon} ${roleInfo.label} ` : '';
+        const roleMeta = roleInfo.label ? `{{ROLE|${roleInfo.color || ''}|${roleInfo.animation || 'pulse'}}}` : '';
+        const rolePrefix = (roleInfo.label && roleInfo.show_in_room) ? `${roleInfo.icon} ${roleInfo.label} ` : '';
         await base44.asServiceRole.entities.RoomMessage.create({
           room_id, user_id: user.id, user_name: name,
-          text: `${rolePrefix}${name} odaya katıldı.`, type: 'system'
+          text: `${roleMeta}${rolePrefix}${name} odaya katıldı.`, type: 'system'
         });
       }
       await updatePresenceRoom(base44, user.id, room_id);
@@ -195,10 +196,11 @@ export default async function(req) {
     if (participants.length === 0) {
       await base44.asServiceRole.entities.Room.update(room_id, { participants, status: 'closed', is_playing: false });
       const roleInfoLeave = getRoleInfo(me);
-      const rolePrefixLeave = roleInfoLeave.label ? `${roleInfoLeave.icon} ${roleInfoLeave.label} ` : '';
+      const roleMetaLeave = roleInfoLeave.label ? `{{ROLE|${roleInfoLeave.color || ''}|${roleInfoLeave.animation || 'pulse'}}}` : '';
+      const rolePrefixLeave = (roleInfoLeave.label && roleInfoLeave.show_in_room) ? `${roleInfoLeave.icon} ${roleInfoLeave.label} ` : '';
       await base44.asServiceRole.entities.RoomMessage.create({
         room_id, user_id: user.id, user_name: name,
-        text: `${rolePrefixLeave}${name} odadan ayrıldı.`, type: 'system'
+        text: `${roleMetaLeave}${rolePrefixLeave}${name} odadan ayrıldı.`, type: 'system'
       });
       return Response.json({ ok: true });
     }
@@ -216,10 +218,11 @@ export default async function(req) {
       last_sync: new Date().toISOString()
     });
     const roleInfoLeave2 = getRoleInfo(me);
-    const rolePrefixLeave2 = roleInfoLeave2.label ? `${roleInfoLeave2.icon} ${roleInfoLeave2.label} ` : '';
+    const roleMetaLeave2 = roleInfoLeave2.label ? `{{ROLE|${roleInfoLeave2.color || ''}|${roleInfoLeave2.animation || 'pulse'}}}` : '';
+    const rolePrefixLeave2 = (roleInfoLeave2.label && roleInfoLeave2.show_in_room) ? `${roleInfoLeave2.icon} ${roleInfoLeave2.label} ` : '';
     await base44.asServiceRole.entities.RoomMessage.create({
       room_id, user_id: user.id, user_name: name,
-      text: `${rolePrefixLeave2}${name} odadan ayrıldı.`, type: 'system'
+      text: `${roleMetaLeave2}${rolePrefixLeave2}${name} odadan ayrıldı.`, type: 'system'
     });
     if (ownershipTransferred) {
       await base44.asServiceRole.entities.RoomMessage.create({

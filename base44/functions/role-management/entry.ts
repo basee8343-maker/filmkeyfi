@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { safeErrorResponse } from '../../shared/security.ts';
-import { isSiteOwner, ROLE_DEFINITIONS, FRAME_DEFINITIONS, getRoleInfo } from '../../shared/roles.ts';
+import { isSiteOwner, FRAME_DEFINITIONS } from '../../shared/roles.ts';
 
 export default async function(req) {
   try {
@@ -8,40 +8,16 @@ export default async function(req) {
     const me = await base44.auth.me();
     if (!me) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Only site owner (role='admin') can manage roles and frames
     if (!isSiteOwner(me)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
 
     const body = await req.json();
     const { action, user_id } = body || {};
     if (!user_id || !action) return Response.json({ error: 'eksik bilgi' }, { status: 400 });
 
-    // Cannot modify site owner accounts
     const target = await base44.asServiceRole.entities.User.get(user_id);
     if (!target) return Response.json({ error: 'kullanıcı bulunamadı' }, { status: 404 });
     if (isSiteOwner(target) && me.id !== user_id) {
       return Response.json({ error: 'Site sahibi üzerinde bu işlem yapılamaz' }, { status: 403 });
-    }
-
-    if (action === 'assign_role') {
-      const { role } = body;
-      if (!ROLE_DEFINITIONS[role] && role !== '') return Response.json({ error: 'geçersiz rol' }, { status: 400 });
-      await base44.asServiceRole.entities.User.update(user_id, { display_role: role, custom_role: null });
-      await base44.asServiceRole.entities.AdminLog.create({
-        admin_id: me.id, admin_name: me.username || me.full_name,
-        action: 'Rol atandı', target: target.email || user_id,
-        details: role || 'rol kaldırıldı'
-      }).catch(() => {});
-      if (role) {
-        const ri = ROLE_DEFINITIONS[role];
-        if (ri) {
-          await base44.asServiceRole.entities.Notification.create({
-            user_id, title: `${ri.icon} Yeni Rolünüz: ${ri.label}`,
-            body: 'Tebrikler! Yeni rolünüz profilinizde ve odalarda görünüyor.',
-            type: 'role'
-          }).catch(() => {});
-        }
-      }
-      return Response.json({ ok: true });
     }
 
     if (action === 'remove_role') {
@@ -85,19 +61,22 @@ export default async function(req) {
     }
 
     if (action === 'create_custom_role') {
-      const { name, icon, color, neon } = body;
+      const { name, icon, color, neon, animation, show_in_room, moderator } = body;
       if (!name || !name.trim()) return Response.json({ error: 'rol adı gerekli' }, { status: 400 });
       const custom_role = {
         name: name.trim().slice(0, 40),
         icon: (icon || '✨').slice(0, 4),
         color: (color || '#8b5cf6').slice(0, 7),
         neon: !!neon,
+        animation: (animation || 'pulse').slice(0, 30),
+        show_in_room: !!show_in_room,
+        moderator: !!moderator,
       };
       await base44.asServiceRole.entities.User.update(user_id, { display_role: '', custom_role });
       await base44.asServiceRole.entities.AdminLog.create({
         admin_id: me.id, admin_name: me.username || me.full_name,
         action: 'Özel rol atandı', target: target.email || user_id,
-        details: custom_role.name
+        details: `${custom_role.name}${custom_role.show_in_room ? ' (oda girişinde göster)' : ''}${custom_role.moderator ? ' (moderatör)' : ''}`
       }).catch(() => {});
       await base44.asServiceRole.entities.Notification.create({
         user_id, title: `${custom_role.icon} Yeni Özel Rolünüz: ${custom_role.name}`,

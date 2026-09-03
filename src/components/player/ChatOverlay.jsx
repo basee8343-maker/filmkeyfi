@@ -10,6 +10,7 @@ import ReportDialog from '@/components/ReportDialog';
 import RoleBadge from '@/components/RoleBadge';
 import useMessageProfiles from '@/hooks/useMessageProfiles';
 import { mergeMessages, upsertMessage } from '@/lib/realtimeMessages';
+import { parseRoleMetadata } from '@/lib/roles';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
@@ -113,18 +114,19 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
            <div key={m.id} className={`flex gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
              {m.type === 'system' ? (
                (() => {
-                 const isRole = /^\p{Extended_Pictographic}/u.test(m.text);
+                 const { text: cleanText, color, hasRole } = parseRoleMetadata(m.text);
+                 const isRole = hasRole && /^\p{Extended_Pictographic}/u.test(cleanText);
                  return (
                    <span
                      className={`text-xs px-3 py-1.5 rounded-full ${isRole ? 'font-bold neon-entrance' : 'text-muted-foreground bg-secondary/50'}`}
                      style={isRole ? {
-                       background: 'linear-gradient(135deg, hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.15))',
-                       color: 'hsl(var(--accent))',
-                       boxShadow: '0 0 10px -1px hsl(var(--accent) / 0.5)',
-                       border: '1px solid hsl(var(--accent) / 0.3)',
+                       background: `linear-gradient(135deg, ${color}33, ${color}22)`,
+                       color: color,
+                       boxShadow: `0 0 10px -1px ${color}80`,
+                       border: `1px solid ${color}55`,
                      } : {}}
                    >
-                     {m.text}
+                     {cleanText}
                    </span>
                  );
                })()

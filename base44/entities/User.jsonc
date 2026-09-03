@@ -19,16 +19,6 @@
     },
     "display_role": {
       "type": "string",
-      "enum": [
-        "",
-        "prince",
-        "princess",
-        "vip1",
-        "vip2",
-        "vip3",
-        "queen_admin",
-        "admin_helper"
-      ],
       "default": ""
     },
     "custom_role": {
@@ -44,6 +34,17 @@
           "type": "string"
         },
         "neon": {
+          "type": "boolean",
+          "default": false
+        },
+        "animation": {
+          "type": "string"
+        },
+        "show_in_room": {
+          "type": "boolean",
+          "default": false
+        },
+        "moderator": {
           "type": "boolean",
           "default": false
         }
