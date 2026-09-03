@@ -1,0 +1,104 @@
+{
+  "name": "UserSession",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "ip": {
+      "type": "string"
+    },
+    "last_ip": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "isp": {
+      "type": "string"
+    },
+    "device_type": {
+      "type": "string"
+    },
+    "os": {
+      "type": "string"
+    },
+    "browser": {
+      "type": "string"
+    },
+    "model": {
+      "type": "string"
+    },
+    "first_login": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_active": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ended_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active"
+    },
+    "gps_lat": {
+      "type": "number"
+    },
+    "gps_lng": {
+      "type": "number"
+    },
+    "gps_accuracy": {
+      "type": "number"
+    },
+    "gps_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "user_id",
+    "session_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

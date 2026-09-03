@@ -3,6 +3,7 @@ import { KeyRound } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import BlockedUsers from '@/components/profile/BlockedUsers';
+import LocationSharing from '@/components/profile/LocationSharing';
 
 export default function ProfileSettings({ user }) {
   const { toast } = useToast(); const [saving, setSaving] = useState(false); const [form, setForm] = useState({ current: '', next: '', confirm: '' });
@@ -20,6 +21,7 @@ export default function ProfileSettings({ user }) {
   return <div className="space-y-5">
     <form onSubmit={submit} className="rounded-2xl border border-border bg-card p-5 space-y-3"><h2 className="flex items-center gap-2 font-bold"><KeyRound className="w-5 h-5" />Şifre Değiştir</h2><Password label="Mevcut Şifre" value={form.current} onChange={(current) => setForm({ ...form, current })} /><Password label="Yeni Şifre" value={form.next} onChange={(next) => setForm({ ...form, next })} /><Password label="Yeni Şifre Tekrar" value={form.confirm} onChange={(confirm) => setForm({ ...form, confirm })} /><button disabled={saving} className="rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? 'Değiştiriliyor...' : 'Şifreyi Değiştir'}</button></form>
     <section><h2 className="mb-3 font-bold">Engellenenler Listesi</h2><BlockedUsers /></section>
+    <LocationSharing user={user} />
   </div>;
 }
 

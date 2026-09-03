@@ -110,7 +110,12 @@ export default async function(req) {
         banned_at: new Date().toISOString(),
         banned_by: me.id,
         membership_status: 'blocked',
+        active_session_id: '',
       });
+      await base44.asServiceRole.entities.UserSession.updateMany(
+        { user_id, status: 'active' },
+        { $set: { status: 'inactive', ended_at: new Date().toISOString() } }
+      ).catch(() => {});
       await removeFromAllRooms(base44, user_id, targetName);
       await base44.asServiceRole.entities.Notification.create({
         user_id, title: '🚫 Hesabınız engellendi',

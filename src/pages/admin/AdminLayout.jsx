@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import { LayoutDashboard, UserCheck, Users, Film, FolderTree, DoorOpen, MessageSquare, LifeBuoy, CreditCard, RefreshCw, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, Crown, ChevronDown, Package as PackageIcon, Home, Flag, MessageCircle, Video } from 'lucide-react';
+import { LayoutDashboard, UserCheck, Users, Film, FolderTree, DoorOpen, MessageSquare, LifeBuoy, CreditCard, RefreshCw, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, Crown, ChevronDown, Package as PackageIcon, Home, Flag, MessageCircle, Video, Smartphone } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAdminNotifications, requestNotificationPermission } from '@/hooks/useAdminNotifications';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -26,6 +26,7 @@ const nav = [
   { to: '/admin/bildirimler', label: 'Bildirimler', icon: Bell },
   { to: '/admin/telegram', label: 'Telegram Bildirimleri', icon: MessageCircle },
   { to: '/admin/guvenlik', label: 'Güvenlik', icon: ShieldAlert },
+  { to: '/admin/oturumlar', label: 'Oturumlar / Cihazlar', icon: Smartphone },
   { to: '/admin/sikayetler', label: 'Şikayetler', icon: Flag },
   { to: '/admin/tanitim-videosu', label: 'Tanıtım Videosu', icon: Video },
   { to: '/admin/ayarlar', label: 'Ayarlar', icon: Settings },

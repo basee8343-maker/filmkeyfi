@@ -130,6 +130,7 @@ export default function AdminUsers({ pendingOnly = false }) {
   };
   const del = async (u) => {
     try {
+      await base44.entities.UserSession.updateMany({ user_id: u.id, status: 'active' }, { $set: { status: 'inactive', ended_at: new Date().toISOString() } }).catch(() => {});
       await base44.entities.User.delete(u.id);
       await log('Kullanıcı silindi', u.email);
       toast({ title: 'Kullanıcı silindi.' }); setConfirm(null); load();
