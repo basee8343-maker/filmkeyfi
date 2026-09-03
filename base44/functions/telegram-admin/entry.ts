@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { getWhatsAppSettings, saveWhatsAppSettings, sendWhatsApp, retryWhatsAppLog } from '../../shared/whatsapp.ts';
+import { getTelegramSettings, saveTelegramSettings, sendTelegram, retryTelegramLog } from '../../shared/telegram.ts';
 
 export default async function (req) {
   try {
@@ -10,57 +10,55 @@ export default async function (req) {
     const body = await req.json().catch(() => ({}));
     const { action } = body;
 
-    // Get settings — token is never returned, only token_set boolean
+    // Get settings — bot_token is never returned, only token_set boolean
     if (action === 'get_settings') {
-      const s = await getWhatsAppSettings(base44);
+      const s = await getTelegramSettings(base44);
       return Response.json({
         enabled: s.enabled,
-        admin_phone: s.admin_phone,
-        phone_number_id: s.phone_number_id,
-        token_set: !!s.api_token,
+        chat_id: s.chat_id,
+        token_set: !!s.bot_token,
         events: s.events,
         templates: s.templates,
       });
     }
 
-    // Save settings — only update token if a new one is provided
+    // Save settings — only update bot_token if a new one is provided
     if (action === 'save_settings') {
-      const current = await getWhatsAppSettings(base44);
+      const current = await getTelegramSettings(base44);
       const u = body.settings || {};
       const newSettings = {
         enabled: u.enabled ?? current.enabled,
-        admin_phone: u.admin_phone ?? current.admin_phone,
+        chat_id: u.chat_id ?? current.chat_id,
         // Keep existing token unless a new one is explicitly provided
-        api_token: u.api_token !== undefined ? (u.api_token || '') : current.api_token,
-        phone_number_id: u.phone_number_id ?? current.phone_number_id,
+        bot_token: u.bot_token !== undefined ? (u.bot_token || '') : current.bot_token,
         events: { ...current.events, ...(u.events || {}) },
         templates: { ...current.templates, ...(u.templates || {}) },
       };
-      await saveWhatsAppSettings(base44, newSettings);
+      await saveTelegramSettings(base44, newSettings);
       return Response.json({ ok: true });
     }
 
     // Send test message
     if (action === 'test') {
-      const result = await sendWhatsApp(base44, 'test', { date: new Date().toLocaleString('tr-TR') }, `test:${Date.now()}`);
+      const result = await sendTelegram(base44, 'test', { date: new Date().toLocaleString('tr-TR') }, `test:${Date.now()}`);
       return Response.json(result);
     }
 
     // Retry a failed message
     if (action === 'retry') {
-      const result = await retryWhatsAppLog(base44, body.log_id);
+      const result = await retryTelegramLog(base44, body.log_id);
       return Response.json(result);
     }
 
     // Get notification history
     if (action === 'get_history') {
-      const logs = await base44.asServiceRole.entities.WhatsAppLog.list('-created_date', 100);
+      const logs = await base44.asServiceRole.entities.TelegramLog.list('-created_date', 100);
       return Response.json({ logs });
     }
 
     // Delete a log entry
     if (action === 'delete_log') {
-      await base44.asServiceRole.entities.WhatsAppLog.delete(body.log_id).catch(() => {});
+      await base44.asServiceRole.entities.TelegramLog.delete(body.log_id).catch(() => {});
       return Response.json({ ok: true });
     }
 

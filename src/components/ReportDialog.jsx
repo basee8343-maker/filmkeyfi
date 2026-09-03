@@ -50,7 +50,7 @@ export default function ReportDialog({ targetId, targetName, context, contextId,
           title: 'Yeni şikayet bildirimi geldi',
           body: `${targetName || 'Bilinmeyen'} — ${reason}`,
           link: '/admin/sikayetler',
-          whatsapp_data: { username: user.username || user.full_name, subject: targetName || 'Bilinmeyen', message: `${reason}${detail ? ' — ' + detail : ''}`, date: new Date().toLocaleString('tr-TR') }
+          telegram_data: { username: user.username || user.full_name, subject: targetName || 'Bilinmeyen', message: `${reason}${detail ? ' — ' + detail : ''}`, date: new Date().toLocaleString('tr-TR') }
         }).catch(() => {});
       }
       toast({ title: 'Şikayetiniz alındı', description: 'İnceleyeceğiz.' });

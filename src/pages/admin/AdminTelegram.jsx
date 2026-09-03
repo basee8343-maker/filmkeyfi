@@ -13,8 +13,6 @@ const EVENT_LABELS = {
   subscription_cancelled: 'Abonelik İptal',
 };
 
-const TEMPLATE_EVENTS = ['new_user', 'support', 'support_message', 'report', 'payment', 'subscription_active', 'subscription_cancelled'];
-
 function timeAgo(d) {
   const diff = Date.now() - new Date(d).getTime();
   const min = Math.floor(diff / 60000);
@@ -25,7 +23,7 @@ function timeAgo(d) {
   return `${Math.floor(hr / 24)} gün önce`;
 }
 
-export default function AdminWhatsApp() {
+export default function AdminTelegram() {
   const { toast } = useToast();
   const [tab, setTab] = useState('settings');
   const [settings, setSettings] = useState(null);
@@ -38,7 +36,7 @@ export default function AdminWhatsApp() {
   const [tokenInput, setTokenInput] = useState('');
 
   const call = useCallback(async (payload) => {
-    const res = await base44.functions.invoke('whatsapp-admin', payload);
+    const res = await base44.functions.invoke('telegram-admin', payload);
     return res.data || res;
   }, []);
 
@@ -64,7 +62,7 @@ export default function AdminWhatsApp() {
     setSaving(true);
     try {
       const merged = { ...settings, ...partial };
-      if (tokenInput) { merged.api_token = tokenInput; }
+      if (tokenInput) { merged.bot_token = tokenInput; }
       await call({ action: 'save_settings', settings: merged });
       setSettings(merged);
       if (tokenInput) { setTokenInput(''); }
@@ -81,10 +79,10 @@ export default function AdminWhatsApp() {
     try {
       const res = await call({ action: 'test' });
       if (res.sent) {
-        toast({ title: 'Test mesajı başarıyla gönderildi', description: 'WhatsApp numaranızı kontrol edin.' });
+        toast({ title: 'Test mesajı başarıyla gönderildi', description: 'Telegram sohbetinizi kontrol edin.' });
       } else {
-        const reason = res.reason === 'not_configured' ? 'WhatsApp API yapılandırılmamış. Ayarlar sekmesinden bağlantıyı yapılandırın.' :
-                       res.reason === 'disabled' ? 'WhatsApp bildirimleri kapalı.' :
+        const reason = res.reason === 'not_configured' ? 'Telegram yapılandırılmamış. Bot Token ve Chat ID girin.' :
+                       res.reason === 'disabled' ? 'Telegram bildirimleri kapalı.' :
                        res.reason === 'event_disabled' ? 'Bu olay türü kapalı.' :
                        res.error || res.reason || 'Bilinmeyen hata';
         toast({ title: 'Test başarısız', description: reason, variant: 'destructive' });
@@ -118,26 +116,25 @@ export default function AdminWhatsApp() {
 
   if (loading || !settings) return <p className="text-muted-foreground">Yükleniyor...</p>;
 
-  const connected = settings.token_set && !!settings.phone_number_id && !!settings.admin_phone;
+  const connected = settings.token_set && !!settings.chat_id;
 
   const tabs = [
     { key: 'settings', label: 'Ayarlar' },
     { key: 'events', label: 'Olaylar' },
-    { key: 'templates', label: 'Şablonlar' },
     { key: 'history', label: 'Geçmiş' },
   ];
 
   return (
     <div>
-      <h1 className="text-2xl font-extrabold mb-4">WhatsApp Bildirimleri</h1>
+      <h1 className="text-2xl font-extrabold mb-4">Telegram Bildirimleri</h1>
 
       {/* Connection status */}
       <div className={`rounded-xl p-4 mb-4 border ${connected ? 'bg-green-500/10 border-green-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
         <p className={`font-semibold text-sm ${connected ? 'text-green-500' : 'text-amber-500'}`}>
-          {connected ? 'WhatsApp bağlantısı aktif' : 'WhatsApp bağlantısı yapılmadı'}
+          {connected ? 'Telegram bağlantısı aktif' : 'Telegram bağlantısı yapılmadı'}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {connected ? `Numara: ${settings.admin_phone} · Telefon Numarası ID: ${settings.phone_number_id}` : 'API yapılandırması tamamlanmadı. Ayarlar sekmesinden bağlantıyı yapılandırın.'}
+          {connected ? `Chat ID: ${settings.chat_id}` : 'Bot Token ve Chat ID girerek bağlantıyı yapılandırın.'}
         </p>
       </div>
 
@@ -153,8 +150,8 @@ export default function AdminWhatsApp() {
         <div className="space-y-4 max-w-lg">
           <label className="flex items-center justify-between bg-card border border-border rounded-xl p-4">
             <div>
-              <p className="font-semibold text-sm">WhatsApp Bildirimleri</p>
-              <p className="text-xs text-muted-foreground">Açık olduğunda olaylar WhatsApp'a gönderilir</p>
+              <p className="font-semibold text-sm">Telegram Bildirimleri</p>
+              <p className="text-xs text-muted-foreground">Açık olduğunda olaylar Telegram'a gönderilir</p>
             </div>
             <button onClick={() => save({ enabled: !settings.enabled })} className={`w-12 h-7 rounded-full transition-colors relative ${settings.enabled ? 'bg-primary' : 'bg-secondary'}`}>
               <span className={`absolute top-1 w-5 h-5 rounded-full bg-white transition-transform ${settings.enabled ? 'left-6' : 'left-1'}`} />
@@ -163,35 +160,30 @@ export default function AdminWhatsApp() {
 
           <div className="bg-card border border-border rounded-xl p-4 space-y-3">
             <div>
-              <label className="text-sm font-semibold">Admin WhatsApp Numarası</label>
-              <p className="text-xs text-muted-foreground mb-1.5">Bildirimlerin gönderileceği numara (ülke kodu ile, örn: 905518270548)</p>
-              <input value={settings.admin_phone} onChange={(e) => setSettings({ ...settings, admin_phone: e.target.value })} className="w-full bg-secondary/60 rounded-lg px-3 py-2 text-sm outline-none border border-border" placeholder="905xxxxxxxxx" />
+              <label className="text-sm font-semibold">Telegram Bot Token</label>
+              <p className="text-xs text-muted-foreground mb-1.5">BotFather'dan alınan bot erişim anahtarı</p>
+              <input type="password" value={tokenInput} onChange={(e) => setTokenInput(e.target.value)} placeholder={settings.token_set ? '•••••••••••••••• (değiştirmek için yeni token girin)' : 'Bot token girin'} className="w-full bg-secondary/60 rounded-lg px-3 py-2 text-sm outline-none border border-border" />
             </div>
             <div>
-              <label className="text-sm font-semibold">WhatsApp Access Token</label>
-              <p className="text-xs text-muted-foreground mb-1.5">Meta Business Suite → WhatsApp Manager'dan alınan kalıcı erişim anahtarı</p>
-              <input type="password" value={tokenInput} onChange={(e) => setTokenInput(e.target.value)} placeholder={settings.token_set ? '•••••••••••••••• (değiştirmek için yeni token girin)' : 'Token girin'} className="w-full bg-secondary/60 rounded-lg px-3 py-2 text-sm outline-none border border-border" />
-            </div>
-            <div>
-              <label className="text-sm font-semibold">Telefon Numarası ID</label>
-              <p className="text-xs text-muted-foreground mb-1.5">WhatsApp Business telefon numarası ID'si (Meta Business Suite)</p>
-              <input value={settings.phone_number_id} onChange={(e) => setSettings({ ...settings, phone_number_id: e.target.value })} className="w-full bg-secondary/60 rounded-lg px-3 py-2 text-sm outline-none border border-border" placeholder="123456789012345" />
+              <label className="text-sm font-semibold">Telegram Chat ID</label>
+              <p className="text-xs text-muted-foreground mb-1.5">Bildirimlerin gönderileceği sohbet ID'si (kişi, grup veya kanal)</p>
+              <input value={settings.chat_id} onChange={(e) => setSettings({ ...settings, chat_id: e.target.value })} className="w-full bg-secondary/60 rounded-lg px-3 py-2 text-sm outline-none border border-border" placeholder="-1001234567890" />
             </div>
           </div>
 
           <div className="flex gap-2">
             <button onClick={() => save({})} disabled={saving} className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50">{saving ? 'Kaydediliyor...' : 'Ayarları Kaydet'}</button>
-            <button onClick={test} disabled={testing || !connected} className="bg-secondary hover:bg-secondary/70 px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50">{testing ? 'Gönderiliyor...' : 'Test Mesajı Gönder'}</button>
+            <button onClick={test} disabled={testing || !connected} className="bg-secondary hover:bg-secondary/70 px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50">{testing ? 'Gönderiliyor...' : 'Test Bildirimi Gönder'}</button>
           </div>
 
           <div className="bg-secondary/40 rounded-xl p-3 text-xs text-muted-foreground space-y-1">
-            <p className="font-semibold text-foreground">WhatsApp Business API Kurulumu:</p>
-            <p>1. Meta Business Suite'de WhatsApp Business hesabı oluşturun</p>
-            <p>2. WhatsApp Manager'dan telefon numarası ekleyin ve doğrulayın</p>
-            <p>3. Kalıcı erişim anahtarı (Access Token) oluşturun</p>
-            <p>4. Telefon Numarası ID'sini kopyalayın</p>
+            <p className="font-semibold text-foreground">Telegram Bot Kurulumu:</p>
+            <p>1. Telegram'da @BotFather ile konuşun ve /newbot komutunu gönderin</p>
+            <p>2. Bot için isim verin ve Bot Token'ı kopyalayın</p>
+            <p>3. Botunuzu ekleyin ve sohbete bir mesaj gönderin</p>
+            <p>4. Chat ID'yi öğrenin (örn: @userinfobot ile)</p>
             <p>5. Yukarıdaki alanları doldurun ve kaydedin</p>
-            <p>6. "Test Mesajı Gönder" butonu ile test edin</p>
+            <p>6. "Test Bildirimi Gönder" butonu ile test edin</p>
           </div>
         </div>
       )}
@@ -199,7 +191,7 @@ export default function AdminWhatsApp() {
       {/* Events tab */}
       {tab === 'events' && (
         <div className="space-y-2 max-w-lg">
-          <p className="text-sm text-muted-foreground mb-2">Hangi olaylarda WhatsApp bildirimi gönderileceğini seçin.</p>
+          <p className="text-sm text-muted-foreground mb-2">Hangi olaylarda Telegram bildirimi gönderileceğini seçin.</p>
           {Object.entries(EVENT_LABELS).map(([key, label]) => (
             <label key={key} className="flex items-center justify-between bg-card border border-border rounded-xl p-3">
               <span className="text-sm font-medium">{label}</span>
@@ -211,29 +203,10 @@ export default function AdminWhatsApp() {
         </div>
       )}
 
-      {/* Templates tab */}
-      {tab === 'templates' && (
-        <div className="space-y-4 max-w-2xl">
-          <p className="text-sm text-muted-foreground mb-2">Bildirim mesaj şablonlarını düzenleyin. Değişkenler: {'{{username}}, {{email}}, {{subject}}, {{message}}, {{package}}, {{amount}}, {{status}}, {{date}}'}</p>
-          {TEMPLATE_EVENTS.map((event) => (
-            <div key={event} className="bg-card border border-border rounded-xl p-3">
-              <p className="font-semibold text-sm mb-2">{EVENT_LABELS[event]}</p>
-              <textarea
-                value={settings.templates[event] || ''}
-                onChange={(e) => setSettings({ ...settings, templates: { ...settings.templates, [event]: e.target.value } })}
-                rows={5}
-                className="w-full bg-secondary/60 rounded-lg px-3 py-2 text-sm outline-none border border-border font-mono text-xs"
-              />
-            </div>
-          ))}
-          <button onClick={() => save({})} disabled={saving} className="bg-primary text-primary-foreground px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50">{saving ? 'Kaydediliyor...' : 'Şablonları Kaydet'}</button>
-        </div>
-      )}
-
       {/* History tab */}
       {tab === 'history' && (
         <div className="space-y-2">
-          {history.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">Henüz WhatsApp bildirim geçmişi yok.</p> :
+          {history.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">Henüz Telegram bildirim geçmişi yok.</p> :
             history.map((log) => (
               <div key={log.id} className="bg-card border border-border rounded-xl p-3 flex items-start gap-3">
                 <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${log.status === 'sent' ? 'bg-green-500' : 'bg-red-500'}`} />

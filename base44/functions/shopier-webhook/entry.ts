@@ -372,7 +372,7 @@ export default async function (req) {
       title: 'Yeni ödeme gerçekleşti',
       body: `${username} — ${planName} — ${payment.amount} ₺`,
       link: '/admin/odemeler',
-      whatsapp_data: { username, package: planName, amount: `${payment.amount} ₺`, status: 'Tamamlandı', date: dateStr },
+      telegram_data: { username, package: planName, amount: `${payment.amount} ₺`, status: 'Tamamlandı', date: dateStr },
     }).catch(() => {});
     await notifyAdmins(base44, {
       event: 'subscription_active',
@@ -380,7 +380,7 @@ export default async function (req) {
       title: 'Abonelik aktif edildi',
       body: `${username} — ${planName} — Bitiş: ${endDate.toLocaleDateString('tr-TR')}`,
       link: '/admin/abonelikler',
-      whatsapp_data: { username, package: planName, date: dateStr },
+      telegram_data: { username, package: planName, date: dateStr },
     }).catch(() => {});
 
     if (isBrowser) return Response.redirect(cfg.successUrl + '?order=' + (shopierOrderId || payment.shopier_order_id), 302);

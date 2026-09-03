@@ -24,7 +24,7 @@ const nav = [
     { to: '/admin/odeme-ayarlari', label: 'Ödeme Ayarları', icon: Settings },
   ]},
   { to: '/admin/bildirimler', label: 'Bildirimler', icon: Bell },
-  { to: '/admin/whatsapp', label: 'WhatsApp Bildirimleri', icon: MessageCircle },
+  { to: '/admin/telegram', label: 'Telegram Bildirimleri', icon: MessageCircle },
   { to: '/admin/guvenlik', label: 'Güvenlik', icon: ShieldAlert },
   { to: '/admin/sikayetler', label: 'Şikayetler', icon: Flag },
   { to: '/admin/ayarlar', label: 'Ayarlar', icon: Settings },

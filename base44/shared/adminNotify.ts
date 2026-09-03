@@ -1,7 +1,7 @@
 // Shared admin notification: creates Notification records for all admins,
-// sends Web Push, and sends WhatsApp message. Used by admin-notify and shopier-webhook.
+// sends Web Push, and sends Telegram message. Used by admin-notify and shopier-webhook.
 import { sendPushToAdmins } from './webPush.ts';
-import { sendWhatsApp } from './whatsapp.ts';
+import { sendTelegram } from './telegram.ts';
 
 function sanitize(text: string, max: number) {
   return String(text || '').replace(/[<>]/g, '').slice(0, max);
@@ -13,9 +13,9 @@ export async function notifyAdmins(base44: any, opts: {
   title: string;
   body?: string;
   link?: string;
-  whatsapp_data?: Record<string, any>;
+  telegram_data?: Record<string, any>;
 }) {
-  const { event, ref_id, title, body, link, whatsapp_data } = opts;
+  const { event, ref_id, title, body, link, telegram_data } = opts;
   const dedupRefId = ref_id || `${event}:${Date.now()}`;
 
   // Dedup: skip if same ref_id already processed
@@ -47,8 +47,8 @@ export async function notifyAdmins(base44: any, opts: {
   // Send Web Push to admin devices
   const pushed = await sendPushToAdmins(base44, cleanTitle, cleanBody, cleanLink);
 
-  // Send WhatsApp message
-  const whatsapp = await sendWhatsApp(base44, event, whatsapp_data || {}, dedupRefId);
+  // Send Telegram message
+  const telegram = await sendTelegram(base44, event, telegram_data || {}, dedupRefId);
 
-  return { ok: true, admins: adminUsers.length, pushed, whatsapp };
+  return { ok: true, admins: adminUsers.length, pushed, telegram };
 }

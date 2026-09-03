@@ -1,5 +1,5 @@
-// WhatsApp Business Cloud API (Meta) — shared module
-// Settings stored in AppConfig (admin-only RLS). Token never returned to frontend.
+// Telegram Bot API — shared module
+// Settings stored in AppConfig (admin-only RLS). Bot Token never returned to frontend.
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
   new_user: `🔔 Yeni kullanıcı kayıt oldu.\n\nKullanıcı: {{username}}\nE-posta: {{email}}\nTarih: {{date}}\n\nAdmin panelinden kullanıcıyı görüntüle.`,
@@ -9,7 +9,7 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
   payment: `💳 Yeni ödeme gerçekleşti.\n\nKullanıcı: {{username}}\nPaket: {{package}}\nTutar: {{amount}}\nDurum: {{status}}\nTarih: {{date}}`,
   subscription_active: `✅ Abonelik aktif edildi.\n\nKullanıcı: {{username}}\nPaket: {{package}}\nTarih: {{date}}`,
   subscription_cancelled: `❌ Abonelik iptal edildi.\n\nKullanıcı: {{username}}\nTarih: {{date}}`,
-  test: `✅ Filmkeyfi WhatsApp bildirim sistemi başarıyla çalışuyor.\n\nTest tarihi: {{date}}`,
+  test: `✅ Filmkeyfi Telegram bildirim sistemi başarıyla çalışıyor.\n\nTest tarihi: {{date}}`,
 };
 
 const DEFAULT_EVENTS: Record<string, boolean> = {
@@ -22,23 +22,21 @@ const DEFAULT_EVENTS: Record<string, boolean> = {
   subscription_cancelled: true,
 };
 
-export interface WhatsAppSettings {
+export interface TelegramSettings {
   enabled: boolean;
-  admin_phone: string;
-  api_token: string;
-  phone_number_id: string;
+  bot_token: string;
+  chat_id: string;
   events: Record<string, boolean>;
   templates: Record<string, string>;
 }
 
-export async function getWhatsAppSettings(base44: any): Promise<WhatsAppSettings> {
+export async function getTelegramSettings(base44: any): Promise<TelegramSettings> {
   const configs = await base44.asServiceRole.entities.AppConfig.list(100).catch(() => []);
-  const raw = configs.find((c: any) => c.key === 'whatsapp_settings')?.value;
-  const settings: WhatsAppSettings = {
+  const raw = configs.find((c: any) => c.key === 'telegram_settings')?.value;
+  const settings: TelegramSettings = {
     enabled: false,
-    admin_phone: '905518270548',
-    api_token: '',
-    phone_number_id: '',
+    bot_token: '',
+    chat_id: '',
     events: { ...DEFAULT_EVENTS },
     templates: { ...DEFAULT_TEMPLATES },
   };
@@ -46,9 +44,8 @@ export async function getWhatsAppSettings(base44: any): Promise<WhatsAppSettings
     try {
       const parsed = JSON.parse(raw);
       settings.enabled = parsed.enabled ?? false;
-      settings.admin_phone = parsed.admin_phone || settings.admin_phone;
-      settings.api_token = parsed.api_token || '';
-      settings.phone_number_id = parsed.phone_number_id || '';
+      settings.bot_token = parsed.bot_token || '';
+      settings.chat_id = parsed.chat_id || '';
       settings.events = { ...DEFAULT_EVENTS, ...(parsed.events || {}) };
       settings.templates = { ...DEFAULT_TEMPLATES, ...(parsed.templates || {}) };
     } catch {}
@@ -56,14 +53,14 @@ export async function getWhatsAppSettings(base44: any): Promise<WhatsAppSettings
   return settings;
 }
 
-export async function saveWhatsAppSettings(base44: any, settings: WhatsAppSettings) {
+export async function saveTelegramSettings(base44: any, settings: TelegramSettings) {
   const configs = await base44.asServiceRole.entities.AppConfig.list(100).catch(() => []);
-  const existing = configs.find((c: any) => c.key === 'whatsapp_settings');
+  const existing = configs.find((c: any) => c.key === 'telegram_settings');
   const value = JSON.stringify(settings);
   if (existing) {
     await base44.asServiceRole.entities.AppConfig.update(existing.id, { value });
   } else {
-    await base44.asServiceRole.entities.AppConfig.create({ key: 'whatsapp_settings', value });
+    await base44.asServiceRole.entities.AppConfig.create({ key: 'telegram_settings', value });
   }
 }
 
@@ -75,8 +72,8 @@ function renderTemplate(template: string, data: Record<string, any>): string {
   return msg;
 }
 
-async function logWhatsApp(base44: any, log: any) {
-  await base44.asServiceRole.entities.WhatsAppLog.create({
+async function logTelegram(base44: any, log: any) {
+  await base44.asServiceRole.entities.TelegramLog.create({
     event_type: log.event_type,
     recipient: log.recipient,
     message: (log.message || '').slice(0, 2000),
@@ -87,80 +84,74 @@ async function logWhatsApp(base44: any, log: any) {
   }).catch(() => {});
 }
 
-// Send a WhatsApp message for a specific event. Bypasses event toggle for 'test' events.
-export async function sendWhatsApp(base44: any, event: string, data: Record<string, any>, refId?: string) {
-  const settings = await getWhatsAppSettings(base44);
+// Send a Telegram message for a specific event. Bypasses event toggle for 'test' events.
+export async function sendTelegram(base44: any, event: string, data: Record<string, any>, refId?: string) {
+  const settings = await getTelegramSettings(base44);
 
   if (!settings.enabled && event !== 'test') return { sent: false, reason: 'disabled' };
   if (event !== 'test' && !settings.events[event]) return { sent: false, reason: 'event_disabled' };
-  if (!settings.api_token || !settings.phone_number_id || !settings.admin_phone) {
+  if (!settings.bot_token || !settings.chat_id) {
     return { sent: false, reason: 'not_configured' };
   }
 
   const template = settings.templates[event] || DEFAULT_TEMPLATES[event] || '';
   if (!template) return { sent: false, reason: 'no_template' };
   const message = renderTemplate(template, data);
-  const phone = settings.admin_phone.replace(/[^0-9]/g, '');
-  const url = `https://graph.facebook.com/v18.0/${settings.phone_number_id}/messages`;
+  const url = `https://api.telegram.org/bot${settings.bot_token}/sendMessage`;
 
   try {
     const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${settings.api_token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to: phone,
-        type: 'text',
-        text: { body: message },
+        chat_id: settings.chat_id,
+        text: message,
+        parse_mode: 'HTML',
       }),
     });
 
     const result: any = await res.json().catch(() => ({}));
 
-    if (res.ok) {
-      await logWhatsApp(base44, { event_type: event, recipient: phone, message, status: 'sent', ref_id: refId, user_name: data?.username || '' });
+    if (res.ok && result.ok) {
+      await logTelegram(base44, { event_type: event, recipient: settings.chat_id, message, status: 'sent', ref_id: refId, user_name: data?.username || '' });
       return { sent: true };
     } else {
-      const error = JSON.stringify(result?.error || result).slice(0, 500);
-      await logWhatsApp(base44, { event_type: event, recipient: phone, message, status: 'failed', error, ref_id: refId, user_name: data?.username || '' });
+      const error = JSON.stringify(result?.description || result).slice(0, 500);
+      await logTelegram(base44, { event_type: event, recipient: settings.chat_id, message, status: 'failed', error, ref_id: refId, user_name: data?.username || '' });
       return { sent: false, reason: 'api_error', error };
     }
   } catch (e: any) {
     const error = (e?.message || 'network_error').slice(0, 500);
-    await logWhatsApp(base44, { event_type: event, recipient: phone, message, status: 'failed', error, ref_id: refId, user_name: data?.username || '' });
+    await logTelegram(base44, { event_type: event, recipient: settings.chat_id, message, status: 'failed', error, ref_id: refId, user_name: data?.username || '' });
     return { sent: false, reason: 'network_error', error };
   }
 }
 
-// Retry a failed WhatsApp log entry by its ID
-export async function retryWhatsAppLog(base44: any, logId: string) {
-  const log = await base44.asServiceRole.entities.WhatsAppLog.get(logId).catch(() => null);
+// Retry a failed Telegram log entry by its ID
+export async function retryTelegramLog(base44: any, logId: string) {
+  const log = await base44.asServiceRole.entities.TelegramLog.get(logId).catch(() => null);
   if (!log) return { sent: false, error: 'Log bulunamadı' };
 
-  const settings = await getWhatsAppSettings(base44);
-  if (!settings.api_token || !settings.phone_number_id || !settings.admin_phone) {
-    return { sent: false, error: 'WhatsApp yapılandırılmamış' };
+  const settings = await getTelegramSettings(base44);
+  if (!settings.bot_token || !settings.chat_id) {
+    return { sent: false, error: 'Telegram yapılandırılmamış' };
   }
 
-  const phone = (log.recipient || settings.admin_phone).replace(/[^0-9]/g, '');
-  const url = `https://graph.facebook.com/v18.0/${settings.phone_number_id}/messages`;
+  const url = `https://api.telegram.org/bot${settings.bot_token}/sendMessage`;
 
   try {
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${settings.api_token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messaging_product: 'whatsapp', to: phone, type: 'text', text: { body: log.message } }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: settings.chat_id, text: log.message, parse_mode: 'HTML' }),
     });
     const result: any = await res.json().catch(() => ({}));
-    if (res.ok) {
-      await base44.asServiceRole.entities.WhatsAppLog.update(log.id, { status: 'sent', error: '' }).catch(() => {});
+    if (res.ok && result.ok) {
+      await base44.asServiceRole.entities.TelegramLog.update(log.id, { status: 'sent', error: '' }).catch(() => {});
       return { sent: true };
     } else {
-      const error = JSON.stringify(result?.error || result).slice(0, 500);
-      await base44.asServiceRole.entities.WhatsAppLog.update(log.id, { status: 'failed', error }).catch(() => {});
+      const error = JSON.stringify(result?.description || result).slice(0, 500);
+      await base44.asServiceRole.entities.TelegramLog.update(log.id, { status: 'failed', error }).catch(() => {});
       return { sent: false, error };
     }
   } catch (e: any) {

@@ -8,7 +8,7 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json();
-    const { event, ref_id, title, body: msgBody, link, whatsapp_data } = body || {};
+    const { event, ref_id, title, body: msgBody, link, telegram_data } = body || {};
 
     if (!event || !title) return Response.json({ error: 'eksik bilgi' }, { status: 400 });
 
@@ -22,7 +22,7 @@ export default async function(req) {
       title,
       body: msgBody,
       link,
-      whatsapp_data,
+      telegram_data,
     });
 
     return Response.json(result);

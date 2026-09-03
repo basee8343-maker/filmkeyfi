@@ -58,7 +58,7 @@ export default function AdminUsers({ pendingOnly = false }) {
         title: 'Abonelik aktif edildi (Manuel)',
         body: u.username || u.full_name || u.email,
         link: '/admin/abonelikler',
-        whatsapp_data: { username: u.username || u.full_name || u.email, package: 'Manuel Aktivasyon', date: new Date().toLocaleString('tr-TR') }
+        telegram_data: { username: u.username || u.full_name || u.email, package: 'Manuel Aktivasyon', date: new Date().toLocaleString('tr-TR') }
       }).catch(() => {});
       toast({ title: 'Kullanıcı onaylandı.' }); load();
     } catch (e) { toast({ title: 'Onaylanamadı', description: e.message, variant: 'destructive' }); }
@@ -83,7 +83,7 @@ export default function AdminUsers({ pendingOnly = false }) {
           title: 'Abonelik iptal edildi (Manuel)',
           body: u.username || u.full_name || u.email,
           link: '/admin/abonelikler',
-          whatsapp_data: { username: u.username || u.full_name || u.email, date: new Date().toLocaleString('tr-TR') }
+          telegram_data: { username: u.username || u.full_name || u.email, date: new Date().toLocaleString('tr-TR') }
         }).catch(() => {});
       } else {
         base44.functions.invoke('admin-notify', {
@@ -92,7 +92,7 @@ export default function AdminUsers({ pendingOnly = false }) {
           title: 'Abonelik aktif edildi (Manuel)',
           body: u.username || u.full_name || u.email,
           link: '/admin/abonelikler',
-          whatsapp_data: { username: u.username || u.full_name || u.email, package: 'Manuel Aktivasyon', date: new Date().toLocaleString('tr-TR') }
+          telegram_data: { username: u.username || u.full_name || u.email, package: 'Manuel Aktivasyon', date: new Date().toLocaleString('tr-TR') }
         }).catch(() => {});
       }
       toast({ title: next === 'active' ? 'Kullanıcı aktif edildi' : 'Kullanıcı pasif edildi' }); load();
