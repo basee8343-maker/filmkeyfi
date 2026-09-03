@@ -14,7 +14,7 @@ const ROLE_VIDEO_KEYS = {
   nargileciler: { entry: 'role_video_nargileciler_entry' },
 };
 
-export default function RoleEntrance({ roomId }) {
+export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
   const [queue, setQueue] = useState([]);
   const [current, setCurrent] = useState(null);
   const timerRef = useRef(null);
@@ -85,6 +85,13 @@ export default function RoleEntrance({ roomId }) {
     return () => { unsub(); clearTimeout(timerRef.current); clearTimeout(delayTimer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
+
+  // Katılım tamamlandığında (joinTrigger değiştiğinde) tekrar mesaj çek
+  // — kullanıcının kendi katılım videosunu görmesi için
+  useEffect(() => {
+    if (joinTrigger > 0) fetchRecent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [joinTrigger]);
 
   useEffect(() => {
     if (current || queue.length === 0) return;

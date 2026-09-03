@@ -43,6 +43,7 @@ export default function WatchParty() {
   const [syncState, setSyncState] = useState({ is_playing: false, current_time: 0, last_sync: null });
   const [unread, setUnread] = useState(0);
   const [viewerProfiles, setViewerProfiles] = useState({});
+  const [joinCount, setJoinCount] = useState(0);
   const [joinError, setJoinError] = useState('');
   const [voiceReady, setVoiceReady] = useState(false);
   const joinedRef = useRef(false);
@@ -99,6 +100,7 @@ export default function WatchParty() {
       .then((res) => {
         joinedRef.current = true;
         setVoiceReady(true);
+        setJoinCount((c) => c + 1);
         if (res.data?.ghost) ghostRef.current = true;
       })
       .catch((e) => {
@@ -355,7 +357,7 @@ export default function WatchParty() {
       {/* Tam ekran video + alt kontrol alanı */}
       <div ref={playerWrapRef} className="flex-1 flex min-h-0 relative" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <RoomNotifications participants={room?.participants || []} currentUserId={user?.id} />
-        <RoleEntrance roomId={id} />
+        <RoleEntrance roomId={id} joinTrigger={joinCount} />
         {dmNotif && (
           <div onClick={() => { setDirectOpen(true); setDmNotif(null); clearTimeout(dmNotifTimer.current); }} className={`absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] flex items-center gap-2 rounded-xl bg-card/95 border border-border px-3 py-2 shadow-2xl backdrop-blur-xl max-w-[70%] cursor-pointer ${dmNotifLeaving ? 'dm-notif-out' : 'dm-notif-in'}`}>
             {dmNotif.avatar ? <Image src={dmNotif.avatar} className="w-8 h-8 rounded-full" fittingType="fill" /> : <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">{dmNotif.name?.[0]}</div>}
