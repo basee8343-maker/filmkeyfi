@@ -40,7 +40,7 @@ export default function AdminLayout() {
   const [verifying, setVerifying] = useState(false);
   const [notifGranted, setNotifGranted] = useState(() => typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted');
   const [payOpen, setPayOpen] = useState(true);
-  useAdminNotifications();
+  const { unreadCount } = useAdminNotifications();
   const handleNotif = async () => { const r = await requestNotificationPermission(); setNotifGranted(r === 'granted'); };
 
   useEffect(() => {
@@ -122,9 +122,10 @@ export default function AdminLayout() {
           <span className="ml-1 hidden min-[390px]:block font-bold whitespace-nowrap">Admin Panel</span>
           <div className="ml-auto flex min-w-0 items-center gap-1">
             <ThemeToggle />
-            <button onClick={handleNotif} className="p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimleri Aç">
+            <button onClick={() => navigate('/admin/bildirimler')} className="p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimler">
               <Bell className="w-5 h-5" />
-              {notifGranted && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
+              {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+              {notifGranted && unreadCount === 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
             </button>
             <div className="flex shrink-0 items-center gap-1 rounded-lg bg-secondary/60 p-1">
               <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
@@ -142,9 +143,10 @@ export default function AdminLayout() {
           <span className="ml-2 font-bold">Admin Panel</span>
           <div className="ml-auto flex items-center gap-3">
             <ThemeToggle />
-            <button onClick={handleNotif} className="p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimleri Aç">
+            <button onClick={() => navigate('/admin/bildirimler')} className="p-2 rounded-lg hover:bg-secondary relative shrink-0" title="Bildirimler">
               <Bell className="w-5 h-5" />
-              {notifGranted && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
+              {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+              {notifGranted && unreadCount === 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
             </button>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/60">
               <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">

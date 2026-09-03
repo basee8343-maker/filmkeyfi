@@ -49,6 +49,21 @@ export default function AppLayout() {
     return unsub;
   }, [user?.id]);
 
+  // Sosyal girişle yeni kayıt olan kullanıcı için admin bildirimi (email kaydı zaten Register'da gönderir, dedup ref_id ile engeller)
+  useEffect(() => {
+    if (!user?.id || user.role === 'admin') return;
+    const created = user.created_date ? new Date(user.created_date).getTime() : 0;
+    if (created && Date.now() - created < 2 * 60 * 1000) {
+      base44.functions.invoke('admin-notify', {
+        event: 'new_user',
+        ref_id: `new_user:${user.email || user.id}`,
+        title: 'Yeni kullanıcı kaydoldu',
+        body: user.username || user.full_name || user.email,
+        link: '/admin/kullanicilar'
+      }).catch(() => {});
+    }
+  }, [user?.id]);
+
   if (isRoom) {
     return <div className="min-h-screen bg-background"><Outlet /></div>;
   }

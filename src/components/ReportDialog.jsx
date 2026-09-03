@@ -32,7 +32,7 @@ export default function ReportDialog({ targetId, targetName, context, contextId,
     if (!user || !targetId) return;
     setSending(true);
     try {
-      await base44.entities.Report.create({
+      const report = await base44.entities.Report.create({
         reporter_id: user.id,
         reporter_name: user.username || user.full_name || 'Kullanıcı',
         target_id: targetId,
@@ -42,6 +42,16 @@ export default function ReportDialog({ targetId, targetName, context, contextId,
         reason: `${reason}${detail ? ' — ' + detail : ''}`,
         file_url: fileUrl || '',
       });
+      // Admin'e realtime + web push bildirimi
+      if (report?.id) {
+        base44.functions.invoke('admin-notify', {
+          event: 'report',
+          ref_id: `report:${report.id}`,
+          title: 'Yeni şikayet bildirimi geldi',
+          body: `${targetName || 'Bilinmeyen'} — ${reason}`,
+          link: '/admin/sikayetler'
+        }).catch(() => {});
+      }
       toast({ title: 'Şikayetiniz alındı', description: 'İnceleyeceğiz.' });
       onClose();
     } catch { toast({ title: 'Gönderilemedi', variant: 'destructive' }); }

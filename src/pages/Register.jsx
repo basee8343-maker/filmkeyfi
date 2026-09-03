@@ -85,6 +85,14 @@ export default function Register() {
           await base44.functions.invoke('ensure-member-id').catch(() => {});
         } catch {}
       }
+      // Admin'e yeni kullanıcı bildirimi gönder (real-time + web push)
+      base44.functions.invoke('admin-notify', {
+        event: 'new_user',
+        ref_id: `new_user:${email}`,
+        title: 'Yeni kullanıcı kaydoldu',
+        body: fullName || username || email,
+        link: '/admin/kullanicilar'
+      }).catch(() => {});
       if (paymentRequired) {
         toast({ title: "Kayıt tamamlandı", description: "Aboneliğinizi aktif etmek için ödeme yapın." });
         window.location.href = "/abonelik";

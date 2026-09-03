@@ -21,6 +21,9 @@
     },
     "link": {
       "type": "string"
+    },
+    "ref_id": {
+      "type": "string"
     }
   },
   "required": [

@@ -65,8 +65,16 @@ export default function Support() {
     if (!form.subject || !form.message) return;
     try {
       const t = await base44.entities.SupportTicket.create({ user_id: user.id, user_name: user.username || user.full_name, subject: form.subject, category: form.category, status: 'new' });
-      await base44.entities.SupportMessage.create({ ticket_id: t.id, owner_id: user.id, user_id: user.id, sender: 'user', text: form.message });
+      const msg = await base44.entities.SupportMessage.create({ ticket_id: t.id, owner_id: user.id, user_id: user.id, sender: 'user', text: form.message });
       await base44.entities.Notification.create({ user_id: 'admin', title: 'Yeni destek talebi', body: `${user.username}: ${form.subject}`, type: 'support' }).catch(() => {});
+      // Admin'e realtime + web push bildirimi
+      base44.functions.invoke('admin-notify', {
+        event: 'support',
+        ref_id: `support_msg:${msg?.id || t.id}`,
+        title: 'Yeni destek mesajı geldi',
+        body: `${user.username || user.full_name}: ${form.subject}`,
+        link: '/admin/destek'
+      }).catch(() => {});
       setForm({ subject: '', category: 'Genel', message: '' }); setShowNew(false); setActive(t);
       load();
       toast({ title: 'Destek talebi oluşturuldu' });
@@ -76,7 +84,20 @@ export default function Support() {
   const send = (e) => {
     e.preventDefault();
     if (!text.trim() || !active) return;
-    base44.entities.SupportMessage.create({ ticket_id: active.id, owner_id: user.id, user_id: user.id, sender: 'user', text: text.trim() }).catch(() => {});
+    const msgText = text.trim();
+    base44.entities.SupportMessage.create({ ticket_id: active.id, owner_id: user.id, user_id: user.id, sender: 'user', text: msgText })
+      .then((msg) => {
+        if (msg?.id) {
+          base44.functions.invoke('admin-notify', {
+            event: 'support',
+            ref_id: `support_msg:${msg.id}`,
+            title: 'Yeni destek mesajı geldi',
+            body: `${user.username || user.full_name}: ${msgText.slice(0, 80)}`,
+            link: '/admin/destek'
+          }).catch(() => {});
+        }
+      })
+      .catch(() => {});
     setText('');
   };
 

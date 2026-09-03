@@ -1,5 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useCurrentUser } from '@/lib/useCurrentUser';
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -11,27 +12,59 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export function useAdminNotifications() {
+  const { user } = useCurrentUser();
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const notifiedRef = useRef(new Set());
+  const isAdmin = user?.role === 'admin';
+
+  const load = useCallback(async () => {
+    if (!user?.id) return;
+    const items = await base44.entities.Notification.filter({ user_id: user.id }, '-created_date', 50).catch(() => []);
+    setNotifications(items);
+    setUnreadCount(items.filter(n => !n.read).length);
+    items.forEach(n => notifiedRef.current.add(n.id));
+  }, [user?.id]);
 
   useEffect(() => {
-    if (!('Notification' in window)) return;
+    if (!isAdmin) return;
+    load();
+  }, [isAdmin, load]);
 
-    if (Notification.permission === 'default') {
-      try { Notification.requestPermission(); } catch {}
-    }
-
-    const notify = (title, body) => {
-      if (Notification.permission === 'granted') {
-        try {
-          const n = new Notification(title, { body, icon: '/favicon.ico' });
-          setTimeout(() => n.close(), 8000);
-        } catch {}
+  // Real-time subscription — admin panele girmeden de çalışan in-app bildirim
+  useEffect(() => {
+    if (!isAdmin || !user?.id) return;
+    const unsub = base44.entities.Notification.subscribe((ev) => {
+      if (ev.type === 'create' && ev.data?.user_id === user.id && !notifiedRef.current.has(ev.data.id)) {
+        notifiedRef.current.add(ev.data.id);
+        setNotifications(prev => [ev.data, ...prev].slice(0, 50));
+        setUnreadCount(prev => prev + 1);
+        // In-app notification (tab açıkken)
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            const n = new Notification(ev.data.title, { body: ev.data.body || '', icon: '/favicon.ico' });
+            n.onclick = () => { if (ev.data.link) window.location.href = ev.data.link; n.close(); };
+            setTimeout(() => n.close(), 8000);
+          } catch {}
+        }
       }
-    };
+      if (ev.type === 'update' && ev.data?.user_id === user.id) {
+        setNotifications(prev => prev.map(n => n.id === ev.data.id ? { ...n, ...ev.data } : n));
+        load();
+      }
+      if (ev.type === 'delete' && ev.data?.user_id === user.id) {
+        setNotifications(prev => prev.filter(n => n.id !== ev.data.id));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    });
+    return unsub;
+  }, [isAdmin, user?.id, load]);
 
-    // Service Worker kaydet + push subscribe (uygulama kapalıyken bildirim)
+  // Service Worker + Push setup (uygulama kapalıyken bildirim)
+  useEffect(() => {
+    if (!isAdmin) return;
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
     const setupPush = async () => {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
       try {
         const reg = await navigator.serviceWorker.register('/sw.js');
         await navigator.serviceWorker.ready;
@@ -47,35 +80,24 @@ export function useAdminNotifications() {
       } catch {}
     };
     setupPush();
+  }, [isAdmin]);
 
-    // Tab açıkken de anlık bildirim (fallback)
-    const unsubTickets = base44.entities.SupportTicket.subscribe((ev) => {
-      if (ev.type === 'create' && !notifiedRef.current.has(ev.data.id)) {
-        notifiedRef.current.add(ev.data.id);
-        notify('🎫 Yeni Destek Talebi', ev.data.subject || 'Yeni bir destek talebi açıldı');
-      }
-    });
-
-    const unsubMessages = base44.entities.SupportMessage.subscribe((ev) => {
-      if (ev.type === 'create' && ev.data?.sender === 'user' && !notifiedRef.current.has(ev.data.id)) {
-        notifiedRef.current.add(ev.data.id);
-        notify('💬 Yeni Destek Mesajı', (ev.data.text || 'Yeni mesaj').slice(0, 100));
-      }
-    });
-
-    const unsubUsers = base44.entities.User.subscribe((ev) => {
-      if (ev.type === 'create' && !notifiedRef.current.has(ev.data.id)) {
-        notifiedRef.current.add(ev.data.id);
-        notify('👤 Yeni Üye Kaydı', ev.data.email || ev.data.full_name || 'Yeni bir üye kayıt oldu');
-      }
-    });
-
-    return () => {
-      unsubTickets?.();
-      unsubMessages?.();
-      unsubUsers?.();
-    };
+  const markRead = useCallback(async (id) => {
+    await base44.entities.Notification.update(id, { read: true }).catch(() => {});
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    setUnreadCount(prev => Math.max(0, prev - 1));
   }, []);
+
+  const markAllRead = useCallback(async () => {
+    const unread = notifications.filter(n => !n.read);
+    for (const n of unread) {
+      await base44.entities.Notification.update(n.id, { read: true }).catch(() => {});
+    }
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setUnreadCount(0);
+  }, [notifications]);
+
+  return { notifications, unreadCount, markRead, markAllRead, reload: load };
 }
 
 export async function requestNotificationPermission() {
