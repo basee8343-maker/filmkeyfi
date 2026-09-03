@@ -3,7 +3,7 @@ import { Play, Pause, Maximize, Minimize, Settings, Rewind, FastForward } from '
 import VolumeSlider from './VolumeSlider';
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onSeek, onEnded, onControlsChange, syncState, isOwner, subtitles, fullscreenRef, watermark, controlsRaised = false }) {
+export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onSeek, onEnded, onControlsChange, syncState, isOwner, isTimeSource, subtitles, fullscreenRef, watermark, controlsRaised = false }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [playing, setPlaying] = useState(false);
@@ -50,37 +50,35 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     if (onSeek) onSeek(v.currentTime);
   };
 
-  // Sync from owner (watch party) — drift düzeltmeli senkronizasyon
+  // Sync from room — drift düzeltmeli senkronizasyon.
+  // is_playing herkes için uygulanır (admin durdurursa sahip de durur);
+  // zaman senkronu yalnızca kaynak olmayan (isTimeSource=false) katılımcılarda.
   useEffect(() => {
-    if (!syncState || isOwner) return;
+    if (!syncState) return;
     const v = videoRef.current; if (!v) return;
-    const target = syncState.current_time || 0;
-    const diff = v.currentTime - target;
-    const absDiff = Math.abs(diff);
-
-    if (absDiff > 3) {
-      // Büyük sapma — doğrudan seek
-      seekTo(target);
-      v.playbackRate = speed;
-    } else if (absDiff > 1) {
-      // Orta sapma — hız微 düzeltme (catch-up / slow-down)
-      if (diff > 0) v.playbackRate = Math.max(0.5, speed - 0.25);
-      else v.playbackRate = Math.min(2, speed + 0.25);
-      // 2 saniye sonra normale dön
-      clearTimeout(v._syncResetTimer);
-      v._syncResetTimer = setTimeout(() => { if (v) v.playbackRate = speed; }, 2000);
-    } else {
-      // Yakın senkron — normal hız
-      v.playbackRate = speed;
+    if (!isTimeSource) {
+      const target = syncState.current_time || 0;
+      const diff = v.currentTime - target;
+      const absDiff = Math.abs(diff);
+      if (absDiff > 3) {
+        seekTo(target);
+        v.playbackRate = speed;
+      } else if (absDiff > 1) {
+        if (diff > 0) v.playbackRate = Math.max(0.5, speed - 0.25);
+        else v.playbackRate = Math.min(2, speed + 0.25);
+        clearTimeout(v._syncResetTimer);
+        v._syncResetTimer = setTimeout(() => { if (v) v.playbackRate = speed; }, 2000);
+      } else {
+        v.playbackRate = speed;
+      }
     }
-
     if (syncState.is_playing && v.paused) v.play().catch(() => {});
     if (!syncState.is_playing && !v.paused) v.pause();
   }, [syncState?.current_time, syncState?.is_playing, syncState?.last_sync]);
 
-  // report time to owner — daha sık ve kararlı
+  // report time to room — yalnızca gerçek kaynak (sahip) bildirir
   useEffect(() => {
-    if (!isOwner || !onTimeUpdate) return;
+    if (!isTimeSource || !onTimeUpdate) return;
     const id = setInterval(() => {
       const v = videoRef.current;
       if (v && !v.paused && Date.now() - lastSyncRef.current > 2000) {
@@ -97,8 +95,8 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     v.playbackRate = speed;
     v.volume = volume;
     v.muted = muted;
-    // initial sync for participants
-    if (!isOwner && syncState) {
+    // initial sync for participants (and admin)
+    if (!isTimeSource && syncState) {
       const target = syncState.current_time || 0;
       if (Math.abs(v.currentTime - target) > 3) seekTo(target);
     }

@@ -19,6 +19,7 @@ import MoviePickerSheet from '@/components/player/MoviePickerSheet';
 import RoleBadge from '@/components/RoleBadge';
 import ProfileFrame from '@/components/ProfileFrame';
 import useSocialBadges from '@/hooks/useSocialBadges';
+import { isModerator } from '@/lib/roles';
 
 export default function WatchParty() {
   const { id } = useParams();
@@ -89,7 +90,7 @@ export default function WatchParty() {
 
   useEffect(() => {
     if (!user || !room || joinedRef.current) return;
-    if (room.password && room.owner_id !== user.id && user.role !== 'admin' && !room.participants?.some((p) => p.user_id === user.id)) {
+    if (room.password && room.owner_id !== user.id && !isModerator(user) && !room.participants?.some((p) => p.user_id === user.id)) {
       setNeedPassword(true);
       return;
     }
@@ -228,7 +229,7 @@ export default function WatchParty() {
   const canMod = isOwner || isMod;
 
   const updateRoom = async (patch, immediate = false) => {
-    if (!isOwner) return;
+    if (!canMod) return;
     if (!immediate && Date.now() - lastUpdateRef.current < 2000) return;
     lastUpdateRef.current = Date.now();
     await base44.entities.Room.update(id, { ...patch, last_sync: new Date().toISOString() }).catch(() => {});
@@ -306,7 +307,7 @@ export default function WatchParty() {
     const t = e.changedTouches[0];
     const dx = t.clientX - touchStart.current.x;
     const dy = t.clientY - touchStart.current.y;
-    if (isOwner && dy > 80 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+    if (canMod && dy > 80 && Math.abs(dy) > Math.abs(dx) * 1.5) {
       setMoviePickerOpen(true);
       return;
     }
@@ -360,17 +361,17 @@ export default function WatchParty() {
         </div>
         <button onClick={() => { setShowViewers(!showViewers); setShowSettings(false); }} className={`absolute top-[max(env(safe-area-inset-top),0.75rem)] right-3 z-[55] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white border border-white/10 backdrop-blur-md transition active:scale-95 ${showViewers ? 'bg-primary/80' : 'bg-black/60'}`}><Eye className="w-4 h-4" /><span>{visibleParticipants.length}</span></button>
         <div className={`flex items-center justify-center bg-black ${chatOpen ? 'flex-1 min-w-0' : 'flex-1 min-w-0'}`}>
-          {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} onEnded={() => setMoviePickerOpen(true)} onControlsChange={(v) => { if (v) showPartyBar(); }} fullscreenRef={playerWrapRef} watermark={user} controlsRaised /> :
+          {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={canMod} isTimeSource={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} onEnded={() => setMoviePickerOpen(true)} onControlsChange={(v) => { if (v) showPartyBar(); }} fullscreenRef={playerWrapRef} watermark={user} controlsRaised /> :
             <div className="text-muted-foreground text-sm p-6 text-center">Video kaynağı yok</div>}
         </div>
 
         {chatOpen && (
-          <div className="absolute right-0 top-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] shadow-2xl backdrop-blur-xl">
+          <div className="absolute right-0 top-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] shadow-2xl backdrop-blur-xl">
             <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} />
           </div>
         )}
 
-        {directOpen && <div className="absolute inset-x-0 top-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-[70]"><RoomDirectMessages onClose={() => setDirectOpen(false)} /></div>}
+        {directOpen && <div className="absolute inset-x-0 top-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-[70]"><RoomDirectMessages onClose={() => setDirectOpen(false)} /></div>}
 
         {showViewers && (
           <div className="absolute bottom-24 right-3 bg-card/95 border border-border rounded-xl p-3 z-[60] w-56 max-h-[65%] overflow-y-auto shadow-2xl backdrop-blur-xl">
@@ -410,7 +411,7 @@ export default function WatchParty() {
 
           </div>
         )}
-        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} />
+        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} />
       </div>
 
       <LiveKitDebugPanel voice={voice} />

@@ -84,11 +84,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   const handleUserClick = (e, m) => {
     if (m.user_id === user?.id) return;
     e.preventDefault();
-    if (isAdmin) {
-      setModTarget({ userId: m.user_id, userName: m.user_name, userAvatar: m.user_avatar });
-    } else {
-      setUserMenu({ userId: m.user_id, userName: m.user_name });
-    }
+    setUserMenu({ userId: m.user_id, userName: m.user_name, userAvatar: m.user_avatar });
   };
 
   if (!chatEnabled) {
@@ -180,9 +176,13 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       {userMenu && (
         <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={() => setUserMenu(null)}>
           <div className="bg-card border border-border rounded-xl p-3 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
-            <p className="font-semibold mb-2">{userMenu.userName}</p>
+            <div className="flex items-center gap-2 mb-2">
+              {userMenu.userAvatar ? <Image src={userMenu.userAvatar} className="w-9 h-9 rounded-full" fittingType="fill" /> : <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">{(userMenu.userName || '?')[0]}</div>}
+              <p className="font-semibold">{userMenu.userName}</p>
+            </div>
             <Link to={`/kullanici/${userMenu.userId}`} onClick={() => setUserMenu(null)} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm">Profili Gör</Link>
             <button onClick={() => { setReportTarget(userMenu); setUserMenu(null); }} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-destructive/10 text-destructive text-sm font-semibold">Şikayet Et</button>
+            {isAdmin && <button onClick={() => { setModTarget({ userId: userMenu.userId, userName: userMenu.userName, userAvatar: userMenu.userAvatar }); setUserMenu(null); }} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-amber-500/10 text-amber-500 text-sm font-semibold">Yönet</button>}
           </div>
         </div>
       )}

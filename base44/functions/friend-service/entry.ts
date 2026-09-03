@@ -129,6 +129,31 @@ export default async function(req) {
       return Response.json({ message });
     }
 
+    if (action === 'start_admin_chat') {
+      // Kullanıcı adminle arkadaş olmadan da özel mesaj başlatabilir.
+      const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' }, 'created_date', 1);
+      const target = admins[0];
+      if (!target) return Response.json({ error: 'Yönetici bulunamadı' }, { status: 404 });
+      if (target.id === user.id) return Response.json({ error: 'Kendinize mesaj yazamazsınız' }, { status: 400 });
+      const existing = await base44.asServiceRole.entities.Friendship.filter({
+        $or: [
+          { requester_id: user.id, recipient_id: target.id },
+          { requester_id: target.id, recipient_id: user.id }
+        ]
+      }, '-created_date', 20);
+      const blocked = existing.find((item) => item.status === 'blocked');
+      if (blocked) return Response.json({ error: 'Bu görüşme kullanılamıyor' }, { status: 403 });
+      const already = existing.find((item) => item.status === 'accepted');
+      if (already) return Response.json({ friendship: already });
+      const me = cleanUser(user); const other = cleanUser(target);
+      const friendship = await base44.asServiceRole.entities.Friendship.create({
+        requester_id: me.id, requester_name: me.name, requester_member_id: me.member_id, requester_avatar: me.avatar,
+        recipient_id: other.id, recipient_name: other.name, recipient_member_id: other.member_id, recipient_avatar: other.avatar,
+        members: [me.id, other.id], status: 'accepted'
+      });
+      return Response.json({ friendship });
+    }
+
     return Response.json({ error: 'Geçersiz işlem' }, { status: 400 });
   } catch (error) {
     return Response.json({ error: error.message || 'İşlem başarısız' }, { status: 500 });
