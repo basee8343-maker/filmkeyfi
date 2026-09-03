@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { parseRoleMetadata, parseFrameMetadata, ROLE_DEFINITIONS, getRoleLabelOverride } from '@/lib/roles';
 import RoleCharacter from '@/components/role/RoleCharacter';
 import FrameEntranceOverlay from '@/components/player/FrameEntranceOverlay';
+import AdminFlameEntrance from '@/components/player/AdminFlameEntrance';
 
 // Oda giriş/çıkış overlay yöneticisi.
 // Öncelik: özel çerçeve > rol karakter animasyonu > hiçbir şey.
@@ -63,7 +64,6 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
 
     processedRef.current.add(msg.id);
 
-    // Çerçeve yoksa: rol karakter animasyonu (video yok)
     const roleKey = roleParsed.roleKey || 'custom';
     const roleDef = ROLE_DEFINITIONS[roleKey || ''];
     const roleLabel = getRoleLabelOverride(roleKey) || roleDef?.label || '';
@@ -73,13 +73,15 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
     if (rolePrefix) displayName = displayName.replace(rolePrefix, '');
     displayName = displayName.replace('odaya katıldı', '').replace('odadan ayrıldı', '').replace(/[.\s]/g, '').trim();
 
+    const isAdminFlame = roleKey === 'admin';
     setQueue((q) => [...q.slice(-4), {
-      key: msg.id + (isEntry ? 'rin' : 'rout'),
-      type: 'role',
+      key: msg.id + (isEntry ? (isAdminFlame ? 'ain' : 'rin') : (isAdminFlame ? 'aout' : 'rout')),
+      type: isAdminFlame ? 'admin_flame' : 'role',
       roleKey,
       color: roleParsed.color || roleDef?.color || '#8b5cf6',
       isEntry,
       displayName,
+      avatar: msg.user_avatar || '',
       roleLabel: roleDef?.show_in_room ? roleLabel : '',
       roleIcon: roleDef?.icon || '✨',
       hideUsername: roleDef?.hide_username_entry || false,
@@ -120,12 +122,23 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
     const next = queue[0];
     setQueue((q) => q.slice(1));
     setCurrent(next);
-    const duration = next.type === 'frame' ? (next.isEntry ? 3500 : 2100) : (next.isEntry ? 4500 : 4000);
+    const duration = next.type === 'frame' ? (next.isEntry ? 3500 : 2100) : next.type === 'admin_flame' ? (next.isEntry ? 4000 : 3000) : (next.isEntry ? 4500 : 4000);
     timerRef.current = setTimeout(() => setCurrent(null), duration);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, queue]);
 
   if (!current) return null;
+
+  if (current.type === 'admin_flame') {
+    return (
+      <AdminFlameEntrance
+        avatar={current.avatar}
+        name={current.displayName}
+        isEntry={current.isEntry}
+        onDone={() => setCurrent(null)}
+      />
+    );
+  }
 
   if (current.type === 'frame') {
     return (

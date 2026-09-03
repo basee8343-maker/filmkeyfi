@@ -822,4 +822,55 @@
     50% { filter: brightness(1.5) drop-shadow(0 0 12px #fff) drop-shadow(0 0 8px #ff1744); }
     100% { filter: brightness(1) drop-shadow(0 0 4px #fff); }
   }
+
+  /* === ADMİN ALEV ÇEMBER EFEKTİ === */
+  .admin-flame-tongue {
+    width: 14px;
+    height: 24px;
+    background: radial-gradient(ellipse at center 80%, #fff 0%, #fef3c7 8%, #fbbf24 22%, #f97316 48%, #ff4500 72%, transparent 100%);
+    border-radius: 50% 50% 30% 30% / 70% 70% 30% 30%;
+    transform-origin: center bottom;
+    filter: blur(0.5px);
+  }
+  @keyframes admin-flame-flicker {
+    0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.9; }
+    25% { transform: scaleY(1.18) scaleX(0.9); opacity: 1; }
+    50% { transform: scaleY(0.92) scaleX(1.08); opacity: 0.82; }
+    75% { transform: scaleY(1.12) scaleX(0.95); opacity: 0.95; }
+  }
+  @keyframes admin-flame-flicker-2 {
+    0%, 100% { transform: scaleY(1.1) scaleX(0.92); opacity: 0.85; }
+    33% { transform: scaleY(0.88) scaleX(1.12); opacity: 1; }
+    66% { transform: scaleY(1.22) scaleX(0.86); opacity: 0.9; }
+  }
+  @keyframes admin-glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px 4px rgba(255, 69, 0, 0.4), 0 0 40px 8px rgba(255, 140, 0, 0.2); }
+    50% { box-shadow: 0 0 30px 6px rgba(255, 69, 0, 0.6), 0 0 60px 12px rgba(255, 140, 0, 0.35); }
+  }
+  @keyframes admin-circle-enter {
+    0% { transform: scale(0.3); opacity: 0; }
+    60% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes admin-flame-die {
+    0% { opacity: 1; transform: scaleY(1) scaleX(1); }
+    50% { opacity: 0.4; transform: scaleY(0.5) scaleX(0.7); }
+    100% { opacity: 0; transform: scaleY(0.15) scaleX(0.4); }
+  }
+  @keyframes admin-text-enter {
+    0% { transform: translateY(20px) scale(0.8); opacity: 0; }
+    60% { transform: translateY(0) scale(1.05); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes admin-overlay-fade {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes admin-badge-pop {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
 }

@@ -9,6 +9,13 @@ export const ROLE_DEFINITIONS: Record<string, any> = {
     show_in_room: true, moderator: true, hide_username_entry: true,
     name_effect: 'flame',
   },
+  'admin': {
+    label: 'ADMİN', icon: '🔥', color: '#ff4500', neon: true, priority: 98,
+    entry_animation: 'flame-entry', exit_animation: 'flame-exit',
+    show_in_room: false, moderator: true, hide_username_entry: false,
+    name_effect: 'flame',
+    flame_profile: true,
+  },
   'queen_admin': {
     label: 'ADMİN KRALİÇESİ', icon: '👑', color: '#ec4899', neon: true, priority: 95,
     entry_animation: 'queen-entry', exit_animation: 'queen-exit',
