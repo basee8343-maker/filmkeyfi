@@ -12,6 +12,8 @@ import { safeReturnTo } from "@/lib/authReturnTo";
 import GoogleIcon from "@/components/GoogleIcon";
 import AppleIcon from "@/components/AppleIcon";
 import LegalLinks from "@/components/auth/LegalLinks";
+import { consumeBanNotice } from "@/lib/banNotice";
+import { detectConnectionType } from "@/lib/connectionType";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -22,12 +24,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState('');
   const returnTo = safeReturnTo();
+  const notice = consumeBanNotice();
   const bannedParam = new URLSearchParams(window.location.search).get('banned');
-  const [banned] = useState(bannedParam === '1');
+  const [banned] = useState(bannedParam === '1' || notice === 'banned');
   const removedParam = new URLSearchParams(window.location.search).get('removed');
-  const [removed] = useState(removedParam === '1');
+  const [removed] = useState(removedParam === '1' || notice === 'removed');
   const kickedParam = new URLSearchParams(window.location.search).get('kicked');
-  const [kicked] = useState(kickedParam === '1');
+  const [kicked] = useState(kickedParam === '1' || notice === 'kicked');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -43,7 +46,7 @@ export default function Login() {
       }
       const privileged = me.role === 'admin' || me.role === 'moderator';
       const membershipActive = me.membership_status === 'active' && (!me.membership_end || new Date(me.membership_end) > new Date());
-      try { const res = await base44.functions.invoke('register-session', { device_session: localStorage.getItem('filmkeyfi_session_' + me.id) || '' }); if (res?.data?.session_id) localStorage.setItem('filmkeyfi_session_' + me.id, res.data.session_id); } catch {}
+      try { const res = await base44.functions.invoke('register-session', { device_session: localStorage.getItem('filmkeyfi_session_' + me.id) || '', connection_type: detectConnectionType() }); if (res?.data?.session_id) localStorage.setItem('filmkeyfi_session_' + me.id, res.data.session_id); } catch {}
       window.location.href = privileged || membershipActive ? returnTo : '/abonelik';
     } catch (err) {
       setError(err.message || "Geçersiz e-posta veya şifre");

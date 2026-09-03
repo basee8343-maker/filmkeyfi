@@ -12,6 +12,9 @@ export default async function(req) {
 
     const ip = getClientIp(req);
     const update = { last_active: new Date().toISOString(), last_ip: ip };
+    if (['wifi', 'cellular', 'ethernet', 'unknown'].includes(body?.connection_type)) {
+      update.connection_type = body.connection_type;
+    }
     if (typeof body?.gps_lat === 'number' && typeof body?.gps_lng === 'number') {
       update.gps_lat = body.gps_lat;
       update.gps_lng = body.gps_lng;

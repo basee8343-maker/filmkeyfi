@@ -20,6 +20,7 @@ import RoleBadge from '@/components/RoleBadge';
 import ProfileFrame from '@/components/ProfileFrame';
 import useSocialBadges from '@/hooks/useSocialBadges';
 import { isModerator } from '@/lib/roles';
+import { triggerBanNotice } from '@/lib/banNotice';
 
 export default function WatchParty() {
   const { id } = useParams();
@@ -166,6 +167,7 @@ export default function WatchParty() {
         try {
           const me = await base44.entities.User.get(user.id);
           if (me.role === 'banned' || me.membership_status === 'suspended') {
+            triggerBanNotice('banned');
             await base44.auth.logout();
             window.location.href = '/login?banned=1';
             return;
@@ -371,7 +373,7 @@ export default function WatchParty() {
         </div>
 
         {chatOpen && (
-          <div className="absolute right-0 top-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] shadow-2xl backdrop-blur-xl">
+          <div className="absolute right-0 top-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] landscape:bottom-0 landscape:pt-0 z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] shadow-2xl backdrop-blur-xl">
             <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} />
           </div>
         )}

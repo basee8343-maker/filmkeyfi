@@ -41,6 +41,16 @@
     "model": {
       "type": "string"
     },
+    "connection_type": {
+      "type": "string",
+      "enum": [
+        "wifi",
+        "cellular",
+        "ethernet",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
     "first_login": {
       "type": "string",
       "format": "date-time"

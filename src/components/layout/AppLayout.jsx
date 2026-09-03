@@ -10,6 +10,8 @@ import useFriendPresence from '@/hooks/useFriendPresence';
 import useRoleCelebration from '@/hooks/useRoleCelebration';
 import useRoleLabels from '@/hooks/useRoleLabels';
 import RoleCelebrationOverlay from '@/components/role/RoleCelebrationOverlay';
+import { detectConnectionType } from '@/lib/connectionType';
+import { triggerBanNotice } from '@/lib/banNotice';
 
 // Abonelik gerektirmeyen sayfalar
 const EXEMPT_PATHS = ['/abonelik', '/destek', '/bildirimler', '/odeme', '/güvenlik-protokolü', '/bakim'];
@@ -46,6 +48,7 @@ export default function AppLayout() {
   // Ban kontrolü — engellenmiş kullanıcıları giriş ekranına at
   useEffect(() => {
     if (user?.is_banned && pathname !== '/login') {
+      triggerBanNotice('banned');
       base44.auth.logout().catch(() => {});
       window.location.href = '/login?banned=1';
     }
@@ -56,16 +59,19 @@ export default function AppLayout() {
     if (!user) return;
     const unsubNotif = base44.entities.Notification.subscribe((ev) => {
       if (ev.type === 'create' && ev.data?.user_id === user.id && ev.data?.type === 'suspended') {
+        triggerBanNotice('banned');
         base44.auth.logout().catch(() => {});
         window.location.href = '/login?banned=1';
       }
     });
     const unsubUser = base44.entities.User.subscribe((ev) => {
       if (ev.type === 'update' && ev.data?.id === user.id && ev.data?.is_banned) {
+        triggerBanNotice('banned');
         base44.auth.logout().catch(() => {});
         window.location.href = '/login?banned=1';
       }
       if (ev.type === 'delete' && (ev.data?.id === user.id || ev.id === user.id)) {
+        triggerBanNotice('removed');
         base44.auth.logout().catch(() => {});
         window.location.href = '/login?removed=1';
       }
@@ -79,7 +85,7 @@ export default function AppLayout() {
     const beat = async () => {
       const sessionId = localStorage.getItem('filmkeyfi_session_' + user.id);
       if (!sessionId) return;
-      const payload = { session_id: sessionId };
+      const payload = { session_id: sessionId, connection_type: detectConnectionType() };
       const gpsRaw = localStorage.getItem('filmkeyfi_gps_' + user.id);
       if (gpsRaw) {
         try { const c = JSON.parse(gpsRaw); if (typeof c.lat === 'number' && typeof c.lng === 'number') { payload.gps_lat = c.lat; payload.gps_lng = c.lng; payload.gps_accuracy = c.acc; } } catch {}
@@ -97,15 +103,17 @@ export default function AppLayout() {
     const check = async () => {
       try {
         const u = await base44.auth.me();
-        if (u?.is_banned) { base44.auth.logout().catch(() => {}); window.location.href = '/login?banned=1'; return; }
+        if (u?.is_banned) { triggerBanNotice('banned'); base44.auth.logout().catch(() => {}); window.location.href = '/login?banned=1'; return; }
         const stored = localStorage.getItem('filmkeyfi_session_' + u.id);
         if (stored && u?.active_session_id && stored !== u.active_session_id) {
+          triggerBanNotice('kicked');
           base44.auth.logout().catch(() => {});
           localStorage.removeItem('filmkeyfi_session_' + u.id);
           window.location.href = '/login?kicked=1';
         }
       } catch (e) {
         if (e?.status === 401 || e?.status === 403 || e?.status === 404) {
+          triggerBanNotice('removed');
           base44.auth.logout().catch(() => {});
           window.location.href = '/login?removed=1';
         }

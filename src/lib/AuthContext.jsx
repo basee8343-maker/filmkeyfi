@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
+import { detectConnectionType } from '@/lib/connectionType';
 
 const AuthContext = createContext();
 
@@ -113,7 +114,7 @@ export const AuthProvider = ({ children }) => {
       const storedSession = localStorage.getItem(sessionKey);
       if (!storedSession) {
         try {
-          const res = await base44.functions.invoke('register-session', {});
+          const res = await base44.functions.invoke('register-session', { connection_type: detectConnectionType() });
           if (res?.data?.session_id) localStorage.setItem(sessionKey, res.data.session_id);
         } catch {}
       } else if (currentUser.active_session_id && storedSession !== currentUser.active_session_id) {

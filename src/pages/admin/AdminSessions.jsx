@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Smartphone, Monitor, Tablet, X, MapPin, Wifi, WifiOff, Search } from 'lucide-react';
+import { Smartphone, Monitor, Tablet, X, MapPin, Wifi, WifiOff, Search, Signal, Trash2 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+
+const connInfo = (t) => {
+  if (t === 'wifi') return { label: 'Wi-Fi', Icon: Wifi, color: 'text-green-400', glow: 'shadow-[0_0_8px_1px_rgba(74,222,128,0.7)]' };
+  if (t === 'cellular') return { label: 'Mobil Veri', Icon: Signal, color: 'text-green-400', glow: 'shadow-[0_0_8px_1px_rgba(74,222,128,0.7)]' };
+  if (t === 'ethernet') return { label: 'Ethernet', Icon: Wifi, color: 'text-green-400', glow: 'shadow-[0_0_8px_1px_rgba(74,222,128,0.7)]' };
+  return { label: 'Bağlantı bilinmiyor', Icon: WifiOff, color: 'text-muted-foreground', glow: '' };
+};
 
 const ONLINE_TIMEOUT = 90 * 1000;
 
@@ -17,11 +25,13 @@ const relTime = (d) => {
 const deviceIcon = (t) => (t === 'Telefon' ? Smartphone : t === 'Tablet' ? Tablet : Monitor);
 
 export default function AdminSessions() {
+  const { toast } = useToast();
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState(null);
   const [query, setQuery] = useState('');
   const [view, setView] = useState('all'); // all | online
+  const [clearing, setClearing] = useState(false);
 
   const load = () => {
     base44.entities.UserSession.list('-last_active', 500)
@@ -54,6 +64,18 @@ export default function AdminSessions() {
 
   const DeviceIcon = (t) => deviceIcon(t);
 
+  const clearAll = async () => {
+    if (!confirm('Tüm oturum/kayıt geçmişi silinsin mi? Bu işlem geri alınamaz.')) return;
+    setClearing(true);
+    try {
+      await base44.entities.UserSession.deleteMany({});
+      setSessions([]);
+      toast({ title: 'Tüm oturumlar silindi' });
+    } catch (e) {
+      toast({ title: 'Silinemedi', description: e.response?.data?.error || e.message, variant: 'destructive' });
+    } finally { setClearing(false); }
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-extrabold mb-1">Oturumlar / Cihazlar</h1>
@@ -61,21 +83,29 @@ export default function AdminSessions() {
 
       {/* Şu anda çevrimiçi */}
       <div className="mb-6 rounded-2xl border border-green-500/30 bg-green-500/5 p-4">
-        <div className="flex items-center gap-2 mb-3"><span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" /><h2 className="font-bold">Şu anda çevrimiçi ({online.length})</h2></div>
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" /><h2 className="font-bold">Şu anda çevrimiçi ({online.length})</h2></div>
+          <button onClick={clearAll} disabled={clearing || sessions.length === 0} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/15 text-destructive text-xs font-semibold border border-destructive/30 disabled:opacity-50">
+            <Trash2 className="w-3.5 h-3.5" /> Tümünü Sil
+          </button>
+        </div>
         {online.length === 0 ? <p className="text-sm text-muted-foreground">Çevrimiçi kullanıcı yok.</p> : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {online.map((s) => {
               const I = deviceIcon(s.device_type);
+              const c = connInfo(s.connection_type);
               return (
-                <button key={s.id} onClick={() => setDetail(s)} className="text-left rounded-xl border border-border bg-card p-3 hover:bg-secondary/40">
+                <button key={s.id} onClick={() => setDetail(s)} className="text-left rounded-xl border border-border bg-card p-3 hover:bg-secondary/40 flex flex-col gap-1">
                   <div className="flex items-center gap-2">
                     <I className="w-4 h-4 text-green-400" />
                     <span className="font-semibold text-sm truncate">{s.user_name || 'Kullanıcı'}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1 truncate">{s.device_type} · {s.os} · {s.browser}</p>
+                  <p className="text-xs text-muted-foreground truncate">Cihaz: {s.device_type || '-'} · {s.os || '-'} · {s.browser || '-'}</p>
+                  <p className="text-xs text-muted-foreground truncate">Model: {s.model || 'Model bilgisi kullanılamıyor'}</p>
                   <p className="text-xs text-muted-foreground truncate">IP: {s.ip || '-'}</p>
                   <p className="text-xs text-muted-foreground truncate">Şehir: {s.city || s.country || '-'}</p>
-                  <p className="text-xs text-green-400 mt-1">Son aktif: {relTime(s.last_active)}</p>
+                  <p className="text-xs flex items-center gap-1.5"><c.Icon className={`w-3.5 h-3.5 ${c.color} ${c.glow}`} />{c.label}</p>
+                  <p className="text-xs text-green-400">Son aktif: {relTime(s.last_active)}</p>
                 </button>
               );
             })}
@@ -97,7 +127,7 @@ export default function AdminSessions() {
       {loading ? <p className="text-muted-foreground">Yükleniyor...</p> :
         filtered.length === 0 ? <p className="text-muted-foreground text-sm">Oturum bulunamadı.</p> : (
           <div className="overflow-x-auto rounded-2xl border border-border bg-card">
-            <table className="w-full text-sm min-w-[860px]">
+            <table className="w-full text-sm min-w-[960px]">
               <thead className="bg-secondary/40 text-muted-foreground">
                 <tr>
                   <th className="text-left font-semibold px-3 py-2.5">Kullanıcı</th>
@@ -106,6 +136,7 @@ export default function AdminSessions() {
                   <th className="text-left font-semibold px-3 py-2.5">Model</th>
                   <th className="text-left font-semibold px-3 py-2.5">İşletim Sistemi</th>
                   <th className="text-left font-semibold px-3 py-2.5">Tarayıcı</th>
+                  <th className="text-left font-semibold px-3 py-2.5">Bağlantı</th>
                   <th className="text-left font-semibold px-3 py-2.5">Konum</th>
                   <th className="text-left font-semibold px-3 py-2.5">Son Aktif</th>
                   <th className="text-left font-semibold px-3 py-2.5">Durum</th>
@@ -126,6 +157,9 @@ export default function AdminSessions() {
                       <td className="px-3 py-2.5 text-xs">{s.model || 'Model bilgisi kullanılamıyor'}</td>
                       <td className="px-3 py-2.5 text-xs">{s.os || '-'}</td>
                       <td className="px-3 py-2.5 text-xs">{s.browser || '-'}</td>
+                      <td className="px-3 py-2.5">
+                        {(() => { const c = connInfo(s.connection_type); return <span className={`inline-flex items-center gap-1.5 text-xs ${c.color}`}><c.Icon className={`w-3.5 h-3.5 ${c.glow}`} />{c.label}</span>; })()}
+                      </td>
                       <td className="px-3 py-2.5 text-xs">{[s.city, s.region, s.country].filter(Boolean).join(', ') || '-'}{s.isp ? <span className="block text-muted-foreground">{s.isp}</span> : null}</td>
                       <td className="px-3 py-2.5 text-xs">{relTime(s.last_active)}</td>
                       <td className="px-3 py-2.5">
@@ -161,6 +195,7 @@ export default function AdminSessions() {
               <Row label="Cihaz türü" value={detail.device_type || '-'} />
               <Row label="İşletim sistemi" value={detail.os || '-'} />
               <Row label="Tarayıcı" value={detail.browser || '-'} />
+              <Row label="Bağlantı" value={connInfo(detail.connection_type).label} />
               <Row label="Model" value={detail.model || 'Model bilgisi kullanılamıyor'} />
               <Row label="İlk giriş" value={detail.first_login ? new Date(detail.first_login).toLocaleString('tr-TR') : '-'} />
               <Row label="Son aktif" value={detail.last_active ? new Date(detail.last_active).toLocaleString('tr-TR') : '-'} />

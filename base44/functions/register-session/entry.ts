@@ -8,6 +8,7 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json().catch(() => ({}));
     const deviceSession = String(body?.device_session || '');
+    const connectionType = ['wifi', 'cellular', 'ethernet', 'unknown'].includes(body?.connection_type) ? body.connection_type : 'unknown';
     const sessionId = crypto.randomUUID();
     const prevSession = user.active_session_id || '';
     const userName = user.username || user.full_name || 'Kullanıcı';
@@ -47,7 +48,7 @@ export default async function(req) {
       ip, last_ip: ip,
       country: geo.country, city: geo.city, region: geo.region, isp: geo.isp,
       device_type: dev.deviceType, os: dev.os, browser: dev.browser,
-      model: dev.model || '',
+      model: dev.model || '', connection_type: connectionType,
       first_login: new Date().toISOString(),
       last_active: new Date().toISOString(),
       status: 'active'
