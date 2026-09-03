@@ -16,7 +16,8 @@ export default function ProfileFrame({ frame, children, size = 'md', className =
   return (
     <div className={`relative ${containerClass} ${className} shrink-0`}>
       <div className="frame-glow-bg" style={{ background: `conic-gradient(${frameInfo.colors[0]}, ${frameInfo.colors[1]}, ${frameInfo.colors[0]})` }} />
-      <div className={`frame-animated ${padding[size] || padding.md} w-full h-full`} style={{ background: `conic-gradient(${frameInfo.colors[0]}, ${frameInfo.colors[1]}, ${frameInfo.colors[0]})` }}>
+      <div className="frame-rotating-bg" style={{ background: `conic-gradient(${frameInfo.colors[0]}, ${frameInfo.colors[1]}, ${frameInfo.colors[0]})` }} />
+      <div className={`relative ${padding[size] || padding.md} w-full h-full z-[1]`}>
         <div className="frame-animated-inner w-full h-full bg-background">
           {innerEl}
         </div>
