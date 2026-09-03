@@ -8,6 +8,7 @@ import BottomNav from '@/components/layout/BottomNav';
 import MaintenanceMode from '@/pages/MaintenanceMode';
 import useFriendPresence from '@/hooks/useFriendPresence';
 import useRoleCelebration from '@/hooks/useRoleCelebration';
+import useRoleLabels from '@/hooks/useRoleLabels';
 import RoleCelebrationOverlay from '@/components/role/RoleCelebrationOverlay';
 
 // Abonelik gerektirmeyen sayfalar
@@ -19,6 +20,7 @@ export default function AppLayout() {
   const { user, loading } = useCurrentUser();
   useFriendPresence(user, true);
   useRoleCelebration();
+  useRoleLabels();
   const { publicSettings } = useAuth();
   // RoleCelebrationOverlay renders a full-screen animated character when role changes
   const isRoom = pathname.startsWith('/oda/');

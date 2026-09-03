@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { parseRoleMetadata, ROLE_DEFINITIONS } from '@/lib/roles';
+import { parseRoleMetadata, ROLE_DEFINITIONS, getRoleLabelOverride } from '@/lib/roles';
 import RoleCharacter from '@/components/role/RoleCharacter';
 
 export default function RoleEntrance({ roomId }) {
@@ -21,8 +21,13 @@ export default function RoleEntrance({ roomId }) {
       if (!isEntry && !isExit) return;
 
       const roleDef = ROLE_DEFINITIONS[roleKey || ''];
-      const rolePrefix = (roleDef && roleDef.show_in_room) ? `${roleDef.icon} ${roleDef.label} ` : '';
-      const displayName = text.replace(rolePrefix, '').replace(' odaya katıldı.', '').replace(' odadan ayrıldı.', '');
+      const roleLabel = getRoleLabelOverride(roleKey) || roleDef?.label || '';
+      const rolePrefix = (roleDef && roleDef.show_in_room) ? `${roleDef.icon} ${roleLabel} ` : '';
+
+      // Extract display name — handle hide_username_entry (no name in text)
+      let remaining = text;
+      if (rolePrefix) remaining = remaining.replace(rolePrefix, '');
+      const displayName = remaining.replace('odaya katıldı', '').replace('odadan ayrıldı', '').replace(/[.\s]/g, '').trim();
 
       setQueue((q) => [...q.slice(-4), {
         key: msg.id + (isEntry ? 'in' : 'out'),
@@ -30,8 +35,9 @@ export default function RoleEntrance({ roomId }) {
         color: color || roleDef?.color || '#8b5cf6',
         isEntry,
         displayName,
-        roleLabel: roleDef?.show_in_room ? roleDef.label : '',
+        roleLabel: roleDef?.show_in_room ? roleLabel : '',
         roleIcon: roleDef?.icon || '✨',
+        hideUsername: roleDef?.hide_username_entry || false,
       }]);
     });
     return () => { unsub(); clearTimeout(timerRef.current); };
@@ -74,9 +80,12 @@ export default function RoleEntrance({ roomId }) {
             {current.roleIcon} {current.roleLabel}
           </p>
         )}
-        <p className="text-2xl font-extrabold text-white" style={{ textShadow: `0 0 15px ${current.color}, 0 0 30px ${current.color}` }}>
-          {current.displayName}
-        </p>
+        {/* Only show username if NOT hidden */}
+        {!current.hideUsername && current.displayName && (
+          <p className="text-2xl font-extrabold text-white" style={{ textShadow: `0 0 15px ${current.color}, 0 0 30px ${current.color}` }}>
+            {current.displayName}
+          </p>
+        )}
         <p className="text-sm font-semibold text-white/80 mt-1">{action}</p>
       </div>
     </div>

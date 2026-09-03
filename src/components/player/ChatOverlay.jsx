@@ -140,7 +140,9 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                  </Link>
                  <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="text-xs font-semibold truncate hover:underline">{m.user_name}{user?.id === m.user_id && ' (Sen)'}</Link>
+                    <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="text-xs font-semibold truncate hover:underline">
+                      <RoleNameEffect nameEffect={getRoleInfo(profiles[m.user_id] || m)?.name_effect}>{m.user_name}{user?.id === m.user_id && ' (Sen)'}</RoleNameEffect>
+                    </Link>
                     {profiles[m.user_id] && (profiles[m.user_id].display_role || profiles[m.user_id].custom_role?.name) && <RoleBadge user={profiles[m.user_id]} size="sm" showLabel={false} />}
                   </div>
                   <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')}>

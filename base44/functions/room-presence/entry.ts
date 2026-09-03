@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimit, safeErrorResponse, logSecurity } from '../../shared/security.ts';
-import { isModerator, isSiteOwner, immuneToModeration, getRoleInfo } from '../../shared/roles.ts';
+import { isModerator, isSiteOwner, immuneToModeration, getRoleInfo, getRoleLabelOverrides } from '../../shared/roles.ts';
 
 async function sha256Hex(salt, pw) {
   const data = new TextEncoder().encode(salt + pw);
@@ -37,6 +37,7 @@ export default async function(req) {
     const isMod = isModerator(me);
     const isOwner = room.owner_id === user.id;
     const ghost = isAdmin && !isOwner;
+    const labelOverrides = await getRoleLabelOverrides(base44);
 
     if (action === 'join') {
       // Rate limit: 10 katılım / dakika / kullanıcı
@@ -85,12 +86,13 @@ export default async function(req) {
         }
         participants.push({ user_id: user.id, name, avatar: user.avatar || '', muted: false, speaking: false });
         await base44.asServiceRole.entities.Room.update(room_id, { participants });
-        const roleInfo = getRoleInfo(me);
+        const roleInfo = getRoleInfo(me, labelOverrides);
         const roleMeta = roleInfo.label ? `{{ROLE|${roleInfo.key || ''}|${roleInfo.color || ''}|${roleInfo.animation || 'pulse'}}}` : '';
         const rolePrefix = (roleInfo.label && roleInfo.show_in_room) ? `${roleInfo.icon} ${roleInfo.label} ` : '';
+        const entryName = roleInfo.hide_username_entry ? '' : `${name} `;
         await base44.asServiceRole.entities.RoomMessage.create({
           room_id, user_id: user.id, user_name: name,
-          text: `${roleMeta}${rolePrefix}${name} odaya katıldı.`, type: 'system'
+          text: `${roleMeta}${rolePrefix}${entryName}odaya katıldı.`, type: 'system'
         });
       }
       await updatePresenceRoom(base44, user.id, room_id);
@@ -195,12 +197,13 @@ export default async function(req) {
     const participants = (room.participants || []).filter((p) => p.user_id !== user.id);
     if (participants.length === 0) {
       await base44.asServiceRole.entities.Room.update(room_id, { participants, status: 'closed', is_playing: false });
-      const roleInfoLeave = getRoleInfo(me);
+      const roleInfoLeave = getRoleInfo(me, labelOverrides);
       const roleMetaLeave = roleInfoLeave.label ? `{{ROLE|${roleInfoLeave.key || ''}|${roleInfoLeave.color || ''}|${roleInfoLeave.animation || 'pulse'}}}` : '';
       const rolePrefixLeave = (roleInfoLeave.label && roleInfoLeave.show_in_room) ? `${roleInfoLeave.icon} ${roleInfoLeave.label} ` : '';
+      const leaveName = roleInfoLeave.hide_username_entry ? '' : `${name} `;
       await base44.asServiceRole.entities.RoomMessage.create({
         room_id, user_id: user.id, user_name: name,
-        text: `${roleMetaLeave}${rolePrefixLeave}${name} odadan ayrıldı.`, type: 'system'
+        text: `${roleMetaLeave}${rolePrefixLeave}${leaveName}odadan ayrıldı.`, type: 'system'
       });
       return Response.json({ ok: true });
     }
@@ -217,12 +220,13 @@ export default async function(req) {
       is_playing: ownershipTransferred ? room.is_playing : (participants.length === 0 ? false : room.is_playing),
       last_sync: new Date().toISOString()
     });
-    const roleInfoLeave2 = getRoleInfo(me);
+    const roleInfoLeave2 = getRoleInfo(me, labelOverrides);
     const roleMetaLeave2 = roleInfoLeave2.label ? `{{ROLE|${roleInfoLeave2.key || ''}|${roleInfoLeave2.color || ''}|${roleInfoLeave2.animation || 'pulse'}}}` : '';
     const rolePrefixLeave2 = (roleInfoLeave2.label && roleInfoLeave2.show_in_room) ? `${roleInfoLeave2.icon} ${roleInfoLeave2.label} ` : '';
+    const leaveName2 = roleInfoLeave2.hide_username_entry ? '' : `${name} `;
     await base44.asServiceRole.entities.RoomMessage.create({
       room_id, user_id: user.id, user_name: name,
-      text: `${roleMetaLeave2}${rolePrefixLeave2}${name} odadan ayrıldı.`, type: 'system'
+      text: `${roleMetaLeave2}${rolePrefixLeave2}${leaveName2}odadan ayrıldı.`, type: 'system'
     });
     if (ownershipTransferred) {
       await base44.asServiceRole.entities.RoomMessage.create({
