@@ -8,6 +8,7 @@ import { Image } from '@/components/ui/image';
 import ChatUserMenu from '@/components/player/ChatUserMenu';
 import ReportDialog from '@/components/ReportDialog';
 import RoleBadge from '@/components/RoleBadge';
+import ProfileFrame from '@/components/ProfileFrame';
 import useMessageProfiles from '@/hooks/useMessageProfiles';
 import { mergeMessages, upsertMessage } from '@/lib/realtimeMessages';
 import { parseRoleMetadata } from '@/lib/roles';
@@ -133,7 +134,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
              ) : (
                <>
                  <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="shrink-0">
-                   {(profiles[m.user_id]?.avatar || m.user_avatar) ? <Image src={profiles[m.user_id]?.avatar || m.user_avatar} className="w-7 h-7 rounded-full object-cover" fittingType="fill" /> : <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold">{(m.user_name || '?')[0]}</span>}
+                   {profiles[m.user_id]?.profile_frame ? <ProfileFrame frame={profiles[m.user_id].profile_frame} size="sm" avatar={profiles[m.user_id]?.avatar || m.user_avatar} name={m.user_name} /> : (profiles[m.user_id]?.avatar || m.user_avatar) ? <Image src={profiles[m.user_id]?.avatar || m.user_avatar} className="w-7 h-7 rounded-full object-cover" fittingType="fill" /> : <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold">{(m.user_name || '?')[0]}</span>}
                  </Link>
                  <div className="min-w-0 flex-1">
                    <div className="flex items-center gap-1.5">

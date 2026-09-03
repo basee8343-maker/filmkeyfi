@@ -17,6 +17,7 @@ import RoomNotifications from '@/components/player/RoomNotifications';
 import RoleEntrance from '@/components/player/RoleEntrance';
 import MoviePickerSheet from '@/components/player/MoviePickerSheet';
 import RoleBadge from '@/components/RoleBadge';
+import ProfileFrame from '@/components/ProfileFrame';
 import useSocialBadges from '@/hooks/useSocialBadges';
 
 export default function WatchParty() {
@@ -386,7 +387,11 @@ export default function WatchParty() {
                 return (
                   <div key={p.user_id} className="flex items-center gap-2 text-sm">
                     <Link to={`/kullanici/${p.user_id}`} className="shrink-0">
-                      {avatar ? <Image src={avatar} className={`w-7 h-7 rounded-full object-cover ${speaking ? 'speaking-glow' : ''}`} fittingType="fill" /> : <span className={`w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold ${speaking ? 'speaking-glow' : ''}`}>{(p.name || '?')[0]}</span>}
+                      {prof?.profile_frame ? (
+                        <ProfileFrame frame={prof.profile_frame} size="sm" avatar={avatar} name={p.name} />
+                      ) : (
+                        avatar ? <Image src={avatar} className={`w-7 h-7 rounded-full object-cover ${speaking ? 'speaking-glow' : ''}`} fittingType="fill" /> : <span className={`w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold ${speaking ? 'speaking-glow' : ''}`}>{(p.name || '?')[0]}</span>
+                      )}
                     </Link>
                     <Link to={`/kullanici/${p.user_id}`} className="flex-1 truncate hover:underline">{p.name}{p.user_id === room.owner_id && <Crown className="w-3 h-3 text-amber-400 inline ml-1" />}</Link>
                     {(viewerProfiles[p.user_id]?.display_role || viewerProfiles[p.user_id]?.custom_role?.name) && <RoleBadge user={viewerProfiles[p.user_id]} size="sm" showLabel={false} />}
