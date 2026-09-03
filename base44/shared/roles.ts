@@ -194,6 +194,40 @@ export async function getRoleLabelOverrides(base44: any): Promise<Record<string,
   return {};
 }
 
+// Fetch a user's active special frame info (for room entry/exit overlays).
+// isEntry=true checks entry_enabled, isEntry=false checks exit_enabled.
+export async function getSpecialFrameInfo(base44: any, user: any, isEntry: boolean): Promise<any> {
+  if (!user?.special_frame_id) return null;
+  const frame = await base44.asServiceRole.entities.SpecialFrame.get(user.special_frame_id).catch(() => null);
+  if (!frame || !frame.active) return null;
+  const enabled = isEntry ? (user.special_frame_entry !== false) : (user.special_frame_exit !== false);
+  if (!enabled) return null;
+  return {
+    id: frame.id,
+    image_url: frame.image_url,
+    theme_color: frame.theme_color || '#ff4500',
+    text_color: frame.text_color || '#ffaa00',
+    glow_color: frame.glow_color || frame.theme_color || '#ff4500',
+    title: user.special_frame_title || frame.title || '',
+  };
+}
+
+// Parse {{FRAME|id|themeColor|textColor|glowColor|title}} metadata from message text.
+export function parseFrameMetadata(text: string): { frameId: string | null; themeColor: string | null; textColor: string | null; glowColor: string | null; title: string | null; rest: string } {
+  if (!text) return { frameId: null, themeColor: null, textColor: null, glowColor: null, title: null, rest: text || '' };
+  const match = text.match(/^\{\{FRAME\|([^}]+)\}\}/);
+  if (!match) return { frameId: null, themeColor: null, textColor: null, glowColor: null, title: null, rest: text };
+  const parts = match[1].split('|');
+  return {
+    frameId: parts[0] || null,
+    themeColor: parts[1] || null,
+    textColor: parts[2] || null,
+    glowColor: parts[3] || null,
+    title: parts[4] || null,
+    rest: text.slice(match[0].length),
+  };
+}
+
 export function getRoleInfo(user: any, labelOverrides: Record<string, string> = {}): any {
   const predefined = ROLE_DEFINITIONS[user?.display_role || ''];
   if (predefined && predefined.label) {

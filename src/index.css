@@ -694,6 +694,45 @@
   }
   .name-effect-smoke { animation: name-smoke-text 3s ease-in-out infinite; }
 
+  /* === ÖZEL ÇERÇEVE GİRİŞ/ÇIKIŞ ANİMASYONLARI === */
+  @keyframes frame-entry-scale {
+    0% { transform: scale(0.3) rotate(-10deg); opacity: 0; }
+    50% { transform: scale(1.1) rotate(2deg); opacity: 1; }
+    70% { transform: scale(0.95) rotate(-1deg); }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  @keyframes frame-entry-quick {
+    0% { transform: scale(0.5); opacity: 0; }
+    60% { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes frame-exit-scale {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.3) rotate(10deg); opacity: 0; }
+  }
+  @keyframes frame-glow-fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes frame-glow-fade-out {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes frame-text-appear {
+    0% { transform: translateY(20px) scale(0.8); opacity: 0; }
+    60% { transform: translateY(0) scale(1.05); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  @keyframes frame-text-fade-out {
+    0% { opacity: 1; }
+    100% { transform: translateY(20px); opacity: 0; }
+  }
+  @keyframes frame-particle-burst {
+    0% { transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateY(0) scale(1); opacity: 0; }
+    20% { opacity: 1; }
+    100% { transform: translate(-50%, -50%) rotate(var(--angle, 0deg)) translateY(-120px) scale(0.2); opacity: 0; }
+  }
+
   /* === KURUCU VİDEO OVERLAY === */
   @keyframes founder-video-fade-in {
     from { opacity: 0; }

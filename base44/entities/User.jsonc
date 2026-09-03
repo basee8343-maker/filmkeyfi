@@ -54,6 +54,22 @@
       "type": "string",
       "default": ""
     },
+    "special_frame_id": {
+      "type": "string",
+      "default": ""
+    },
+    "special_frame_title": {
+      "type": "string",
+      "default": ""
+    },
+    "special_frame_entry": {
+      "type": "boolean",
+      "default": true
+    },
+    "special_frame_exit": {
+      "type": "boolean",
+      "default": true
+    },
     "name_effect": {
       "type": "string",
       "default": ""

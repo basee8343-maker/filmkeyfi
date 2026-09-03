@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimit, safeErrorResponse, logSecurity } from '../../shared/security.ts';
-import { isModerator, isSiteOwner, immuneToModeration, getRoleInfo, getRoleLabelOverrides } from '../../shared/roles.ts';
+import { isModerator, isSiteOwner, immuneToModeration, getRoleInfo, getRoleLabelOverrides, getSpecialFrameInfo } from '../../shared/roles.ts';
 
 async function sha256Hex(salt, pw) {
   const data = new TextEncoder().encode(salt + pw);

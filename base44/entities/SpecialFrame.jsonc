@@ -1,0 +1,53 @@
+{
+  "name": "SpecialFrame",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "theme_color": {
+      "type": "string",
+      "default": "#ff4500"
+    },
+    "text_color": {
+      "type": "string",
+      "default": "#ffaa00"
+    },
+    "glow_color": {
+      "type": "string",
+      "default": "#ff4500"
+    },
+    "title": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "image_url"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -196,6 +196,21 @@ export const BAN_REASONS = [
   { key: 'other', icon: '📝', label: 'Diğer' },
 ];
 
+export function parseFrameMetadata(text) {
+  if (!text) return { frameId: null, themeColor: null, textColor: null, glowColor: null, title: null, rest: text || '' };
+  const match = text.match(/^\{\{FRAME\|([^}]+)\}\}/);
+  if (!match) return { frameId: null, themeColor: null, textColor: null, glowColor: null, title: null, rest: text };
+  const parts = match[1].split('|');
+  return {
+    frameId: parts[0] || null,
+    themeColor: parts[1] || null,
+    textColor: parts[2] || null,
+    glowColor: parts[3] || null,
+    title: parts[4] || null,
+    rest: text.slice(match[0].length),
+  };
+}
+
 export function parseRoleMetadata(text) {
   if (!text) return { text: '', roleKey: null, color: null, animation: null, hasRole: false };
   const match = text.match(/^\{\{ROLE\|([^}]+)\}\}/);
