@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { logSecurity } from '../../shared/security.ts';
+import { notifyAdmins } from '../../shared/adminNotify.ts';
 
 async function getConfigs(base44) {
   const configs = await base44.asServiceRole.entities.AppConfig.list(100).catch(() => []);
@@ -361,6 +362,26 @@ export default async function (req) {
 
     await logSecurity(base44, 'shopier_payment_success', { id: payment.user_id, email: buyerEmail }, shopierOrderId, 'info').catch(() => {});
     log('completed', { message: 'Subscription activated and user auto-approved successfully', user_id: payment.user_id, was_pending: wasPending, end_date: endDate.toISOString() });
+
+    // Admin'lere WhatsApp + Web Push + Notification bildirimi (ödeme ve abonelik aktivasyonu)
+    const username = userRecord?.username || userRecord?.full_name || buyerEmail;
+    const dateStr = now.toLocaleString('tr-TR');
+    await notifyAdmins(base44, {
+      event: 'payment',
+      ref_id: `payment:${payment.id}`,
+      title: 'Yeni ödeme gerçekleşti',
+      body: `${username} — ${planName} — ${payment.amount} ₺`,
+      link: '/admin/odemeler',
+      whatsapp_data: { username, package: planName, amount: `${payment.amount} ₺`, status: 'Tamamlandı', date: dateStr },
+    }).catch(() => {});
+    await notifyAdmins(base44, {
+      event: 'subscription_active',
+      ref_id: `sub_active:${payment.user_id}:${endDate.toISOString()}`,
+      title: 'Abonelik aktif edildi',
+      body: `${username} — ${planName} — Bitiş: ${endDate.toLocaleDateString('tr-TR')}`,
+      link: '/admin/abonelikler',
+      whatsapp_data: { username, package: planName, date: dateStr },
+    }).catch(() => {});
 
     if (isBrowser) return Response.redirect(cfg.successUrl + '?order=' + (shopierOrderId || payment.shopier_order_id), 302);
     return Response.json({ ok: true, activated: true, user_id: payment.user_id, end_date: endDate.toISOString() });

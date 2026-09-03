@@ -12,6 +12,18 @@ export function useCurrentUser() {
       .finally(() => active && setLoading(false));
     return () => { active = false; };
   }, []);
+
+  // Real-time: admin panelden abonelik durumu değiştiğinde anında güncelle
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = base44.entities.User.subscribe((ev) => {
+      if (ev.type === 'update' && ev.data?.id === user.id) {
+        setUser((prev) => prev ? { ...prev, ...ev.data } : prev);
+      }
+    });
+    return unsub;
+  }, [user?.id]);
+
   return { user, loading, setUser, reload: () => base44.auth.me().then(setUser) };
 }
 

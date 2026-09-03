@@ -71,9 +71,10 @@ export default function Support() {
       base44.functions.invoke('admin-notify', {
         event: 'support',
         ref_id: `support_msg:${msg?.id || t.id}`,
-        title: 'Yeni destek mesajı geldi',
+        title: 'Yeni destek talebi geldi',
         body: `${user.username || user.full_name}: ${form.subject}`,
-        link: '/admin/destek'
+        link: '/admin/destek',
+        whatsapp_data: { username: user.username || user.full_name, subject: form.subject, message: form.message, date: new Date().toLocaleString('tr-TR') }
       }).catch(() => {});
       setForm({ subject: '', category: 'Genel', message: '' }); setShowNew(false); setActive(t);
       load();
@@ -89,11 +90,12 @@ export default function Support() {
       .then((msg) => {
         if (msg?.id) {
           base44.functions.invoke('admin-notify', {
-            event: 'support',
+            event: 'support_message',
             ref_id: `support_msg:${msg.id}`,
             title: 'Yeni destek mesajı geldi',
             body: `${user.username || user.full_name}: ${msgText.slice(0, 80)}`,
-            link: '/admin/destek'
+            link: '/admin/destek',
+            whatsapp_data: { username: user.username || user.full_name, subject: active?.subject || '', message: msgText.slice(0, 200), date: new Date().toLocaleString('tr-TR') }
           }).catch(() => {});
         }
       })

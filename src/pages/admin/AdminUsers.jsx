@@ -52,6 +52,14 @@ export default function AdminUsers({ pendingOnly = false }) {
       await base44.entities.User.update(u.id, { membership_status: 'active', membership_start: start.toISOString(), membership_end: end.toISOString() });
       await notify(u.id, 'Üyeliğiniz onaylandı', 'Premium içeriklere erişebilirsiniz.');
       await log('Üyelik onaylandı', u.email);
+      base44.functions.invoke('admin-notify', {
+        event: 'subscription_active',
+        ref_id: `sub_active_manual:${u.id}`,
+        title: 'Abonelik aktif edildi (Manuel)',
+        body: u.username || u.full_name || u.email,
+        link: '/admin/abonelikler',
+        whatsapp_data: { username: u.username || u.full_name || u.email, package: 'Manuel Aktivasyon', date: new Date().toLocaleString('tr-TR') }
+      }).catch(() => {});
       toast({ title: 'Kullanıcı onaylandı.' }); load();
     } catch (e) { toast({ title: 'Onaylanamadı', description: e.message, variant: 'destructive' }); }
   };
@@ -68,6 +76,25 @@ export default function AdminUsers({ pendingOnly = false }) {
       const next = u.membership_status === 'active' ? 'blocked' : 'active';
       await base44.entities.User.update(u.id, { membership_status: next });
       await log(next === 'active' ? 'Kullanıcı aktif edildi' : 'Kullanıcı pasif edildi', u.email);
+      if (next === 'blocked') {
+        base44.functions.invoke('admin-notify', {
+          event: 'subscription_cancelled',
+          ref_id: `sub_cancel_manual:${u.id}`,
+          title: 'Abonelik iptal edildi (Manuel)',
+          body: u.username || u.full_name || u.email,
+          link: '/admin/abonelikler',
+          whatsapp_data: { username: u.username || u.full_name || u.email, date: new Date().toLocaleString('tr-TR') }
+        }).catch(() => {});
+      } else {
+        base44.functions.invoke('admin-notify', {
+          event: 'subscription_active',
+          ref_id: `sub_active_manual:${u.id}`,
+          title: 'Abonelik aktif edildi (Manuel)',
+          body: u.username || u.full_name || u.email,
+          link: '/admin/abonelikler',
+          whatsapp_data: { username: u.username || u.full_name || u.email, package: 'Manuel Aktivasyon', date: new Date().toLocaleString('tr-TR') }
+        }).catch(() => {});
+      }
       toast({ title: next === 'active' ? 'Kullanıcı aktif edildi' : 'Kullanıcı pasif edildi' }); load();
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.message, variant: 'destructive' }); }
   };

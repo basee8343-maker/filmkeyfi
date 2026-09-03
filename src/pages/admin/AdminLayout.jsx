@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import { useCurrentUser } from '@/lib/useCurrentUser';
-import { LayoutDashboard, UserCheck, Users, Film, FolderTree, DoorOpen, MessageSquare, LifeBuoy, CreditCard, RefreshCw, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, Crown, ChevronDown, Package as PackageIcon, Home, Flag } from 'lucide-react';
+import { LayoutDashboard, UserCheck, Users, Film, FolderTree, DoorOpen, MessageSquare, LifeBuoy, CreditCard, RefreshCw, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, Crown, ChevronDown, Package as PackageIcon, Home, Flag, MessageCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAdminNotifications, requestNotificationPermission } from '@/hooks/useAdminNotifications';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -24,6 +24,7 @@ const nav = [
     { to: '/admin/odeme-ayarlari', label: 'Ödeme Ayarları', icon: Settings },
   ]},
   { to: '/admin/bildirimler', label: 'Bildirimler', icon: Bell },
+  { to: '/admin/whatsapp', label: 'WhatsApp Bildirimleri', icon: MessageCircle },
   { to: '/admin/guvenlik', label: 'Güvenlik', icon: ShieldAlert },
   { to: '/admin/sikayetler', label: 'Şikayetler', icon: Flag },
   { to: '/admin/ayarlar', label: 'Ayarlar', icon: Settings },

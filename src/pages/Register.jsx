@@ -91,7 +91,8 @@ export default function Register() {
         ref_id: `new_user:${email}`,
         title: 'Yeni kullanıcı kaydoldu',
         body: fullName || username || email,
-        link: '/admin/kullanicilar'
+        link: '/admin/kullanicilar',
+        whatsapp_data: { username: fullName || username || email, email, date: new Date().toLocaleString('tr-TR') }
       }).catch(() => {});
       if (paymentRequired) {
         toast({ title: "Kayıt tamamlandı", description: "Aboneliğinizi aktif etmek için ödeme yapın." });

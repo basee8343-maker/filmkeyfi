@@ -29,6 +29,7 @@ import AdminRoomMessages from '@/pages/admin/AdminRoomMessages';
 import AdminSupport from '@/pages/admin/AdminSupport';
 import AdminPackages from '@/pages/admin/AdminPackages';
 import AdminNotifications from '@/pages/admin/AdminNotifications';
+import AdminWhatsApp from '@/pages/admin/AdminWhatsApp';
 import AdminCategories from '@/pages/admin/AdminCategories';
 import OpenRooms from '@/pages/OpenRooms';
 import AdminReports from '@/pages/admin/AdminReports';
@@ -125,6 +126,7 @@ const AuthenticatedApp = () => {
           <Route path="shopier" element={<AdminShopier />} />
           <Route path="odeme-ayarlari" element={<AdminPaymentSettings />} />
           <Route path="bildirimler" element={<AdminNotifications />} />
+          <Route path="whatsapp" element={<AdminWhatsApp />} />
           <Route path="guvenlik" element={<AdminSecurity />} />
           <Route path="sikayetler" element={<AdminUserReports />} />
           <Route path="ayarlar" element={<AdminSettings />} />
