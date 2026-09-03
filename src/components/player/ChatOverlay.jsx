@@ -113,7 +113,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
            <div key={m.id} className={`flex gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
              {m.type === 'system' ? (
                (() => {
-                 const isRole = /[👑🛡️⭐🌟🤴👸✨]/.test(m.text);
+                 const isRole = /^\p{Extended_Pictographic}/u.test(m.text);
                  return (
                    <span
                      className={`text-xs px-3 py-1.5 rounded-full ${isRole ? 'font-bold neon-entrance' : 'text-muted-foreground bg-secondary/50'}`}

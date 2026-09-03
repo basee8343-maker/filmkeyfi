@@ -158,4 +158,18 @@
     100% { transform: scale(1); opacity: 1; box-shadow: 0 0 10px -1px hsl(var(--accent) / 0.5); }
   }
   .neon-entrance { animation: neon-entrance 0.7s ease-out; }
+  @keyframes neon-flash-overlay {
+    0% { opacity: 0; box-shadow: inset 0 0 0 0 hsl(var(--accent) / 0); }
+    15% { opacity: 1; box-shadow: inset 0 0 100px 20px hsl(var(--accent) / 0.5); }
+    85% { opacity: 1; box-shadow: inset 0 0 80px 10px hsl(var(--accent) / 0.35); }
+    100% { opacity: 0; box-shadow: inset 0 0 0 0 hsl(var(--accent) / 0); }
+  }
+  .neon-flash-overlay { animation: neon-flash-overlay 3.5s ease-out forwards; }
+  @keyframes neon-flash-text {
+    0% { transform: scale(0.5) translateY(20px); opacity: 0; }
+    15% { transform: scale(1.15) translateY(0); opacity: 1; }
+    75% { transform: scale(1) translateY(0); opacity: 1; }
+    100% { transform: scale(0.9) translateY(-10px); opacity: 0; }
+  }
+  .neon-flash-text { animation: neon-flash-text 3.5s ease-out forwards; }
 }

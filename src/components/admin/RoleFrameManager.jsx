@@ -2,12 +2,12 @@ import { useState } from 'react';
 import confetti from 'canvas-confetti';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
-import { ROLE_DEFINITIONS, FRAME_DEFINITIONS } from '@/lib/roles';
+import { ROLE_DEFINITIONS, FRAME_DEFINITIONS, getRoleInfo } from '@/lib/roles';
 
 export default function RoleFrameManager({ user, onUpdated }) {
   const { toast } = useToast();
   const [showCustomRole, setShowCustomRole] = useState(false);
-  const [customRole, setCustomRole] = useState({ name: '', icon: '✨', color: '#8b5cf6', neon: false });
+  const [customRole, setCustomRole] = useState({ name: '', icon: '✨', color: '#8b5cf6', neon: true });
 
   const assignRole = async (role) => {
     if (role === 'custom') { setShowCustomRole(true); return; }
@@ -39,15 +39,21 @@ export default function RoleFrameManager({ user, onUpdated }) {
       toast({ title: 'Özel rol atandı' });
       confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: [customRole.color, '#fbbf24', '#ffffff'], zIndex: 9999 });
       setShowCustomRole(false);
-      setCustomRole({ name: '', icon: '✨', color: '#8b5cf6', neon: false });
+      setCustomRole({ name: '', icon: '✨', color: '#8b5cf6', neon: true });
       onUpdated();
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
   const selectClass = 'bg-secondary/60 border border-border rounded-lg px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-ring cursor-pointer';
+  const currentRole = getRoleInfo(user);
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
+      {currentRole?.label && (
+        <span className="text-xs px-2 py-1 rounded-full font-bold" style={{ backgroundColor: `${currentRole.color}25`, color: currentRole.color, boxShadow: currentRole.neon ? `0 0 6px -1px ${currentRole.color}80` : 'none' }}>
+          {currentRole.icon} {currentRole.label}
+        </span>
+      )}
       <select value={user.display_role || ''} onChange={(e) => assignRole(e.target.value)} className={selectClass}>
         <option value="">Rol: Yok</option>
         {Object.entries(ROLE_DEFINITIONS).filter(([k]) => k).map(([key, info]) => (

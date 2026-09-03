@@ -14,6 +14,7 @@ import PartyControlBar from '@/components/player/PartyControlBar';
 import LiveKitDebugPanel from '@/components/player/LiveKitDebugPanel';
 import RoomDirectMessages from '@/components/player/RoomDirectMessages';
 import RoomNotifications from '@/components/player/RoomNotifications';
+import NeonEntrance from '@/components/player/NeonEntrance';
 import MoviePickerSheet from '@/components/player/MoviePickerSheet';
 import RoleBadge from '@/components/RoleBadge';
 import useSocialBadges from '@/hooks/useSocialBadges';
@@ -345,6 +346,7 @@ export default function WatchParty() {
       {/* Tam ekran video + alt kontrol alanı */}
       <div ref={playerWrapRef} className="flex-1 flex min-h-0 relative" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <RoomNotifications participants={room?.participants || []} currentUserId={user?.id} />
+        <NeonEntrance roomId={id} currentUser={user} />
         {dmNotif && (
           <div onClick={() => { setDirectOpen(true); setDmNotif(null); clearTimeout(dmNotifTimer.current); }} className={`absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] flex items-center gap-2 rounded-xl bg-card/95 border border-border px-3 py-2 shadow-2xl backdrop-blur-xl max-w-[70%] cursor-pointer ${dmNotifLeaving ? 'dm-notif-out' : 'dm-notif-in'}`}>
             {dmNotif.avatar ? <Image src={dmNotif.avatar} className="w-8 h-8 rounded-full" fittingType="fill" /> : <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">{dmNotif.name?.[0]}</div>}
