@@ -57,7 +57,6 @@ import Friends from '@/pages/Friends';
 import AdminFriendMessages from '@/pages/admin/AdminFriendMessages';
 import AdminPromoVideo from '@/pages/admin/AdminPromoVideo';
 import AdminSessions from '@/pages/admin/AdminSessions';
-import AdminSpecialFrames from '@/pages/admin/AdminSpecialFrames';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -138,7 +137,6 @@ const AuthenticatedApp = () => {
           <Route path="ayalar" element={<AdminSettings />} />
           <Route path="tanitim-videosu" element={<AdminPromoVideo />} />
           <Route path="oturumlar" element={<AdminSessions />} />
-          <Route path="ozel-cerceve" element={<AdminSpecialFrames />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
