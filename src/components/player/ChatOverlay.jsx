@@ -17,7 +17,7 @@ import RoleNameEffect from '@/components/role/RoleNameEffect';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
-export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose }) {
+export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete }) {
   const { user } = useCurrentUser();
   const { toast } = useToast();
   const [messages, setMessages] = useState([]);
@@ -30,6 +30,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   const [uploading, setUploading] = useState(false);
   const [menuProfile, setMenuProfile] = useState(null);
   const [lightbox, setLightbox] = useState(null);
+  const [showAutoDeleteMenu, setShowAutoDeleteMenu] = useState(false);
   const scrollRef = useRef(null);
   const profiles = useMessageProfiles(messages.map((message) => message.user_id));
 
@@ -140,6 +141,22 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-2">
         <h3 className="font-bold flex items-center gap-2">💬 Sohbet <span className="text-xs text-muted-foreground font-normal">({messages.length})</span></h3>
         <div className="flex items-center gap-1.5">
+          {isOwner && (
+            <div className="relative">
+              <button onClick={() => setShowAutoDeleteMenu(!showAutoDeleteMenu)} className="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400 text-xs font-semibold whitespace-nowrap">⏱ Oto-sil: {autoDeleteMinutes ? `${autoDeleteMinutes}dk` : 'Kapalı'}</button>
+              {showAutoDeleteMenu && (
+                <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-xl p-2 w-36">
+                  <p className="text-xs text-muted-foreground mb-1.5 text-center">Otomatik Silme Süresi</p>
+                  <div className="grid grid-cols-3 gap-1">
+                    <button onClick={() => { onSetAutoDelete?.(0); setShowAutoDeleteMenu(false); }} className={`px-1.5 py-1 rounded text-xs font-semibold ${!autoDeleteMinutes ? 'bg-blue-500/30 text-blue-400' : 'hover:bg-secondary'}`}>Kapalı</button>
+                    {[2,3,4,5,6,7,8,9,10].map((m) => (
+                      <button key={m} onClick={() => { onSetAutoDelete?.(m); setShowAutoDeleteMenu(false); }} className={`px-1.5 py-1 rounded text-xs font-semibold ${autoDeleteMinutes === m ? 'bg-blue-500/30 text-blue-400' : 'hover:bg-secondary'}`}>{m}dk</button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {isOwner && <button onClick={clearAll} className="px-2 py-1 rounded-lg bg-destructive/20 text-destructive text-xs font-semibold">TÜMÜNÜ SİL</button>}
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary"><X className="w-5 h-5" /></button>
         </div>
@@ -192,6 +209,11 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
            </div>
          ))}
          </div>
+      {autoDeleteMinutes > 0 && countdownText && (
+        <div className="px-3 py-1.5 bg-blue-500/10 border-t border-blue-500/20 text-center">
+          <p className="text-xs text-blue-400 font-semibold animate-pulse">⏱ Otomatik silme: {autoDeleteMinutes} dk (kalan: {countdownText})</p>
+        </div>
+      )}
       {showEmoji && (
         <div className="px-3 py-2 border-t border-border flex flex-wrap gap-1">
           {EMOJIS.map((e) => <button key={e} onClick={() => setText((t) => t + e)} className="text-xl hover:bg-secondary rounded p-1">{e}</button>)}

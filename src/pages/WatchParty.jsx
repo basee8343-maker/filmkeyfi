@@ -70,6 +70,8 @@ export default function WatchParty() {
   const dmNotifTimer = useRef(null);
   const directOpenRef = useRef(false);
   useEffect(() => { directOpenRef.current = directOpen; }, [directOpen]);
+  const [countdownText, setCountdownText] = useState('');
+  const [autoDeleteMinutes, setAutoDeleteMinutes] = useState(0);
 
   useEffect(() => {
     base44.functions.invoke('room-presence', { action: 'get', room_id: id })
@@ -237,6 +239,44 @@ export default function WatchParty() {
   const isMod = user?.role === 'admin' || user?.role === 'moderator';
   const canMod = isOwner || isMod;
 
+  // Otomatik sohbet silme sayacı
+  useEffect(() => {
+    const minutes = room?.chat_auto_delete_minutes || 0;
+    setAutoDeleteMinutes(minutes);
+    if (!minutes || !room?.chat_auto_delete_at) { setCountdownText(''); return; }
+    const tick = () => {
+      const target = new Date(room.chat_auto_delete_at).getTime();
+      const remaining = Math.max(0, target - Date.now());
+      if (remaining <= 0) {
+        if (canMod) {
+          base44.functions.invoke('clear-room-messages', { room_id: id }).catch(() => {});
+          const newTarget = new Date(Date.now() + minutes * 60000).toISOString();
+          base44.entities.Room.update(id, { chat_auto_delete_at: newTarget }).catch(() => {});
+        }
+        setCountdownText('0:00');
+      } else {
+        const m = Math.floor(remaining / 60000);
+        const s = Math.floor((remaining % 60000) / 1000);
+        setCountdownText(`${m}:${s.toString().padStart(2, '0')}`);
+      }
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [room?.chat_auto_delete_minutes, room?.chat_auto_delete_at, id, canMod]);
+
+  const setAutoDelete = async (minutes) => {
+    if (!canMod) return;
+    try {
+      const updates = { chat_auto_delete_minutes: minutes };
+      if (minutes > 0) updates.chat_auto_delete_at = new Date(Date.now() + minutes * 60000).toISOString();
+      else updates.chat_auto_delete_at = null;
+      await base44.entities.Room.update(id, updates);
+    } catch (e) {
+      toast({ title: 'Ayar güncellenemedi', variant: 'destructive' });
+    }
+  };
+
   const updateRoom = async (patch, immediate = false) => {
     if (!canMod) return;
     if (!immediate && Date.now() - lastUpdateRef.current < 2000) return;
@@ -376,7 +416,7 @@ export default function WatchParty() {
 
         {chatOpen && (
           <div className="absolute right-0 top-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] landscape:bottom-0 landscape:pt-0 z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] shadow-2xl backdrop-blur-xl">
-            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} />
+            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} />
           </div>
         )}
 

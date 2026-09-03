@@ -40,6 +40,14 @@
       "type": "boolean",
       "default": false
     },
+    "chat_auto_delete_minutes": {
+      "type": "integer",
+      "default": 0
+    },
+    "chat_auto_delete_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "is_playing": {
       "type": "boolean",
       "default": false
