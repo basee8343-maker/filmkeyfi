@@ -9,43 +9,62 @@ export default function RoleEntrance({ roomId }) {
   const [queue, setQueue] = useState([]);
   const [current, setCurrent] = useState(null);
   const timerRef = useRef(null);
+  const processedRef = useRef(new Set());
   const { publicSettings } = useAuth();
   const founderEntryVideo = publicSettings?.founder_entry_video || '';
   const founderExitVideo = publicSettings?.founder_exit_video || '';
 
+  const processMessage = (msg) => {
+    if (!msg || msg.room_id !== roomId || msg.type !== 'system') return;
+    if (processedRef.current.has(msg.id)) return;
+    const { text, roleKey, color, hasRole } = parseRoleMetadata(msg.text);
+    if (!hasRole) return;
+
+    const isEntry = text.includes('odaya katıldı');
+    const isExit = text.includes('odadan ayrıldı');
+    if (!isEntry && !isExit) return;
+
+    processedRef.current.add(msg.id);
+
+    const roleDef = ROLE_DEFINITIONS[roleKey || ''];
+    const roleLabel = getRoleLabelOverride(roleKey) || roleDef?.label || '';
+    const rolePrefix = (roleDef && roleDef.show_in_room) ? `${roleDef.icon} ${roleLabel} ` : '';
+
+    let remaining = text;
+    if (rolePrefix) remaining = remaining.replace(rolePrefix, '');
+    const displayName = remaining.replace('odaya katıldı', '').replace('odadan ayrıldı', '').replace(/[.\s]/g, '').trim();
+
+    setQueue((q) => [...q.slice(-4), {
+      key: msg.id + (isEntry ? 'in' : 'out'),
+      roleKey: roleKey || 'custom',
+      color: color || roleDef?.color || '#8b5cf6',
+      isEntry,
+      displayName,
+      roleLabel: roleDef?.show_in_room ? roleLabel : '',
+      roleIcon: roleDef?.icon || '✨',
+      hideUsername: roleDef?.hide_username_entry || false,
+    }]);
+  };
+
   useEffect(() => {
+    // Mount'ta son sistem mesajlarını çek — kullanıcının kendi katılım olayını
+    // WebSocket aboneliği hazır olmadan önce kaçırma riskini önler.
+    base44.entities.RoomMessage.filter({ room_id: roomId, type: 'system' }, '-created_date', 15)
+      .then((msgs) => {
+        const now = Date.now();
+        const recent = msgs
+          .filter((m) => now - new Date(m.created_date).getTime() < 20000)
+          .reverse(); // Eskiden yeniye doğru işle
+        recent.forEach(processMessage);
+      })
+      .catch(() => {});
+
     const unsub = base44.entities.RoomMessage.subscribe((event) => {
       if (event.type !== 'create') return;
-      const msg = event.data;
-      if (!msg || msg.room_id !== roomId || msg.type !== 'system') return;
-      const { text, roleKey, color, hasRole } = parseRoleMetadata(msg.text);
-      if (!hasRole) return;
-
-      const isEntry = text.includes('odaya katıldı');
-      const isExit = text.includes('odadan ayrıldı');
-      if (!isEntry && !isExit) return;
-
-      const roleDef = ROLE_DEFINITIONS[roleKey || ''];
-      const roleLabel = getRoleLabelOverride(roleKey) || roleDef?.label || '';
-      const rolePrefix = (roleDef && roleDef.show_in_room) ? `${roleDef.icon} ${roleLabel} ` : '';
-
-      // Extract display name — handle hide_username_entry (no name in text)
-      let remaining = text;
-      if (rolePrefix) remaining = remaining.replace(rolePrefix, '');
-      const displayName = remaining.replace('odaya katıldı', '').replace('odadan ayrıldı', '').replace(/[.\s]/g, '').trim();
-
-      setQueue((q) => [...q.slice(-4), {
-        key: msg.id + (isEntry ? 'in' : 'out'),
-        roleKey: roleKey || 'custom',
-        color: color || roleDef?.color || '#8b5cf6',
-        isEntry,
-        displayName,
-        roleLabel: roleDef?.show_in_room ? roleLabel : '',
-        roleIcon: roleDef?.icon || '✨',
-        hideUsername: roleDef?.hide_username_entry || false,
-      }]);
+      processMessage(event.data);
     });
     return () => { unsub(); clearTimeout(timerRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
 
   useEffect(() => {

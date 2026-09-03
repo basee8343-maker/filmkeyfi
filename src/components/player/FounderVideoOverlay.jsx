@@ -33,6 +33,8 @@ export default function FounderVideoOverlay({ url, isEntry }) {
         muted
         playsInline
         preload="auto"
+        onCanPlay={() => videoRef.current?.play().catch(() => {})}
+        onLoadedData={() => videoRef.current?.play().catch(() => {})}
       />
       {/* Koyu katman — video üzerindeki yazının okunabilirliği için */}
       <div className="absolute inset-0 bg-black/30" />
