@@ -56,8 +56,8 @@ export default function AdminFlameEntrance({ avatar, name, isEntry, onDone }) {
         </div>
 
         {/* Admin rozeti */}
-        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-red-600 text-white text-[9px] font-bold tracking-wider z-20 whitespace-nowrap" style={{ animation: 'admin-badge-pop 0.4s ease-out 0.3s both', boxShadow: '0 0 8px rgba(255, 69, 0, 0.8)' }}>
-          ADMİN
+        <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-red-600 text-white text-[8px] font-bold tracking-tight z-20 whitespace-nowrap" style={{ animation: 'admin-badge-pop 0.4s ease-out 0.3s both', boxShadow: '0 0 8px rgba(255, 69, 0, 0.8)' }}>
+          ADMİN YARDIMCISI
         </div>
       </div>
 

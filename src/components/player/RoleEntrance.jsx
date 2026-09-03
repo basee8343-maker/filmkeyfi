@@ -74,8 +74,8 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
     if (rolePrefix) displayName = displayName.replace(rolePrefix, '');
     displayName = displayName.replace('odaya katıldı', '').replace('odadan ayrıldı', '').replace(/[.\s]/g, '').trim();
 
-    const isAdminFlame = roleKey === 'admin';
-    const isRedHeart = roleKey === 'red_heart';
+    const isAdminFlame = roleKey === 'admin_helper';
+    const isRedHeart = roleKey === 'queen_admin';
     const specialType = isAdminFlame ? 'admin_flame' : isRedHeart ? 'red_heart' : null;
     const suffix = specialType ? (isEntry ? (isAdminFlame ? 'ain' : 'hin') : (isAdminFlame ? 'aout' : 'hout')) : (isEntry ? 'rin' : 'rout');
     setQueue((q) => [...q.slice(-4), {
