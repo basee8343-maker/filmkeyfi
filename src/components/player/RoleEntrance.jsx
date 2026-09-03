@@ -4,6 +4,7 @@ import { parseRoleMetadata, parseFrameMetadata, ROLE_DEFINITIONS, getRoleLabelOv
 import RoleCharacter from '@/components/role/RoleCharacter';
 import FrameEntranceOverlay from '@/components/player/FrameEntranceOverlay';
 import AdminFlameEntrance from '@/components/player/AdminFlameEntrance';
+import RedHeartEntrance from '@/components/player/RedHeartEntrance';
 
 // Oda giriş/çıkış overlay yöneticisi.
 // Öncelik: özel çerçeve > rol karakter animasyonu > hiçbir şey.
@@ -74,9 +75,12 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
     displayName = displayName.replace('odaya katıldı', '').replace('odadan ayrıldı', '').replace(/[.\s]/g, '').trim();
 
     const isAdminFlame = roleKey === 'admin';
+    const isRedHeart = roleKey === 'red_heart';
+    const specialType = isAdminFlame ? 'admin_flame' : isRedHeart ? 'red_heart' : null;
+    const suffix = specialType ? (isEntry ? (isAdminFlame ? 'ain' : 'hin') : (isAdminFlame ? 'aout' : 'hout')) : (isEntry ? 'rin' : 'rout');
     setQueue((q) => [...q.slice(-4), {
-      key: msg.id + (isEntry ? (isAdminFlame ? 'ain' : 'rin') : (isAdminFlame ? 'aout' : 'rout')),
-      type: isAdminFlame ? 'admin_flame' : 'role',
+      key: msg.id + suffix,
+      type: specialType || 'role',
       roleKey,
       color: roleParsed.color || roleDef?.color || '#8b5cf6',
       isEntry,
@@ -122,7 +126,7 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
     const next = queue[0];
     setQueue((q) => q.slice(1));
     setCurrent(next);
-    const duration = next.type === 'frame' ? (next.isEntry ? 3500 : 2100) : next.type === 'admin_flame' ? (next.isEntry ? 4000 : 3000) : (next.isEntry ? 4500 : 4000);
+    const duration = next.type === 'frame' ? (next.isEntry ? 3500 : 2100) : (next.type === 'admin_flame' || next.type === 'red_heart') ? (next.isEntry ? 4000 : 3000) : (next.isEntry ? 4500 : 4000);
     timerRef.current = setTimeout(() => setCurrent(null), duration);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, queue]);
@@ -132,6 +136,17 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
   if (current.type === 'admin_flame') {
     return (
       <AdminFlameEntrance
+        avatar={current.avatar}
+        name={current.displayName}
+        isEntry={current.isEntry}
+        onDone={() => setCurrent(null)}
+      />
+    );
+  }
+
+  if (current.type === 'red_heart') {
+    return (
+      <RedHeartEntrance
         avatar={current.avatar}
         name={current.displayName}
         isEntry={current.isEntry}

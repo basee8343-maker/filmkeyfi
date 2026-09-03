@@ -21,6 +21,13 @@ export const ROLE_DEFINITIONS = {
     name_effect: 'flame',
     flame_profile: true,
   },
+  'red_heart': {
+    label: 'KIRMIZI KALP', icon: '❤️', color: '#ff1744', neon: true, priority: 97,
+    entry_animation: 'heart-entry', exit_animation: 'heart-exit',
+    show_in_room: false, moderator: false, hide_username_entry: false,
+    name_effect: 'heart',
+    heart_profile: true,
+  },
   'queen_admin': {
     label: 'ADMİN KRALİÇESİ', icon: '👑', color: '#ec4899', neon: true, priority: 95,
     entry_animation: 'queen-entry', exit_animation: 'queen-exit',
@@ -91,6 +98,7 @@ export const ROLE_DEFINITIONS = {
 export const MSG_EFFECTS = {
   founder: 'flame',
   admin: 'flame',
+  red_heart: 'heart',
   queen_admin: 'heart',
   admin_helper: 'lightning',
   can_ablam: 'diamond',

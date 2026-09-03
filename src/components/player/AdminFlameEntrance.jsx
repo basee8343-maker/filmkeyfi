@@ -64,7 +64,7 @@ export default function AdminFlameEntrance({ avatar, name, isEntry, onDone }) {
       {/* Bildirim yazısı */}
       <div className="relative text-center px-6" style={{ animation: 'admin-text-enter 0.6s ease-out 0.3s both' }}>
         <p className="text-base sm:text-lg font-extrabold text-white" style={{ textShadow: '0 0 10px rgba(255, 69, 0, 0.9), 0 0 20px rgba(255, 140, 0, 0.6)' }}>
-          {name} {isEntry ? 'alevli odaya katıldı' : 'odadan ayrıldı'}
+          {name} {isEntry ? 'odaya katıldı' : 'odadan ayrıldı'}
         </p>
       </div>
     </div>
