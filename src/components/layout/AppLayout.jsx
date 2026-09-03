@@ -43,10 +43,11 @@ export default function AppLayout() {
     }
   }, [loading, user, pathname, isRoom]);
 
-  // Ban kontrolü — engellenmiş kullanıcıları ban ekranına yönlendir
+  // Ban kontrolü — engellenmiş kullanıcıları giriş ekranına at
   useEffect(() => {
-    if (user?.is_banned && pathname !== '/engellendiniz') {
-      window.location.href = '/engellendiniz';
+    if (user?.is_banned && pathname !== '/login') {
+      base44.auth.logout().catch(() => {});
+      window.location.href = '/login?banned=1';
     }
   }, [user?.is_banned, pathname]);
 
@@ -55,12 +56,14 @@ export default function AppLayout() {
     if (!user) return;
     const unsubNotif = base44.entities.Notification.subscribe((ev) => {
       if (ev.type === 'create' && ev.data?.user_id === user.id && ev.data?.type === 'suspended') {
-        window.location.href = '/engellendiniz';
+        base44.auth.logout().catch(() => {});
+        window.location.href = '/login?banned=1';
       }
     });
     const unsubUser = base44.entities.User.subscribe((ev) => {
       if (ev.type === 'update' && ev.data?.id === user.id && ev.data?.is_banned) {
-        window.location.href = '/engellendiniz';
+        base44.auth.logout().catch(() => {});
+        window.location.href = '/login?banned=1';
       }
       if (ev.type === 'delete' && (ev.data?.id === user.id || ev.id === user.id)) {
         base44.auth.logout().catch(() => {});
@@ -68,6 +71,24 @@ export default function AppLayout() {
       }
     });
     return () => { unsubNotif(); unsubUser(); };
+  }, [user?.id]);
+
+  // Yedek kontrol — realtime kaçırsa diye periyodik ban/silme durumu
+  useEffect(() => {
+    if (!user) return;
+    const check = async () => {
+      try {
+        const u = await base44.auth.me();
+        if (u?.is_banned) { base44.auth.logout().catch(() => {}); window.location.href = '/login?banned=1'; }
+      } catch (e) {
+        if (e?.status === 401 || e?.status === 403 || e?.status === 404) {
+          base44.auth.logout().catch(() => {});
+          window.location.href = '/login?removed=1';
+        }
+      }
+    };
+    const id = setInterval(check, 15000);
+    return () => clearInterval(id);
   }, [user?.id]);
 
   // Sosyal girişle yeni kayıt olan kullanıcı için admin bildirimi (email kaydı zaten Register'da gönderir, dedup ref_id ile engeller)

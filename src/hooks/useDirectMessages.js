@@ -22,8 +22,9 @@ export default function useDirectMessages(friendshipId) {
     if (!friendshipId) return;
     base44.entities.DirectMessage.filter({ friendship_id: friendshipId }, 'created_date', 500)
       .then((items) => {
-        seenRef.current = new Set(items.map((m) => m.id));
-        setMessages((current) => mergeMessages(current, items));
+        const visible = items.filter((m) => !(m.hidden_for || []).includes(userId));
+        seenRef.current = new Set(visible.map((m) => m.id));
+        setMessages((current) => mergeMessages(current, visible));
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -39,6 +40,10 @@ export default function useDirectMessages(friendshipId) {
       if (event.data?.friendship_id !== friendshipId) return;
       if (event.type === 'delete') {
         setMessages((prev) => prev.filter((m) => m.id !== event.id));
+        return;
+      }
+      if ((event.data?.hidden_for || []).includes(userId)) {
+        setMessages((prev) => prev.filter((m) => m.id !== event.data.id));
         return;
       }
       seenRef.current.add(event.data.id);
@@ -91,12 +96,12 @@ export default function useDirectMessages(friendshipId) {
   const del = useCallback(async (messageId) => {
     if (!messageId) return;
     try {
-      await base44.entities.DirectMessage.delete(messageId);
+      await base44.entities.DirectMessage.updateMany({ id: messageId }, { $addToSet: { hidden_for: userId } });
       setMessages((prev) => prev.filter((m) => m.id !== messageId));
     } catch (err) {
       toast({ title: 'Silinemedi', description: err.response?.data?.error || err.message, variant: 'destructive' });
     }
-  }, [toast]);
+  }, [userId, toast]);
 
   const clearAll = useCallback(async () => {
     if (!friendshipId || !userId) return;

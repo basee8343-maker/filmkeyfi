@@ -30,6 +30,13 @@
       },
       "default": []
     },
+    "hidden_for": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "text": {
       "type": "string",
       "maxLength": 2000

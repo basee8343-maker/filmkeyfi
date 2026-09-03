@@ -24,6 +24,8 @@ export default function Login() {
   const returnTo = safeReturnTo();
   const bannedParam = new URLSearchParams(window.location.search).get('banned');
   const [banned] = useState(bannedParam === '1');
+  const removedParam = new URLSearchParams(window.location.search).get('removed');
+  const [removed] = useState(removedParam === '1');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -86,6 +88,15 @@ export default function Login() {
             <div>
               <p className="font-semibold">Hesabınız Askıya Alındı</p>
               <p className="mt-1 text-xs">Hesabınız yönetici tarafından askıya alınmıştır. Giriş yapamazsınız. Lütfen destekle iletişime geçin.</p>
+            </div>
+          </div>
+        )}
+        {removed && (
+          <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Hesabınız Silindi</p>
+              <p className="mt-1 text-xs">Hesabınız yönetici tarafından silinmiştir. Giriş yapamazsınız.</p>
             </div>
           </div>
         )}
