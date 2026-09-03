@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
-import { mergeMessages, upsertMessage, sortMessages } from '@/lib/realtimeMessages';
+import { upsertMessage, sortMessages } from '@/lib/realtimeMessages';
 
 /**
  * Birebir sohbet için oda sohbetiyle aynı realtime + DB mimarisini kullanır.
@@ -24,11 +24,14 @@ export default function useDirectMessages(friendshipId) {
       .then((items) => {
         const visible = items.filter((m) => !(m.hidden_for || []).includes(userId));
         seenRef.current = new Set(visible.map((m) => m.id));
-        setMessages((current) => mergeMessages(current, visible));
+        setMessages((current) => {
+          const temps = current.filter((m) => m.id?.startsWith('temp-'));
+          return sortMessages([...temps, ...visible]);
+        });
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [friendshipId]);
+  }, [friendshipId, userId]);
 
   useEffect(() => {
     if (!friendshipId) return;
