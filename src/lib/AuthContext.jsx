@@ -108,6 +108,21 @@ export const AuthProvider = ({ children }) => {
           return;
         }
       }
+      // Tek cihaz girişi — cihaz oturum kimliği doğrula
+      const sessionKey = 'filmkeyfi_session_' + currentUser.id;
+      const storedSession = localStorage.getItem(sessionKey);
+      if (!storedSession) {
+        try {
+          const res = await base44.functions.invoke('register-session', {});
+          if (res?.data?.session_id) localStorage.setItem(sessionKey, res.data.session_id);
+        } catch {}
+      } else if (currentUser.active_session_id && storedSession !== currentUser.active_session_id) {
+        // Hesap başka cihazdan açılmış — bu cihazı kapat
+        await base44.auth.logout();
+        localStorage.removeItem(sessionKey);
+        window.location.href = '/login?kicked=1';
+        return;
+      }
       setUser(currentUser);
       setIsAuthenticated(true);
       setIsLoadingAuth(false);

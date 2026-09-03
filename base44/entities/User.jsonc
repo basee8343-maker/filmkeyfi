@@ -104,6 +104,10 @@
       "type": "string",
       "format": "date-time"
     },
+    "active_session_id": {
+      "type": "string",
+      "default": ""
+    },
     "twofa_secret": {
       "type": "string"
     },

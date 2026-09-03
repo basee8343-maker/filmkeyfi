@@ -79,7 +79,13 @@ export default function AppLayout() {
     const check = async () => {
       try {
         const u = await base44.auth.me();
-        if (u?.is_banned) { base44.auth.logout().catch(() => {}); window.location.href = '/login?banned=1'; }
+        if (u?.is_banned) { base44.auth.logout().catch(() => {}); window.location.href = '/login?banned=1'; return; }
+        const stored = localStorage.getItem('filmkeyfi_session_' + u.id);
+        if (stored && u?.active_session_id && stored !== u.active_session_id) {
+          base44.auth.logout().catch(() => {});
+          localStorage.removeItem('filmkeyfi_session_' + u.id);
+          window.location.href = '/login?kicked=1';
+        }
       } catch (e) {
         if (e?.status === 401 || e?.status === 403 || e?.status === 404) {
           base44.auth.logout().catch(() => {});

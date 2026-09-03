@@ -26,6 +26,8 @@ export default function Login() {
   const [banned] = useState(bannedParam === '1');
   const removedParam = new URLSearchParams(window.location.search).get('removed');
   const [removed] = useState(removedParam === '1');
+  const kickedParam = new URLSearchParams(window.location.search).get('kicked');
+  const [kicked] = useState(kickedParam === '1');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,6 +43,7 @@ export default function Login() {
       }
       const privileged = me.role === 'admin' || me.role === 'moderator';
       const membershipActive = me.membership_status === 'active' && (!me.membership_end || new Date(me.membership_end) > new Date());
+      try { const res = await base44.functions.invoke('register-session', { device_session: localStorage.getItem('filmkeyfi_session_' + me.id) || '' }); if (res?.data?.session_id) localStorage.setItem('filmkeyfi_session_' + me.id, res.data.session_id); } catch {}
       window.location.href = privileged || membershipActive ? returnTo : '/abonelik';
     } catch (err) {
       setError(err.message || "Geçersiz e-posta veya şifre");
@@ -97,6 +100,15 @@ export default function Login() {
             <div>
               <p className="font-semibold">Hesabınız Silindi</p>
               <p className="mt-1 text-xs">Hesabınız yönetici tarafından silinmiştir. Giriş yapamazsınız.</p>
+            </div>
+          </div>
+        )}
+        {kicked && (
+          <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-sm flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Hesabınız Başka Cihazdan Açıldı</p>
+              <p className="mt-1 text-xs">Hesabınıza başka bir cihazdan giriş yapıldığı için bu oturum kapatıldı.</p>
             </div>
           </div>
         )}
