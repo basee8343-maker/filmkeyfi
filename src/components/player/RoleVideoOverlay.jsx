@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
-// Kurucu rolü için tam ekran AI video overlay'i.
-// Gerçek video dosyası oynatılır — CSS animasyonu kullanılmaz.
-export default function FounderVideoOverlay({ url, isEntry }) {
+// Rol bazlı tam ekran AI video overlay'i.
+// Her rol için özel üretilmiş video dosyası oynatılır.
+export default function RoleVideoOverlay({ url, isEntry, title, color = '#ff4500' }) {
   const videoRef = useRef(null);
   const [visible, setVisible] = useState(true);
   const [fadeOut, setFadeOut] = useState(false);
@@ -18,7 +18,7 @@ export default function FounderVideoOverlay({ url, isEntry }) {
 
   if (!visible) return null;
 
-  const title = isEntry ? 'KURUCU ODAYA KATILDI' : 'KURUCU ODADAN AYRILDI';
+  const displayTitle = title || (isEntry ? 'ODAYA KATILDI' : 'ODADAN AYRILDI');
 
   return (
     <div
@@ -36,20 +36,18 @@ export default function FounderVideoOverlay({ url, isEntry }) {
         onCanPlay={() => videoRef.current?.play().catch(() => {})}
         onLoadedData={() => videoRef.current?.play().catch(() => {})}
       />
-      {/* Koyu katman — video üzerindeki yazının okunabilirliği için */}
       <div className="absolute inset-0 bg-black/30" />
-      {/* Alev temalı yazı */}
       <div className="absolute inset-0 flex items-center justify-center px-4">
         <div style={{ animation: 'founder-text-appear 0.8s ease-out 0.3s forwards', opacity: 0 }}>
           <p
             className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-center leading-tight"
             style={{
               color: '#ffcc00',
-              textShadow: '0 0 12px #ff4500, 0 0 24px #ff6b00, 0 0 48px #ff4500, 0 2px 4px rgba(0,0,0,0.9)',
+              textShadow: `0 0 12px ${color}, 0 0 24px ${color}, 0 0 48px ${color}, 0 2px 4px rgba(0,0,0,0.9)`,
               letterSpacing: '0.05em',
             }}
           >
-            🔥 {title} 🔥
+            {displayTitle}
           </p>
         </div>
       </div>

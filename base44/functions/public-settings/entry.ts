@@ -17,6 +17,10 @@ export default async function (req) {
       payment_methods: methods.map((m) => ({ id: m.id, provider: m.provider, name: m.display_name, description: m.description || '' })),
       founder_entry_video: get('founder_entry_video', ''),
       founder_exit_video: get('founder_exit_video', ''),
+      role_video_queen_admin_entry: get('role_video_queen_admin_entry', ''),
+      role_video_can_abim_entry: get('role_video_can_abim_entry', ''),
+      role_video_can_ablam_entry: get('role_video_can_ablam_entry', ''),
+      role_video_nargileciler_entry: get('role_video_nargileciler_entry', ''),
     });
   } catch (e) {
     return Response.json({ maintenance_mode: false, registration_open: true, app_theme: 'auto', shopier_enabled: false, payment_required: true, payment_methods: [] });
