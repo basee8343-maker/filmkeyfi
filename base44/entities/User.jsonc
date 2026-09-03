@@ -54,6 +54,23 @@
       "type": "string",
       "default": ""
     },
+    "is_banned": {
+      "type": "boolean",
+      "default": false
+    },
+    "ban_reason": {
+      "type": "string"
+    },
+    "ban_description": {
+      "type": "string"
+    },
+    "banned_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "banned_by": {
+      "type": "string"
+    },
     "membership_status": {
       "type": "string",
       "enum": [

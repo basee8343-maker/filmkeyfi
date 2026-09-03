@@ -365,4 +365,136 @@
     85% { transform: translate(0); opacity: 1; }
     100% { transform: translate(0); opacity: 0; }
   }
+
+  /* === ROL GİRİŞ/ÇIKIŞ ANİMASYONLARI === */
+  @keyframes role-overlay-fade {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    85% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes role-text-appear {
+    0% { transform: scale(0.5) translateY(30px); opacity: 0; }
+    15% { transform: scale(1.15) translateY(0); opacity: 1; }
+    25% { transform: scale(1); }
+    85% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.3) translateY(-30px); opacity: 0; }
+  }
+  @keyframes role-text-disappear {
+    0% { transform: scale(1); opacity: 1; }
+    15% { transform: scale(1.1); }
+    85% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.5) translateY(30px); opacity: 0; }
+  }
+  @keyframes role-char-walk-in {
+    0% { transform: translateX(-200%) scale(0.4); opacity: 0; }
+    25% { transform: translateX(-80%) scale(0.9); opacity: 1; }
+    45% { transform: translateX(0) scale(1); opacity: 1; }
+    85% { transform: translateX(0) scale(1); opacity: 1; }
+    100% { transform: translateX(60%) scale(0.7); opacity: 0; }
+  }
+  @keyframes role-char-walk-out {
+    0% { transform: translateX(0) scale(1); opacity: 1; }
+    25% { transform: translateX(-30%) scale(1); opacity: 1; }
+    100% { transform: translateX(-200%) scale(0.4); opacity: 0; }
+  }
+  @keyframes role-char-emerge {
+    0% { transform: scale(0) translateY(60%); opacity: 0; filter: blur(20px); }
+    25% { transform: scale(1.3) translateY(0); opacity: 1; filter: blur(0); }
+    45% { transform: scale(1) translateY(0); opacity: 1; }
+    85% { transform: scale(1) translateY(0); opacity: 1; }
+    100% { transform: scale(0.7) translateY(-30%); opacity: 0; }
+  }
+  @keyframes role-char-retreat {
+    0% { transform: scale(1) translateY(0); opacity: 1; }
+    25% { transform: scale(1) translateY(10%); opacity: 1; }
+    100% { transform: scale(0) translateY(60%); opacity: 0; filter: blur(20px); }
+  }
+
+  /* Particle keyframes — hearts (queen/princess) */
+  @keyframes particle-heart-float {
+    0% { transform: translateY(100%) scale(0) rotate(0); opacity: 0; }
+    20% { transform: translateY(40%) scale(1) rotate(10deg); opacity: 1; }
+    100% { transform: translateY(-200%) scale(0.4) rotate(-20deg); opacity: 0; }
+  }
+  /* Particle keyframes — flames (founder) */
+  @keyframes particle-flame-rise {
+    0% { transform: translateY(100%) scale(0); opacity: 0; }
+    15% { transform: translateY(30%) scale(1.3); opacity: 1; }
+    100% { transform: translateY(-250%) scale(0.2); opacity: 0; }
+  }
+  /* Particle keyframes — lightning (admin_helper) */
+  @keyframes particle-lightning-flash {
+    0%, 100% { opacity: 0; transform: scaleY(0); }
+    8%, 12% { opacity: 1; transform: scaleY(1); }
+    10% { opacity: 0.3; }
+    20%, 24% { opacity: 1; }
+    22% { opacity: 0.2; }
+    30%, 34% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+  /* Particle keyframes — diamonds (vip1) */
+  @keyframes particle-diamond-sparkle {
+    0% { transform: scale(0) rotate(0); opacity: 0; }
+    25% { transform: scale(1.2) rotate(180deg); opacity: 1; }
+    100% { transform: scale(0) rotate(360deg); opacity: 0; }
+  }
+  /* Particle keyframes — purple energy (vip2) */
+  @keyframes particle-purple-energy {
+    0% { transform: scale(0); opacity: 0; }
+    25% { transform: scale(1.5); opacity: 0.8; }
+    100% { transform: scale(3.5); opacity: 0; }
+  }
+  /* Particle keyframes — stars (vip3) */
+  @keyframes particle-star-burst {
+    0% { transform: scale(0) rotate(0); opacity: 0; }
+    15% { transform: scale(1.5) rotate(72deg); opacity: 1; }
+    100% { transform: scale(0) rotate(360deg); opacity: 0; }
+  }
+  /* Particle keyframes — subtle glow (member/prince) */
+  @keyframes particle-subtle-glow {
+    0% { transform: scale(0); opacity: 0; }
+    25% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+  /* Particle keyframes — gold sparkle (prince) */
+  @keyframes particle-gold-sparkle {
+    0% { transform: scale(0) rotate(0); opacity: 0; }
+    20% { transform: scale(1.2) rotate(45deg); opacity: 1; }
+    100% { transform: scale(0) rotate(180deg); opacity: 0; }
+  }
+
+  /* === TAKIM ÇERÇEVE ANİMASYONLARI === */
+  @keyframes frame-rotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes frame-glow-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  @keyframes frame-sparkle-orbit {
+    0% { transform: rotate(0deg) translateX(var(--orbit-r, 48%)) rotate(0deg); opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { transform: rotate(360deg) translateX(var(--orbit-r, 48%)) rotate(-360deg); opacity: 0; }
+  }
+  .frame-animated { position: relative; border-radius: 50%; }
+  .frame-animated-inner { position: relative; border-radius: 50%; overflow: hidden; z-index: 1; }
+  .frame-rotating-bg {
+    position: absolute; inset: 0; border-radius: 50%;
+    animation: frame-rotate 4s linear infinite;
+  }
+  .frame-glow-bg {
+    position: absolute; inset: -3px; border-radius: 50%;
+    animation: frame-rotate 4s linear infinite, frame-glow-pulse 2s ease-in-out infinite;
+    filter: blur(6px); opacity: 0.6; z-index: 0;
+  }
+  .frame-sparkle {
+    position: absolute; top: 50%; left: 50%;
+    width: 6px; height: 6px; border-radius: 50%;
+    margin: -3px 0 0 -3px;
+    animation: frame-sparkle-orbit 3s linear infinite;
+    pointer-events: none;
+  }
 }

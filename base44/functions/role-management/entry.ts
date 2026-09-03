@@ -1,6 +1,30 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { safeErrorResponse } from '../../shared/security.ts';
-import { isSiteOwner, FRAME_DEFINITIONS } from '../../shared/roles.ts';
+import { safeErrorResponse, logSecurity } from '../../shared/security.ts';
+import { isSiteOwner, FRAME_DEFINITIONS, ROLE_DEFINITIONS } from '../../shared/roles.ts';
+
+async function removeFromAllRooms(base44, userId, userName) {
+  const rooms = await base44.asServiceRole.entities.Room.filter({ status: 'active' }, '-created_date', 200).catch(() => []);
+  for (const room of rooms) {
+    const participants = room.participants || [];
+    if (!participants.some((p) => p.user_id === userId)) continue;
+    const newParticipants = participants.filter((p) => p.user_id !== userId);
+    let update: any = { participants: newParticipants };
+    if (room.owner_id === userId) {
+      if (newParticipants.length > 0) {
+        update.owner_id = newParticipants[0].user_id;
+        update.owner_name = newParticipants[0].name;
+      } else {
+        update.status = 'closed';
+        update.is_playing = false;
+      }
+    }
+    await base44.asServiceRole.entities.Room.update(room.id, update).catch(() => {});
+    await base44.asServiceRole.entities.RoomMessage.create({
+      room_id: room.id, user_id: userId, user_name: userName,
+      text: `${userName} engellendi ve odadan kaldırıldı.`, type: 'system'
+    }).catch(() => {});
+  }
+}
 
 export default async function(req) {
   try {
@@ -20,10 +44,35 @@ export default async function(req) {
       return Response.json({ error: 'Site sahibi üzerinde bu işlem yapılamaz' }, { status: 403 });
     }
 
+    const adminName = me.username || me.full_name;
+
+    if (action === 'assign_role') {
+      const { role_key } = body;
+      if (role_key && !ROLE_DEFINITIONS[role_key]) return Response.json({ error: 'geçersiz rol' }, { status: 400 });
+      await base44.asServiceRole.entities.User.update(user_id, {
+        display_role: role_key || '',
+        custom_role: null,
+      });
+      const roleDef = ROLE_DEFINITIONS[role_key || ''];
+      await base44.asServiceRole.entities.AdminLog.create({
+        admin_id: me.id, admin_name: adminName,
+        action: 'Rol atandı', target: target.email || user_id,
+        details: roleDef?.label || 'rol kaldırıldı'
+      }).catch(() => {});
+      if (roleDef?.label) {
+        await base44.asServiceRole.entities.Notification.create({
+          user_id, title: `${roleDef.icon} Yeni Rolünüz: ${roleDef.label}`,
+          body: 'Rolünüz profilinizde ve odalarda görünüyor.',
+          type: 'role'
+        }).catch(() => {});
+      }
+      return Response.json({ ok: true });
+    }
+
     if (action === 'remove_role') {
       await base44.asServiceRole.entities.User.update(user_id, { display_role: '', custom_role: null });
       await base44.asServiceRole.entities.AdminLog.create({
-        admin_id: me.id, admin_name: me.username || me.full_name,
+        admin_id: me.id, admin_name: adminName,
         action: 'Rol kaldırıldı', target: target.email || user_id
       }).catch(() => {});
       return Response.json({ ok: true });
@@ -34,7 +83,7 @@ export default async function(req) {
       if (!FRAME_DEFINITIONS[frame] && frame !== '') return Response.json({ error: 'geçersiz çerçeve' }, { status: 400 });
       await base44.asServiceRole.entities.User.update(user_id, { profile_frame: frame });
       await base44.asServiceRole.entities.AdminLog.create({
-        admin_id: me.id, admin_name: me.username || me.full_name,
+        admin_id: me.id, admin_name: adminName,
         action: 'Çerçeve atandı', target: target.email || user_id,
         details: frame || 'çerçeve kaldırıldı'
       }).catch(() => {});
@@ -51,11 +100,49 @@ export default async function(req) {
       return Response.json({ ok: true });
     }
 
-    if (action === 'remove_frame') {
-      await base44.asServiceRole.entities.User.update(user_id, { profile_frame: '' });
+    if (action === 'ban_user') {
+      const { reason, description } = body;
+      const targetName = target.username || target.full_name || 'Kullanıcı';
+      await base44.asServiceRole.entities.User.update(user_id, {
+        is_banned: true,
+        ban_reason: (reason || '').slice(0, 100),
+        ban_description: (description || '').slice(0, 500),
+        banned_at: new Date().toISOString(),
+        banned_by: me.id,
+        membership_status: 'blocked',
+      });
+      await removeFromAllRooms(base44, user_id, targetName);
+      await base44.asServiceRole.entities.Notification.create({
+        user_id, title: '🚫 Hesabınız engellendi',
+        body: `Engel nedeni: ${reason || 'Belirtilmedi'}`,
+        type: 'suspended'
+      }).catch(() => {});
+      await logSecurity(base44, 'user_banned', target, `${reason || ''} | ${description || ''}`, 'warning');
       await base44.asServiceRole.entities.AdminLog.create({
-        admin_id: me.id, admin_name: me.username || me.full_name,
-        action: 'Çerçeve kaldırıldı', target: target.email || user_id
+        admin_id: me.id, admin_name: adminName,
+        action: 'Kullanıcı engellendi', target: target.email || user_id,
+        details: `${reason || ''}${description ? ' | ' + description : ''}`
+      }).catch(() => {});
+      return Response.json({ ok: true });
+    }
+
+    if (action === 'unban_user') {
+      await base44.asServiceRole.entities.User.update(user_id, {
+        is_banned: false,
+        ban_reason: '',
+        ban_description: '',
+        banned_at: '',
+        banned_by: '',
+        membership_status: 'active',
+      });
+      await base44.asServiceRole.entities.Notification.create({
+        user_id, title: '✅ Engel kaldırıldı',
+        body: 'Hesabınız tekrar aktif edildi.',
+        type: 'info'
+      }).catch(() => {});
+      await base44.asServiceRole.entities.AdminLog.create({
+        admin_id: me.id, admin_name: adminName,
+        action: 'Engel kaldırıldı', target: target.email || user_id
       }).catch(() => {});
       return Response.json({ ok: true });
     }
@@ -74,9 +161,9 @@ export default async function(req) {
       };
       await base44.asServiceRole.entities.User.update(user_id, { display_role: '', custom_role });
       await base44.asServiceRole.entities.AdminLog.create({
-        admin_id: me.id, admin_name: me.username || me.full_name,
+        admin_id: me.id, admin_name: adminName,
         action: 'Özel rol atandı', target: target.email || user_id,
-        details: `${custom_role.name}${custom_role.show_in_room ? ' (oda girişinde göster)' : ''}${custom_role.moderator ? ' (moderatör)' : ''}`
+        details: custom_role.name
       }).catch(() => {});
       await base44.asServiceRole.entities.Notification.create({
         user_id, title: `${custom_role.icon} Yeni Özel Rolünüz: ${custom_role.name}`,
