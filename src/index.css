@@ -891,4 +891,46 @@
     50% { opacity: 0.4; transform: scale(0.5); }
     100% { opacity: 0; transform: scale(0.2); }
   }
+
+  /* === KRAL TAÇ ÇEMBER EFEKTİ === */
+  @keyframes crown-glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px 4px rgba(251, 191, 36, 0.4), 0 0 40px 8px rgba(252, 211, 77, 0.2); }
+    50% { box-shadow: 0 0 30px 6px rgba(251, 191, 36, 0.6), 0 0 60px 12px rgba(252, 211, 77, 0.35); }
+  }
+  @keyframes crown-sparkle {
+    0%, 100% { transform: scale(0.8); opacity: 0.6; }
+    50% { transform: scale(1.3); opacity: 1; }
+  }
+  @keyframes crown-die {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.3); }
+  }
+
+  /* === NARGİLE ÇEMBER EFEKTİ === */
+  @keyframes nargile-glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px 4px rgba(76, 175, 80, 0.4), 0 0 40px 8px rgba(129, 199, 132, 0.2); }
+    50% { box-shadow: 0 0 30px 6px rgba(76, 175, 80, 0.6), 0 0 60px 12px rgba(129, 199, 132, 0.35); }
+  }
+  @keyframes nargile-puff {
+    0%, 100% { transform: scale(0.8); opacity: 0.4; }
+    50% { transform: scale(1.5); opacity: 0.7; }
+  }
+  @keyframes nargile-die {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.3); }
+  }
+
+  /* === ASLAN ÇEMBER EFEKTİ === */
+  @keyframes lion-glow-pulse {
+    0%, 100% { box-shadow: 0 0 20px 4px rgba(245, 158, 11, 0.4), 0 0 40px 8px rgba(255, 136, 0, 0.2); }
+    50% { box-shadow: 0 0 30px 6px rgba(245, 158, 11, 0.6), 0 0 60px 12px rgba(255, 136, 0, 0.35); }
+  }
+  @keyframes lion-mane {
+    0%, 100% { transform: scale(1); opacity: 0.9; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+  @keyframes lion-die {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.3); }
+  }
 }

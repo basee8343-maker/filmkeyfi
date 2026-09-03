@@ -9,10 +9,11 @@ export function getRoleLabelOverride(roleKey) { return ROLE_LABEL_OVERRIDES[role
 export const ROLE_DEFINITIONS = {
   '': { label: '', icon: '', color: '', neon: false, priority: 0 },
   'founder': {
-    label: 'ADMİN / KURUCU', icon: '🔥', color: '#ff4500', neon: true, priority: 100,
-    entry_animation: 'flame-entry', exit_animation: 'flame-exit',
-    show_in_room: true, moderator: true, hide_username_entry: true,
-    name_effect: 'flame',
+    label: 'ADMİN / KURUCU', icon: '👑', color: '#fbbf24', neon: true, priority: 100,
+    entry_animation: 'crown-entry', exit_animation: 'crown-exit',
+    show_in_room: false, moderator: true, hide_username_entry: false,
+    name_effect: 'gold',
+    crown_profile: true,
   },
   'queen_admin': {
     label: 'ADMİN KRALİÇESİ', icon: '❤️', color: '#ff1744', neon: true, priority: 95,
@@ -29,16 +30,18 @@ export const ROLE_DEFINITIONS = {
     flame_profile: true,
   },
   'can_ablam': {
-    label: 'CAN ABLAM', icon: '👑', color: '#ff1744', neon: true, priority: 88,
-    entry_animation: 'queen-entry', exit_animation: 'queen-exit',
-    show_in_room: true, moderator: false, hide_username_entry: true,
-    name_effect: 'diamond',
+    label: 'CAN ABLAM', icon: '🪔', color: '#4caf50', neon: true, priority: 88,
+    entry_animation: 'nargile-entry', exit_animation: 'nargile-exit',
+    show_in_room: false, moderator: false, hide_username_entry: false,
+    name_effect: 'smoke',
+    nargile_profile: true,
   },
   'can_abim': {
-    label: 'CAN ABİM', icon: '🚗', color: '#00e5ff', neon: true, priority: 87,
-    entry_animation: 'car-entry', exit_animation: 'car-exit',
-    show_in_room: true, moderator: false, hide_username_entry: true,
-    name_effect: 'lightning',
+    label: 'CAN ABİM', icon: '🦁', color: '#f59e0b', neon: true, priority: 87,
+    entry_animation: 'lion-entry', exit_animation: 'lion-exit',
+    show_in_room: false, moderator: false, hide_username_entry: false,
+    name_effect: 'gold',
+    lion_profile: true,
   },
   'nargileciler': {
     label: 'NARGİLECİLER', icon: '🪔', color: '#4caf50', neon: true, priority: 86,
@@ -84,11 +87,11 @@ export const ROLE_DEFINITIONS = {
 };
 
 export const MSG_EFFECTS = {
-  founder: 'flame',
+  founder: 'gold',
   queen_admin: 'heart',
   admin_helper: 'flame',
-  can_ablam: 'diamond',
-  can_abim: 'lightning',
+  can_ablam: 'smoke',
+  can_abim: 'gold',
   nargileciler: 'smoke',
   prince: 'gold',
   princess: 'heart',

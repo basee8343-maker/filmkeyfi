@@ -5,6 +5,9 @@ import RoleCharacter from '@/components/role/RoleCharacter';
 import FrameEntranceOverlay from '@/components/player/FrameEntranceOverlay';
 import AdminFlameEntrance from '@/components/player/AdminFlameEntrance';
 import RedHeartEntrance from '@/components/player/RedHeartEntrance';
+import CrownEntrance from '@/components/player/CrownEntrance';
+import NargileEntrance from '@/components/player/NargileEntrance';
+import LionEntrance from '@/components/player/LionEntrance';
 
 // Oda giriş/çıkış overlay yöneticisi.
 // Öncelik: özel çerçeve > rol karakter animasyonu > hiçbir şey.
@@ -74,10 +77,14 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
     if (rolePrefix) displayName = displayName.replace(rolePrefix, '');
     displayName = displayName.replace('odaya katıldı', '').replace('odadan ayrıldı', '').replace(/[.\s]/g, '').trim();
 
+    const isCrown = roleKey === 'founder';
+    const isNargile = roleKey === 'can_ablam';
+    const isLion = roleKey === 'can_abim';
     const isAdminFlame = roleKey === 'admin_helper';
     const isRedHeart = roleKey === 'queen_admin';
-    const specialType = isAdminFlame ? 'admin_flame' : isRedHeart ? 'red_heart' : null;
-    const suffix = specialType ? (isEntry ? (isAdminFlame ? 'ain' : 'hin') : (isAdminFlame ? 'aout' : 'hout')) : (isEntry ? 'rin' : 'rout');
+    const specialType = isCrown ? 'crown' : isNargile ? 'nargile' : isLion ? 'lion' : isAdminFlame ? 'admin_flame' : isRedHeart ? 'red_heart' : null;
+    const useRoleName = isCrown || isAdminFlame || isRedHeart;
+    const suffix = specialType ? (isEntry ? (isCrown ? 'cin' : isNargile ? 'nin' : isLion ? 'lin' : isAdminFlame ? 'ain' : 'hin') : (isCrown ? 'cout' : isNargile ? 'nout' : isLion ? 'lout' : isAdminFlame ? 'aout' : 'hout')) : (isEntry ? 'rin' : 'rout');
     setQueue((q) => [...q.slice(-4), {
       key: msg.id + suffix,
       type: specialType || 'role',
@@ -86,9 +93,10 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
       isEntry,
       displayName,
       avatar: msg.user_avatar || '',
-      roleLabel: roleDef?.show_in_room ? roleLabel : '',
+      roleLabel: specialType ? roleLabel : (roleDef?.show_in_room ? roleLabel : ''),
       roleIcon: roleDef?.icon || '✨',
       hideUsername: roleDef?.hide_username_entry || false,
+      useRoleName,
     }]);
   };
 
@@ -126,18 +134,51 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
     const next = queue[0];
     setQueue((q) => q.slice(1));
     setCurrent(next);
-    const duration = next.type === 'frame' ? (next.isEntry ? 3500 : 2100) : (next.type === 'admin_flame' || next.type === 'red_heart') ? (next.isEntry ? 4000 : 3000) : (next.isEntry ? 4500 : 4000);
+    const duration = next.type === 'frame' ? (next.isEntry ? 3500 : 2100) : (next.type === 'admin_flame' || next.type === 'red_heart' || next.type === 'crown' || next.type === 'nargile' || next.type === 'lion') ? (next.isEntry ? 4000 : 3000) : (next.isEntry ? 4500 : 4000);
     timerRef.current = setTimeout(() => setCurrent(null), duration);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, queue]);
 
   if (!current) return null;
 
+  if (current.type === 'crown') {
+    return (
+      <CrownEntrance
+        avatar={current.avatar}
+        name={current.useRoleName ? current.roleLabel : current.displayName}
+        isEntry={current.isEntry}
+        onDone={() => setCurrent(null)}
+      />
+    );
+  }
+
+  if (current.type === 'nargile') {
+    return (
+      <NargileEntrance
+        avatar={current.avatar}
+        name={current.displayName}
+        isEntry={current.isEntry}
+        onDone={() => setCurrent(null)}
+      />
+    );
+  }
+
+  if (current.type === 'lion') {
+    return (
+      <LionEntrance
+        avatar={current.avatar}
+        name={current.displayName}
+        isEntry={current.isEntry}
+        onDone={() => setCurrent(null)}
+      />
+    );
+  }
+
   if (current.type === 'admin_flame') {
     return (
       <AdminFlameEntrance
         avatar={current.avatar}
-        name={current.displayName}
+        name={current.useRoleName ? current.roleLabel : current.displayName}
         isEntry={current.isEntry}
         onDone={() => setCurrent(null)}
       />
@@ -148,7 +189,7 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
     return (
       <RedHeartEntrance
         avatar={current.avatar}
-        name={current.displayName}
+        name={current.useRoleName ? current.roleLabel : current.displayName}
         isEntry={current.isEntry}
         onDone={() => setCurrent(null)}
       />
