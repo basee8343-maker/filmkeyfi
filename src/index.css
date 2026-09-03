@@ -151,4 +151,11 @@
   }
   .dm-notif-in { animation: dm-notif-in 0.3s ease-out forwards; }
   .dm-notif-out { animation: dm-notif-out 0.4s ease-in forwards; }
+  @keyframes neon-entrance {
+    0% { transform: scale(0.7) translateY(8px); opacity: 0; box-shadow: 0 0 0 hsl(var(--accent) / 0); }
+    40% { transform: scale(1.08) translateY(-2px); opacity: 1; box-shadow: 0 0 24px 4px hsl(var(--accent) / 0.7); }
+    70% { transform: scale(0.97); box-shadow: 0 0 16px 2px hsl(var(--accent) / 0.5); }
+    100% { transform: scale(1); opacity: 1; box-shadow: 0 0 10px -1px hsl(var(--accent) / 0.5); }
+  }
+  .neon-entrance { animation: neon-entrance 0.7s ease-out; }
 }

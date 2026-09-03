@@ -112,7 +112,22 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
          messages.map((m) => (
            <div key={m.id} className={`flex gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
              {m.type === 'system' ? (
-               <span className="text-xs text-muted-foreground bg-secondary/50 px-3 py-1 rounded-full">{m.text}</span>
+               (() => {
+                 const isRole = /[👑🛡️⭐🌟🤴👸✨]/.test(m.text);
+                 return (
+                   <span
+                     className={`text-xs px-3 py-1.5 rounded-full ${isRole ? 'font-bold neon-entrance' : 'text-muted-foreground bg-secondary/50'}`}
+                     style={isRole ? {
+                       background: 'linear-gradient(135deg, hsl(var(--accent) / 0.2), hsl(var(--primary) / 0.15))',
+                       color: 'hsl(var(--accent))',
+                       boxShadow: '0 0 10px -1px hsl(var(--accent) / 0.5)',
+                       border: '1px solid hsl(var(--accent) / 0.3)',
+                     } : {}}
+                   >
+                     {m.text}
+                   </span>
+                 );
+               })()
              ) : (
                <>
                  <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="shrink-0">
