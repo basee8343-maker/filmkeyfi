@@ -6,6 +6,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import UserBadge from '@/components/admin/UserBadge';
 import RoleFrameManager from '@/components/admin/RoleFrameManager';
 import RoleLabelEditor from '@/components/admin/RoleLabelEditor';
+import FramePickerModal from '@/components/admin/FramePickerModal';
 
 const btn = 'px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap';
 
@@ -16,6 +17,7 @@ export default function AdminUsers({ pendingOnly = false }) {
   const [loading, setLoading] = useState(true);
   const [confirm, setConfirm] = useState(null);
   const [detail, setDetail] = useState(null);
+  const [frameTarget, setFrameTarget] = useState(null);
   const [idQuery, setIdQuery] = useState('');
   const [nameQuery, setNameQuery] = useState('');
   const [paidUserIds, setPaidUserIds] = useState(new Set());
@@ -165,8 +167,10 @@ export default function AdminUsers({ pendingOnly = false }) {
                 {onlineUsers.has(u.id) ? <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400">Online</span> : <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">Offline</span>}
                 {u.is_banned && <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 font-semibold" title={u.ban_reason}>🚫 ENGELLİ</span>}
                 {!pendingOnly && <RoleFrameManager user={u} onUpdated={load} />}
+                {!pendingOnly && u.special_frame_id && <span className="text-xs px-2 py-1 rounded bg-primary/20 text-primary font-semibold" title={u.special_frame_title || 'Çerçeve var'}>🖼️ ÇERÇEVE</span>}
                 <div className="flex flex-wrap gap-1.5">
                 {!pendingOnly && <button onClick={() => setDetail(u)} className={`${btn} bg-secondary hover:bg-secondary/70`}>GÖRÜNTÜLE</button>}
+                {!pendingOnly && <button onClick={() => setFrameTarget(u)} className={`${btn} ${u.special_frame_id ? 'bg-primary/20 text-primary hover:bg-primary/30' : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'}`}>ÇERÇEVE</button>}
                 {!isActive && paidUserIds.has(u.id) && <button onClick={() => approve(u)} className={`${btn} bg-green-500/20 text-green-400 hover:bg-green-500/30`}>AKTİF ET</button>}
                 {!isActive && !paidUserIds.has(u.id) && <button onClick={() => approve(u)} className={`${btn} bg-green-500/20 text-green-400 hover:bg-green-500/30`}>ONAYLA</button>}
                   {!pendingOnly && <button onClick={() => toggleActive(u)} className={`${btn} ${isActive ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'}`}>{isActive ? 'ASKIYA AL' : 'AKTİF ET'}</button>}
@@ -200,12 +204,17 @@ export default function AdminUsers({ pendingOnly = false }) {
                 {detail.ban_reason && <p><span className="text-muted-foreground">Engel nedeni:</span> {detail.ban_reason}</p>}
                 {detail.ban_description && <p><span className="text-muted-foreground">Açıklama:</span> {detail.ban_description}</p>}
               </>}
+              <p><span className="text-muted-foreground">Özel Çerçeve:</span> {detail.special_frame_title || 'Yok'}</p>
             </div>
-            <button onClick={() => setDetail(null)} className="mt-4 bg-secondary px-4 py-2 rounded-lg text-sm w-full">Kapat</button>
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setFrameTarget(detail)} className="flex-1 bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 px-4 py-2 rounded-lg text-sm font-semibold">ÇERÇEVE ATA</button>
+              <button onClick={() => setDetail(null)} className="flex-1 bg-secondary px-4 py-2 rounded-lg text-sm">Kapat</button>
+            </div>
           </div>
         </div>
       )}
       <ConfirmDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)} title="Kullanıcıyı sil?" description={`${confirm?.email} kalıcı olarak silinecek.`} onConfirm={() => del(confirm)} />
+      {frameTarget && <FramePickerModal user={frameTarget} onClose={() => setFrameTarget(null)} onUpdated={load} />}
     </div>
   );
 }

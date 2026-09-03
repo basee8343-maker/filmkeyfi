@@ -179,14 +179,16 @@ export default async function(req) {
     }
 
     if (action === 'assign_special_frame') {
-      const { frame_id, frame_title, entry_enabled, exit_enabled } = body;
+      const { frame_id, entry_enabled, exit_enabled } = body;
+      let resolvedTitle = '';
       if (frame_id) {
         const frame = await base44.asServiceRole.entities.SpecialFrame.get(frame_id).catch(() => null);
         if (!frame) return Response.json({ error: 'çerçeve bulunamadı' }, { status: 400 });
+        resolvedTitle = frame.title || frame.name || '';
       }
       const updates: any = {
         special_frame_id: frame_id || '',
-        special_frame_title: (frame_title || '').slice(0, 60),
+        special_frame_title: resolvedTitle.slice(0, 60),
         special_frame_entry: entry_enabled !== false,
         special_frame_exit: exit_enabled !== false,
       };
