@@ -17,6 +17,42 @@
     "title": {
       "type": "string"
     },
+    "display_role": {
+      "type": "string",
+      "enum": [
+        "",
+        "prince",
+        "princess",
+        "vip1",
+        "vip2",
+        "vip3",
+        "queen_admin",
+        "admin_helper"
+      ],
+      "default": ""
+    },
+    "custom_role": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "icon": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string"
+        },
+        "neon": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "profile_frame": {
+      "type": "string",
+      "default": ""
+    },
     "membership_status": {
       "type": "string",
       "enum": [

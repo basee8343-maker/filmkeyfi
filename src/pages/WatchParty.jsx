@@ -15,6 +15,7 @@ import LiveKitDebugPanel from '@/components/player/LiveKitDebugPanel';
 import RoomDirectMessages from '@/components/player/RoomDirectMessages';
 import RoomNotifications from '@/components/player/RoomNotifications';
 import MoviePickerSheet from '@/components/player/MoviePickerSheet';
+import RoleBadge from '@/components/RoleBadge';
 import useSocialBadges from '@/hooks/useSocialBadges';
 
 export default function WatchParty() {
@@ -285,6 +286,19 @@ export default function WatchParty() {
     setShowViewers(false);
   };
 
+  const banUser = async (uid) => {
+    if (!canMod) return;
+    try { await base44.functions.invoke('room-presence', { action: 'ban', room_id: id, target_id: uid }); toast({ title: 'Kullanıcı yasaklandı' }); }
+    catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+    setShowViewers(false);
+  };
+
+  const unbanUser = async (uid) => {
+    if (!canMod) return;
+    try { await base44.functions.invoke('room-presence', { action: 'unban', room_id: id, target_id: uid }); toast({ title: 'Yasak kaldırıldı' }); }
+    catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+
   const onTouchStart = (e) => { const t = e.touches[0]; touchStart.current = { x: t.clientX, y: t.clientY }; };
   const onTouchEnd = (e) => {
     const t = e.changedTouches[0];
@@ -373,12 +387,14 @@ export default function WatchParty() {
                       {avatar ? <Image src={avatar} className={`w-7 h-7 rounded-full object-cover ${speaking ? 'speaking-glow' : ''}`} fittingType="fill" /> : <span className={`w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold ${speaking ? 'speaking-glow' : ''}`}>{(p.name || '?')[0]}</span>}
                     </Link>
                     <Link to={`/kullanici/${p.user_id}`} className="flex-1 truncate hover:underline">{p.name}{p.user_id === room.owner_id && <Crown className="w-3 h-3 text-amber-400 inline ml-1" />}</Link>
+                    {(viewerProfiles[p.user_id]?.display_role || viewerProfiles[p.user_id]?.custom_role?.name) && <RoleBadge user={viewerProfiles[p.user_id]} size="sm" showLabel={false} />}
                     {micActive ? <Mic className="w-3.5 h-3.5 text-green-400 shrink-0" /> : <MicOff className="w-3.5 h-3.5 text-red-400 shrink-0" />}
                     {canMod && p.user_id !== user.id && room.voice_enabled && (
                       <button onClick={() => toggleMuteUser(p.user_id)} className={`p-1 rounded shrink-0 ${p.muted ? 'text-red-400' : 'text-green-400'}`} title={p.muted ? 'Mikrofonu aç' : 'Mikrofonu kapat'}>
                         {p.muted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
                       </button>
                     )}
+                    {canMod && p.user_id !== user.id && <button onClick={() => banUser(p.user_id)} className="text-xs text-red-400 shrink-0">Yasakla</button>}
                     {canMod && p.user_id !== user.id && <button onClick={() => removeUser(p.user_id)} className="text-xs text-destructive shrink-0">Çıkar</button>}
                   </div>
                 );
@@ -387,7 +403,7 @@ export default function WatchParty() {
 
           </div>
         )}
-        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} />
+        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} />
       </div>
 
       <LiveKitDebugPanel voice={voice} />

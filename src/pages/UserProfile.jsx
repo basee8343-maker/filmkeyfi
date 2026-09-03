@@ -6,6 +6,9 @@ import { Image } from '@/components/ui/image';
 import { ArrowLeft, Crown, Hash, MessageCircle, UserPlus, Copy, Flag } from 'lucide-react';
 import ReportDialog from '@/components/ReportDialog';
 import { useToast } from '@/components/ui/use-toast';
+import RoleBadge from '@/components/RoleBadge';
+import ProfileFrame from '@/components/ProfileFrame';
+import { getRoleInfo } from '@/lib/roles';
 
 export default function UserProfile() {
   const { id } = useParams();
@@ -52,9 +55,12 @@ export default function UserProfile() {
       <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground mb-4"><ArrowLeft className="w-4 h-4" /> Geri</button>
       {err ? <p className="text-center text-destructive py-10">{err}</p> : profile && (
         <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center">
-          {profile.avatar ? <Image src={profile.avatar} className="w-28 h-28 rounded-full object-cover" fittingType="fill" /> :
-            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-4xl font-bold">{(profile.username || profile.full_name || '?')[0]}</div>}
+          <ProfileFrame frame={profile.profile_frame} size="lg">
+            {profile.avatar ? <Image src={profile.avatar} className="w-28 h-28 rounded-full object-cover" fittingType="fill" /> :
+              <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-4xl font-bold">{(profile.username || profile.full_name || '?')[0]}</div>}
+          </ProfileFrame>
           <h1 className="text-2xl font-extrabold mt-4 flex items-center gap-2">{profile.title || profile.username || profile.full_name || 'Kullanıcı'} {(profile.role === 'admin' || profile.role === 'moderator') && <Crown className="w-5 h-5 text-amber-400" />}</h1>
+          {getRoleInfo({ display_role: profile.display_role, custom_role: profile.custom_role }).label && <div className="mt-1.5"><RoleBadge user={{ display_role: profile.display_role, custom_role: profile.custom_role }} size="md" /></div>}
           {profile.title && <p className="text-base font-semibold text-gradient mt-1">{profile.title}</p>}
           {profile.username && profile.username !== profile.title && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
           <div className="mt-4 inline-flex items-center gap-2 bg-secondary/60 rounded-full pl-4 pr-1.5 py-1.5">

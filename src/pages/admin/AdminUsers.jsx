@@ -4,6 +4,7 @@ import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import UserBadge from '@/components/admin/UserBadge';
+import RoleFrameManager from '@/components/admin/RoleFrameManager';
 
 const btn = 'px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap';
 
@@ -149,11 +150,12 @@ export default function AdminUsers({ pendingOnly = false }) {
             return (
               <div key={u.id} className="bg-card border border-border rounded-xl p-3 flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <UserBadge userId={u.id} name={u.username || u.full_name || '?'} avatar={u.avatar} memberId={u.member_id} size="md" />
+                  <UserBadge userId={u.id} name={u.username || u.full_name || '?'} avatar={u.avatar} memberId={u.member_id} size="md" displayRole={u.display_role} customRole={u.custom_role} profileFrame={u.profile_frame} />
                   <p className="text-xs text-muted-foreground truncate hidden sm:block">{u.email}</p>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded ${isActive ? 'bg-green-500/20 text-green-400' : u.membership_status === 'pending' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>{isActive ? 'Aktif' : u.membership_status === 'pending' ? 'Beklemede' : 'Askıya Alındı'}</span>
                 {paidUserIds.has(u.id) && <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 font-semibold">ÖDENDİ</span>}
+                {!pendingOnly && <RoleFrameManager user={u} onUpdated={load} />}
                 <div className="flex flex-wrap gap-1.5">
                 {!pendingOnly && <button onClick={() => setDetail(u)} className={`${btn} bg-secondary hover:bg-secondary/70`}>GÖRÜNTÜLE</button>}
                 {!isActive && paidUserIds.has(u.id) && <button onClick={() => approve(u)} className={`${btn} bg-green-500/20 text-green-400 hover:bg-green-500/30`}>AKTİF ET</button>}
@@ -173,7 +175,7 @@ export default function AdminUsers({ pendingOnly = false }) {
       {detail && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setDetail(null)}>
           <div className="bg-card border border-border rounded-xl p-5 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="mb-4"><UserBadge userId={detail.id} name={detail.username || detail.full_name || '?'} avatar={detail.avatar} memberId={detail.member_id} size="lg" /></div>
+            <div className="mb-4"><UserBadge userId={detail.id} name={detail.username || detail.full_name || '?'} avatar={detail.avatar} memberId={detail.member_id} size="lg" displayRole={detail.display_role} customRole={detail.custom_role} profileFrame={detail.profile_frame} /></div>
             <div className="space-y-1.5 text-sm">
               <p><span className="text-muted-foreground">Kullanıcı adı:</span> {detail.username || detail.full_name || '-'}</p>
               <p><span className="text-muted-foreground">Üye No:</span> {detail.member_id || '-'}</p>

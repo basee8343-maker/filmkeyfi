@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimit, safeErrorResponse, logSecurity } from '../../shared/security.ts';
+import { isModerator, isSiteOwner, immuneToModeration } from '../../shared/roles.ts';
 
 async function sha256Hex(salt, pw) {
   const data = new TextEncoder().encode(salt + pw);
@@ -19,7 +20,7 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json();
     const { action, room_id, password, target_id } = body || {};
-    if (!room_id || !['get', 'join', 'leave', 'kick', 'set-password', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat', 'change-movie'].includes(action)) {
+    if (!room_id || !['get', 'join', 'leave', 'kick', 'ban', 'unban', 'set-password', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat', 'change-movie'].includes(action)) {
       return Response.json({ error: 'invalid request' }, { status: 400 });
     }
     const name = user.username || user.full_name || 'Kullanıcı';
@@ -33,7 +34,7 @@ export default async function(req) {
 
     const me = await base44.asServiceRole.entities.User.get(user.id);
     const isAdmin = me.role === 'admin';
-    const isMod = me.role === 'admin' || me.role === 'moderator';
+    const isMod = isModerator(me);
     const isOwner = room.owner_id === user.id;
     const ghost = isAdmin && !isOwner;
 
@@ -58,6 +59,11 @@ export default async function(req) {
         if (blockedRelations.length) {
           return Response.json({ error: 'Bu odanın sahibiyle aranızda engel bulunduğu için odaya katılamazsınız.' }, { status: 403 });
         }
+      }
+      // Ban check: atılmış kullanıcılar tekrar giremez
+      const isBanned = (room.banned_users || []).some((b) => b.user_id === user.id);
+      if (isBanned && !isMod) {
+        return Response.json({ error: 'Bu odadan atılmışsınız. Tekrar katılamazsınız.' }, { status: 403 });
       }
       // Admin ghost mode: görünmez katılım
       if (ghost) return Response.json({ ok: true, ghost: true });
@@ -88,26 +94,36 @@ export default async function(req) {
       return Response.json({ ok: true });
     }
 
-    if (action === 'kick') {
+    if (action === 'kick' || action === 'ban') {
       if (!isOwner && !isMod) return Response.json({ error: 'yetkisiz' }, { status: 403 });
       const targetUser = await base44.asServiceRole.entities.User.get(target_id).catch(() => null);
-      const targetIsMod = targetUser?.role === 'admin' || targetUser?.role === 'moderator';
-      if (targetIsMod && !isMod) return Response.json({ error: 'yetkili kullanıcı atılamaz' }, { status: 403 });
+      // Yetki hiyerarşisi: site sahibi herkesi atabilir, moderator'ler sadece normal kullanıcıları
+      if (isSiteOwner(targetUser)) return Response.json({ error: 'Site sahibi atılamaz' }, { status: 403 });
+      if (immuneToModeration(targetUser) && !isSiteOwner(me)) return Response.json({ error: 'Bu kullanıcıyı atamazsınız' }, { status: 403 });
       const participants = (room.participants || []).filter((p) => p.user_id !== target_id);
       const targetName = (room.participants || []).find((p) => p.user_id === target_id)?.name || 'Kullanıcı';
-      if (participants.length === 0) {
-        await base44.asServiceRole.entities.Room.update(room_id, { participants, status: 'closed', is_playing: false });
-        await base44.asServiceRole.entities.RoomMessage.create({
-          room_id, user_id: target_id, user_name: targetName,
-          text: `${targetName} odadan atıldı.`, type: 'system'
-        });
-        return Response.json({ ok: true });
+      // ban aksiyonunda kullanıcıyı banned_users listesine ekle
+      let update: any = { participants };
+      if (action === 'ban') {
+        const bannedUsers = (room.banned_users || []).filter((b) => b.user_id !== target_id);
+        bannedUsers.push({ user_id: target_id, name: targetName, banned_at: new Date().toISOString() });
+        update.banned_users = bannedUsers;
       }
-      await base44.asServiceRole.entities.Room.update(room_id, { participants });
+      if (participants.length === 0) {
+        update.status = 'closed'; update.is_playing = false;
+      }
+      await base44.asServiceRole.entities.Room.update(room_id, update);
       await base44.asServiceRole.entities.RoomMessage.create({
         room_id, user_id: target_id, user_name: targetName,
-        text: `${targetName} odadan atıldı.`, type: 'system'
+        text: action === 'ban' ? `${targetName} odadan atıldı ve giriş yasaklandı.` : `${targetName} odadan atıldı.`, type: 'system'
       });
+      return Response.json({ ok: true });
+    }
+
+    if (action === 'unban') {
+      if (!isOwner && !isMod) return Response.json({ error: 'yetkisiz' }, { status: 403 });
+      const bannedUsers = (room.banned_users || []).filter((b) => b.user_id !== target_id);
+      await base44.asServiceRole.entities.Room.update(room_id, { banned_users: bannedUsers });
       return Response.json({ ok: true });
     }
 
@@ -143,6 +159,8 @@ export default async function(req) {
 
     if (action === 'toggle-mute') {
       if (!isOwner && !isMod) return Response.json({ error: 'yetkisiz' }, { status: 403 });
+      const targetUser = await base44.asServiceRole.entities.User.get(target_id).catch(() => null);
+      if (immuneToModeration(targetUser) && !isSiteOwner(me)) return Response.json({ error: 'Bu kullanıcı susturulamaz' }, { status: 403 });
       const participants = (room.participants || []).map((p) =>
         p.user_id === target_id ? { ...p, muted: !p.muted } : p
       );

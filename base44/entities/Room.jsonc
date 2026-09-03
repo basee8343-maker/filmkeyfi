@@ -60,6 +60,25 @@
       ],
       "default": "active"
     },
+    "banned_users": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "banned_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "default": []
+    },
     "participants": {
       "type": "array",
       "items": {

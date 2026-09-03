@@ -20,6 +20,9 @@ export default async function(req) {
       avatar: u.avatar || '',
       member_id: u.member_id || '-',
       role: u.role || '',
+      display_role: u.display_role || '',
+      custom_role: u.custom_role || null,
+      profile_frame: u.profile_frame || '',
       title: u.title || '',
       created_date: u.created_date || null
     });
