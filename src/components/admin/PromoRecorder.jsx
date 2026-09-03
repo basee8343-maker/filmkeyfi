@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, AlertCircle, Play, Square, RotateCcw, Save, X } from 'lucide-react';
+import { Loader2, AlertCircle, Play, Square, RotateCcw, Save, X, ExternalLink } from 'lucide-react';
 
 const MAX_DURATION = 60;
 
@@ -13,6 +13,7 @@ export default function PromoRecorder({ onClose, onSaved }) {
   const [secondsLeft, setSecondsLeft] = useState(MAX_DURATION);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [error, setError] = useState('');
+  const [needsNewTab, setNeedsNewTab] = useState(false);
   const [title, setTitle] = useState('');
 
   const chunksRef = useRef([]);
@@ -34,11 +35,9 @@ export default function PromoRecorder({ onClose, onSaved }) {
 
   const start = async () => {
     setError('');
-    if (!navigator.mediaDevices?.getDisplayMedia) {
-      setError('Tarayıcınız ekran kaydını desteklemiyor. Chrome veya Edge kullanın.');
-      return;
-    }
+    setNeedsNewTab(false);
     try {
+      if (!navigator.mediaDevices?.getDisplayMedia) throw new Error('unsupported');
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 30 }, audio: true });
       streamRef.current = stream;
       chunksRef.current = [];
@@ -66,8 +65,13 @@ export default function PromoRecorder({ onClose, onSaved }) {
         if (elapsed >= MAX_DURATION) stop();
       }, 1000);
     } catch (e) {
-      setError('Ekran kaydı başlatılamadı: ' + (e.message || 'izin verilmedi'));
+      setNeedsNewTab(true);
+      setError('Ekran kaydı bu pencerede çalışmıyor (önizleme engelli). Sayfayı yeni sekmede açın — tam pencerede kayıt çalışır.');
     }
+  };
+
+  const openInNewTab = () => {
+    window.open(window.location.href, '_blank', 'noopener');
   };
 
   const save = async () => {
@@ -129,6 +133,11 @@ export default function PromoRecorder({ onClose, onSaved }) {
               <p>• Oda girişi, sohbet, rol animasyonları ve bildirimleri sergileyin.</p>
               <p>• Kaydı tarayıcının "Paylaşımı durdur" düğmesiyle de bitirebilirsiniz.</p>
             </div>
+            {needsNewTab && (
+              <button onClick={openInNewTab} className={`w-full ${btn} bg-accent text-accent-foreground`}>
+                <ExternalLink className="w-4 h-4" /> Yeni Sekmede Aç
+              </button>
+            )}
             <button onClick={start} className={`w-full ${btn} bg-primary text-primary-foreground`}>
               <Play className="w-4 h-4" /> Kaydı Başlat
             </button>
