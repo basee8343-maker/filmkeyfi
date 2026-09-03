@@ -25,7 +25,7 @@ export const ROLE_DEFINITIONS: Record<string, any> = {
     flame_profile: true,
   },
   'can_ablam': {
-    label: 'CAN ABLAM', icon: '🪔', color: '#4caf50', neon: true, priority: 88,
+    label: 'CAN ABLAM', icon: '🪔', color: '#ff1744', neon: true, priority: 88,
     entry_animation: 'nargile-entry', exit_animation: 'nargile-exit',
     show_in_room: false, moderator: false, hide_username_entry: false,
     name_effect: 'smoke',
@@ -41,19 +41,27 @@ export const ROLE_DEFINITIONS: Record<string, any> = {
   'nargileciler': {
     label: 'NARGİLECİLER', icon: '🪔', color: '#4caf50', neon: true, priority: 86,
     entry_animation: 'nargile-entry', exit_animation: 'nargile-exit',
-    show_in_room: true, moderator: false, hide_username_entry: true,
+    show_in_room: false, moderator: false, hide_username_entry: false,
     name_effect: 'smoke',
+    nargile_profile: true,
+  },
+  'special_vip': {
+    label: 'ÖZEL VIP', icon: '💰', color: '#fbbf24', neon: true, priority: 85,
+    entry_animation: 'money-entry', exit_animation: 'money-exit',
+    show_in_room: false, moderator: false, hide_username_entry: false,
+    name_effect: 'gold',
+    special_vip_profile: true,
   },
   'prince': {
-    label: 'PRENS', icon: '👑', color: '#fbbf24', neon: true, priority: 80,
+    label: 'PRENS', icon: '💙', color: '#3b82f6', neon: true, priority: 80,
     entry_animation: 'prince-entry', exit_animation: 'prince-exit',
-    show_in_room: true, moderator: false,
+    show_in_room: false, moderator: false, hide_username_entry: false,
     name_effect: 'gold',
   },
   'princess': {
     label: 'PRENSES', icon: '👸', color: '#f472b6', neon: true, priority: 75,
     entry_animation: 'princess-entry', exit_animation: 'princess-exit',
-    show_in_room: true, moderator: false,
+    show_in_room: false, moderator: false, hide_username_entry: false,
     name_effect: 'heart',
   },
   'vip1': {
