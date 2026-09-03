@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sanitizeText, rateLimit, safeErrorResponse, logSecurity } from '../../shared/security.ts';
+import { findProfanity } from '../../shared/profanity.ts';
 
 export default async function(req) {
   try {
@@ -41,6 +42,18 @@ export default async function(req) {
     const clean = sanitizeText(text, 1000);
     if (!clean) return Response.json({ error: 'boş mesaj' }, { status: 400 });
     const name = user.username || user.full_name || 'Kullanıcı';
+    // Küfür/argo filtresi — mesajı engeller, yönetici paneline düşürür
+    const badWords = findProfanity(clean);
+    if (badWords.length) {
+      await base44.asServiceRole.entities.Report.create({
+        reporter_id: user.id, reporter_name: name,
+        target_id: user.id, target_name: name,
+        context: 'room', context_id: room_id,
+        reason: `Küfür/Argo filtre: "${clean}" (${badWords.join(', ')})`,
+        status: 'pending'
+      }).catch(() => {});
+      return Response.json({ error: 'Mesajınız uygunsuz içerik tespit edildiği için engellendi.', filtered: true }, { status: 400 });
+    }
     await base44.asServiceRole.entities.RoomMessage.create({
       room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
       text: clean, type: 'user'

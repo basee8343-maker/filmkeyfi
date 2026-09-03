@@ -62,6 +62,10 @@ export default function AppLayout() {
       if (ev.type === 'update' && ev.data?.id === user.id && ev.data?.is_banned) {
         window.location.href = '/engellendiniz';
       }
+      if (ev.type === 'delete' && (ev.data?.id === user.id || ev.id === user.id)) {
+        base44.auth.logout().catch(() => {});
+        window.location.href = '/login?removed=1';
+      }
     });
     return () => { unsubNotif(); unsubUser(); };
   }, [user?.id]);

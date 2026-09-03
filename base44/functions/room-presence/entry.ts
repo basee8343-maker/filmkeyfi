@@ -104,6 +104,8 @@ export default async function(req) {
       const targetUser = await base44.asServiceRole.entities.User.get(target_id).catch(() => null);
       // Yetki hiyerarşisi: site sahibi herkesi atabilir, moderator'ler sadece normal kullanıcıları
       if (isSiteOwner(targetUser)) return Response.json({ error: 'Site sahibi atılamaz' }, { status: 403 });
+      const targetRoleKey = targetUser?.display_role || '';
+      if (targetRoleKey === 'queen_admin' || targetRoleKey === 'admin_helper') return Response.json({ error: 'Admin kraliçesi ve admin yardımcısı atılamaz' }, { status: 403 });
       if (immuneToModeration(targetUser) && !isSiteOwner(me)) return Response.json({ error: 'Bu kullanıcıyı atamazsınız' }, { status: 403 });
       const participants = (room.participants || []).filter((p) => p.user_id !== target_id);
       const targetName = (room.participants || []).find((p) => p.user_id === target_id)?.name || 'Kullanıcı';

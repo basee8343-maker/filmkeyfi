@@ -51,10 +51,10 @@ export default function CreateRoom() {
           {movies.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">Yüklü içerik yok.</p>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-80 overflow-y-auto p-1 -m-1">
+            <div className="flex gap-2 overflow-x-auto no-scrollbar p-1 -m-1">
               {movies.map((m) => (
                 <button key={m.id} type="button" onClick={() => setForm({ ...form, movie_id: m.id })}
-                  className={`relative rounded-lg overflow-hidden border-2 transition-all ${form.movie_id === m.id ? 'border-primary ring-2 ring-primary' : 'border-transparent hover:border-border'}`}>
+                  className={`relative shrink-0 w-28 rounded-lg overflow-hidden border-2 transition-all ${form.movie_id === m.id ? 'border-primary ring-2 ring-primary' : 'border-transparent hover:border-border'}`}>
                   <Image src={m.poster || m.backdrop} alt={m.title} className="aspect-[2/3] w-full" fittingType="fill" />
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-1.5">
                     <p className="text-xs font-medium text-white line-clamp-2">{m.title}</p>
@@ -79,9 +79,10 @@ export default function CreateRoom() {
           </div>
           <div>
             <label className="text-sm font-medium block mb-1.5">Maks. Kullanıcı</label>
-            <input className={field} type="number" min={2} max={50} value={form.max_users} onChange={(e) => setForm({ ...form, max_users: e.target.value })} />
+            <input className={field} type="number" min={2} max={250} value={form.max_users} onChange={(e) => setForm({ ...form, max_users: e.target.value })} />
           </div>
         </div>
+        {Number(form.max_users) > 100 && <p className="text-xs text-amber-500 -mt-1 flex items-center gap-1">⚠️ Yüksek kapasite: çok sayıda katılımcı oda performansını etkileyebilir.</p>}
         <div className="flex gap-3">
           <label className={`flex-1 flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${form.chat_enabled ? 'border-primary bg-primary/10' : 'border-border bg-secondary/40'}`}>
             <input type="checkbox" checked={form.chat_enabled} onChange={(e) => setForm({ ...form, chat_enabled: e.target.checked })} className="accent-primary" />

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, X, Smile, Trash2, MessageSquareOff } from 'lucide-react';
+import { Send, X, Smile, Trash2, MessageSquareOff, Image as ImageIcon } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
@@ -27,6 +27,8 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   const [modTarget, setModTarget] = useState(null); // { userId, userName, userAvatar }
   const [userMenu, setUserMenu] = useState(null);
   const [reportTarget, setReportTarget] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [menuProfile, setMenuProfile] = useState(null);
   const scrollRef = useRef(null);
   const profiles = useMessageProfiles(messages.map((message) => message.user_id));
 
@@ -85,6 +87,41 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
     if (m.user_id === user?.id) return;
     e.preventDefault();
     setUserMenu({ userId: m.user_id, userName: m.user_name, userAvatar: m.user_avatar });
+  };
+
+  useEffect(() => {
+    if (!userMenu?.userId) { setMenuProfile(null); return; }
+    base44.functions.invoke('user-profile', { user_id: userMenu.userId }).then((res) => setMenuProfile(res.data)).catch(() => {});
+  }, [userMenu?.userId]);
+
+  const onPhoto = async (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(f.type)) { toast({ title: 'Sadece JPG, PNG, WEBP', variant: 'destructive' }); e.target.value = ''; return; }
+    if (f.size > 10 * 1024 * 1024) { toast({ title: 'Maksimum 10 MB', variant: 'destructive' }); e.target.value = ''; return; }
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file: f });
+      await base44.entities.Report.create({ reporter_id: user.id, reporter_name: user.username || user.full_name || 'Kullanıcı', target_id: user.id, target_name: user.username || user.full_name || 'Kullanıcı', context: 'room', context_id: roomId, reason: 'Görsel onay', file_url, status: 'pending' });
+      toast({ title: 'Görsel yönetici onayına iletildi' });
+    } catch { toast({ title: 'Yükleme hatası', variant: 'destructive' }); }
+    finally { setUploading(false); e.target.value = ''; }
+  };
+
+  const copyMemberId = async () => {
+    const mid = menuProfile?.member_id;
+    if (!mid) return;
+    try { await navigator.clipboard.writeText(mid); toast({ title: 'Üye No kopyalandı', description: mid }); }
+    catch { toast({ title: 'Kopyalanamadı', variant: 'destructive' }); }
+  };
+  const blockUser = async () => {
+    try { await base44.functions.invoke('role-management', { action: 'ban_user', user_id: userMenu.userId, reason: 'Sohbet üzerinden engellendi' }); toast({ title: 'Kullanıcı engellendi' }); setUserMenu(null); }
+    catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+  const deleteUser = async () => {
+    if (!confirm('Bu kullanıcı kalıcı olarak silinsin mi?')) return;
+    try { await base44.entities.User.delete(userMenu.userId); toast({ title: 'Kullanıcı silindi' }); setUserMenu(null); }
+    catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
   if (!chatEnabled) {
@@ -159,9 +196,14 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
         </div>
       )}
       <form onSubmit={send} className="p-3 border-t border-border flex items-center gap-2">
+        <label className="p-2 rounded-lg hover:bg-secondary cursor-pointer">
+          <ImageIcon className="w-5 h-5" />
+          <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhoto} disabled={uploading} />
+        </label>
         <button type="button" onClick={() => setShowEmoji(!showEmoji)} className="p-2 rounded-lg hover:bg-secondary"><Smile className="w-5 h-5" /></button>
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Mesaj yazın..." className="flex-1 bg-secondary/60 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" />
-        <button type="submit" disabled={!text.trim()} className="p-2.5 rounded-full bg-primary text-primary-foreground disabled:opacity-50"><Send className="w-4 h-4" /></button>
+        <button type="submit" disabled={!text.trim() || uploading} className="p-2.5 rounded-full bg-primary text-primary-foreground disabled:opacity-50"><Send className="w-4 h-4" /></button>
+        {uploading && <span className="text-xs text-muted-foreground animate-pulse shrink-0">...</span>}
       </form>
 
       {modTarget && (
@@ -182,7 +224,11 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
             </div>
             <Link to={`/kullanici/${userMenu.userId}`} onClick={() => setUserMenu(null)} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm">Profili Gör</Link>
             <button onClick={() => { setReportTarget(userMenu); setUserMenu(null); }} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-destructive/10 text-destructive text-sm font-semibold">Şikayet Et</button>
-            {isAdmin && <button onClick={() => { setModTarget({ userId: userMenu.userId, userName: userMenu.userName, userAvatar: userMenu.userAvatar }); setUserMenu(null); }} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-amber-500/10 text-amber-500 text-sm font-semibold">Yönet</button>}
+            {isAdmin && <>
+              {menuProfile?.member_id && <button onClick={copyMemberId} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm">Üye No Kopyala ({menuProfile.member_id})</button>}
+              <button onClick={blockUser} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-amber-500/10 text-amber-500 text-sm font-semibold">Engelle</button>
+              <button onClick={deleteUser} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-destructive/10 text-destructive text-sm font-semibold">Sil</button>
+            </>}
           </div>
         </div>
       )}

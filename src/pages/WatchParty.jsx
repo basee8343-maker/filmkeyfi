@@ -196,11 +196,16 @@ export default function WatchParty() {
     setVoiceReady(false);
     try { await base44.functions.invoke('room-presence', { action: 'leave', room_id: id }); } catch {}
   };
+  const leaveRoomRef = useRef(() => {});
+  leaveRoomRef.current = leaveRoom;
 
   const handleBack = async () => { await leaveRoom(); navigate(-1); };
 
   useEffect(() => {
-    return () => { leaveRoom(); };
+    const handler = () => { leaveRoomRef.current(); };
+    window.addEventListener('pagehide', handler);
+    window.addEventListener('beforeunload', handler);
+    return () => { leaveRoomRef.current(); window.removeEventListener('pagehide', handler); window.removeEventListener('beforeunload', handler); };
   }, []);
 
   // Oda içindeyken özel mesaj gelince üstte bildirim göster (sadece alıcı görür)
@@ -284,7 +289,7 @@ export default function WatchParty() {
 
   const removeUser = async (uid) => {
     if (!canMod) return;
-    try { await base44.functions.invoke('room-presence', { action: 'kick', room_id: id, target_id: uid }); toast({ title: 'Kullanıcı odadan çıkarıldı' }); }
+    try { await base44.functions.invoke('room-presence', { action: 'ban', room_id: id, target_id: uid }); toast({ title: 'Kullanıcı odadan atıldı ve geri girişi engellendi' }); }
     catch (e) { toast({ title: 'Çıkarılamadı', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
     setShowViewers(false);
   };

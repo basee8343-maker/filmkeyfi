@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { findProfanity } from '../../shared/profanity.ts';
 
 const cleanUser = (user) => ({
   id: user.id,
@@ -119,6 +120,19 @@ export default async function(req) {
       const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
       if (!friendship || friendship.status !== 'accepted' || !friendship.members.includes(user.id)) {
         return Response.json({ error: 'Yalnızca arkadaşlarınıza mesaj gönderebilirsiniz' }, { status: 403 });
+      }
+      // Küfür/argo filtresi
+      const badWords = findProfanity(text);
+      if (badWords.length) {
+        const senderName = user.username || user.full_name || 'Kullanıcı';
+        await base44.asServiceRole.entities.Report.create({
+          reporter_id: user.id, reporter_name: senderName,
+          target_id: user.id, target_name: senderName,
+          context: 'dm', context_id: friendship.id,
+          reason: `Küfür/Argo filtre: "${text}" (${badWords.join(', ')})`,
+          status: 'pending'
+        }).catch(() => {});
+        return Response.json({ error: 'Mesajınız uygunsuz içerik tespit edildiği için engellendi.', filtered: true }, { status: 400 });
       }
       const recipientId = friendship.requester_id === user.id ? friendship.recipient_id : friendship.requester_id;
       const senderName = friendship.requester_id === user.id ? friendship.requester_name : friendship.recipient_name;
