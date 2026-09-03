@@ -1,57 +1,82 @@
 import { useEffect, useState, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { parseRoleMetadata, ROLE_DEFINITIONS, getRoleLabelOverride } from '@/lib/roles';
+import { parseRoleMetadata, parseFrameMetadata, ROLE_DEFINITIONS, getRoleLabelOverride } from '@/lib/roles';
 import RoleCharacter from '@/components/role/RoleCharacter';
-import RoleVideoOverlay from '@/components/player/RoleVideoOverlay';
-import { useAuth } from '@/lib/AuthContext';
+import FrameEntranceOverlay from '@/components/player/FrameEntranceOverlay';
 
-// Rol → video config key eşlemesi
-const ROLE_VIDEO_KEYS = {
-  founder: { entry: 'founder_entry_video', exit: 'founder_exit_video' },
-  queen_admin: { entry: 'role_video_queen_admin_entry' },
-  can_abim: { entry: 'role_video_can_abim_entry' },
-  can_ablam: { entry: 'role_video_can_ablam_entry' },
-  nargileciler: { entry: 'role_video_nargileciler_entry' },
-};
-
+// Oda giriş/çıkış overlay yöneticisi.
+// Öncelik: özel çerçeve > rol karakter animasyonu > hiçbir şey.
+// Video overlay sistemi tamamen kaldırıldı.
 export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
   const [queue, setQueue] = useState([]);
   const [current, setCurrent] = useState(null);
+  const [frameCache, setFrameCache] = useState({});
   const timerRef = useRef(null);
   const processedRef = useRef(new Set());
-  const { publicSettings } = useAuth();
 
-  const getVideoUrl = (roleKey, isEntry) => {
-    const keys = ROLE_VIDEO_KEYS[roleKey];
-    if (!keys) return '';
-    const key = isEntry ? keys.entry : keys.exit;
-    return key ? (publicSettings?.[key] || '') : '';
-  };
+  // Aktif çerçeveleri çek ve cache'le
+  useEffect(() => {
+    base44.entities.SpecialFrame.filter({ active: true }, '-created_date', 100)
+      .then((frames) => {
+        const map = {};
+        frames.forEach((f) => { map[f.id] = f; });
+        setFrameCache(map);
+      })
+      .catch(() => {});
+  }, []);
 
   const processMessage = (msg) => {
     if (!msg || msg.room_id !== roomId || msg.type !== 'system') return;
     if (processedRef.current.has(msg.id)) return;
-    const { text, roleKey, color, hasRole } = parseRoleMetadata(msg.text);
-    if (!hasRole) return;
 
-    const isEntry = text.includes('odaya katıldı');
-    const isExit = text.includes('odadan ayrıldı');
+    // Önce FRAME metadata'yı çöz
+    const frameParsed = parseFrameMetadata(msg.text);
+    const roleParsed = parseRoleMetadata(frameParsed.rest);
+    const hasFrame = !!frameParsed.frameId;
+    const hasRole = roleParsed.hasRole;
+    if (!hasFrame && !hasRole) return;
+
+    let remaining = roleParsed.text;
+    const isEntry = remaining.includes('odaya katıldı');
+    const isExit = remaining.includes('odadan ayrıldı');
     if (!isEntry && !isExit) return;
 
     processedRef.current.add(msg.id);
 
+    // Çerçeve varsa: frame overlay kullan
+    if (hasFrame) {
+      const frame = frameCache[frameParsed.frameId];
+      if (!frame) return; // çerçeve cache'de yoksa atla
+      const title = frameParsed.title || '';
+      let displayName = remaining.replace('odaya katıldı', '').replace('odadan ayrıldı', '').replace(/[.\s]/g, '').trim();
+      if (title && displayName.startsWith(title)) displayName = displayName.slice(title.length).trim();
+      setQueue((q) => [...q.slice(-4), {
+        key: msg.id + (isEntry ? 'fin' : 'fout'),
+        type: 'frame',
+        frame,
+        avatar: msg.user_avatar || '',
+        displayName,
+        title,
+        isEntry,
+      }]);
+      return;
+    }
+
+    // Çerçeve yoksa: rol karakter animasyonu (video yok)
+    const roleKey = roleParsed.roleKey || 'custom';
     const roleDef = ROLE_DEFINITIONS[roleKey || ''];
     const roleLabel = getRoleLabelOverride(roleKey) || roleDef?.label || '';
     const rolePrefix = (roleDef && roleDef.show_in_room) ? `${roleDef.icon} ${roleLabel} ` : '';
 
-    let remaining = text;
-    if (rolePrefix) remaining = remaining.replace(rolePrefix, '');
-    const displayName = remaining.replace('odaya katıldı', '').replace('odadan ayrıldı', '').replace(/[.\s]/g, '').trim();
+    let displayName = remaining;
+    if (rolePrefix) displayName = displayName.replace(rolePrefix, '');
+    displayName = displayName.replace('odaya katıldı', '').replace('odadan ayrıldı', '').replace(/[.\s]/g, '').trim();
 
     setQueue((q) => [...q.slice(-4), {
-      key: msg.id + (isEntry ? 'in' : 'out'),
-      roleKey: roleKey || 'custom',
-      color: color || roleDef?.color || '#8b5cf6',
+      key: msg.id + (isEntry ? 'rin' : 'rout'),
+      type: 'role',
+      roleKey,
+      color: roleParsed.color || roleDef?.color || '#8b5cf6',
       isEntry,
       displayName,
       roleLabel: roleDef?.show_in_room ? roleLabel : '',
@@ -74,20 +99,16 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
 
   useEffect(() => {
     fetchRecent();
-    // Gecikmeli tekrar çekme — kullanıcının kendi katılım mesajı,
-    // WebSocket aboneliği hazır olmadan önce oluşturulursa yakalar.
     const delayTimer = setTimeout(fetchRecent, 2000);
-
     const unsub = base44.entities.RoomMessage.subscribe((event) => {
       if (event.type !== 'create') return;
       processMessage(event.data);
     });
     return () => { unsub(); clearTimeout(timerRef.current); clearTimeout(delayTimer); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
+  }, [roomId, frameCache]);
 
-  // Katılım tamamlandığında (joinTrigger değiştiğinde) tekrar mesaj çek
-  // — kullanıcının kendi katılım videosunu görmesi için
+  // Katılım tamamlandığında tekrar mesaj çek
   useEffect(() => {
     if (joinTrigger > 0) fetchRecent();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,24 +119,27 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
     const next = queue[0];
     setQueue((q) => q.slice(1));
     setCurrent(next);
-    const videoUrl = getVideoUrl(next.roleKey, next.isEntry);
-    const duration = videoUrl ? 6000 : (next.isEntry ? 4500 : 4000);
+    const duration = next.type === 'frame' ? (next.isEntry ? 3500 : 2100) : (next.isEntry ? 4500 : 4000);
     timerRef.current = setTimeout(() => setCurrent(null), duration);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, queue, publicSettings]);
+  }, [current, queue]);
 
   if (!current) return null;
 
-  const videoUrl = getVideoUrl(current.roleKey, current.isEntry);
-  if (videoUrl) {
-    const roleLabel = current.roleLabel || ROLE_DEFINITIONS[current.roleKey]?.label || '';
-    const title = roleLabel
-      ? `${roleLabel} ${current.isEntry ? 'ODAYA KATILDI' : 'ODADAN AYRILDI'}`
-      : (current.isEntry ? 'ODAYA KATILDI' : 'ODADAN AYRILDI');
-    return <RoleVideoOverlay url={videoUrl} isEntry={current.isEntry} title={title} color={current.color} />;
+  if (current.type === 'frame') {
+    return (
+      <FrameEntranceOverlay
+        frame={current.frame}
+        avatar={current.avatar}
+        name={current.displayName}
+        title={current.title}
+        isEntry={current.isEntry}
+        onDone={() => setCurrent(null)}
+      />
+    );
   }
 
-  // Video yoksa karakter animasyonuna düş
+  // Rol karakter animasyonu (çerçeve yoksa)
   const action = current.isEntry ? 'odaya katıldı' : 'odadan ayrıldı';
   const overlayDuration = current.isEntry ? '4.5s' : '4s';
   const charAnim = current.isEntry ? 'celebration-char-in' : 'role-text-disappear';

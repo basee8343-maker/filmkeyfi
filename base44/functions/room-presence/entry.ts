@@ -88,11 +88,15 @@ export default async function(req) {
         await base44.asServiceRole.entities.Room.update(room_id, { participants });
         const roleInfo = getRoleInfo(me, labelOverrides);
         const roleMeta = roleInfo.label ? `{{ROLE|${roleInfo.key || ''}|${roleInfo.color || ''}|${roleInfo.animation || 'pulse'}}}` : '';
-        const rolePrefix = (roleInfo.label && roleInfo.show_in_room) ? `${roleInfo.icon} ${roleInfo.label} ` : '';
-        const entryName = roleInfo.hide_username_entry ? '' : `${name} `;
+        const frameInfo = await getSpecialFrameInfo(base44, me, true);
+        const frameMeta = frameInfo ? `{{FRAME|${frameInfo.id}|${frameInfo.theme_color}|${frameInfo.text_color}|${frameInfo.glow_color}|${frameInfo.title}}}` : '';
+        const titlePrefix = frameInfo?.title
+          ? `${frameInfo.title} `
+          : (roleInfo.label && roleInfo.show_in_room ? `${roleInfo.icon} ${roleInfo.label} ` : '');
+        const entryName = frameInfo ? `${name} ` : (roleInfo.hide_username_entry ? '' : `${name} `);
         await base44.asServiceRole.entities.RoomMessage.create({
-          room_id, user_id: user.id, user_name: name,
-          text: `${roleMeta}${rolePrefix}${entryName}odaya katıldı.`, type: 'system'
+          room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
+          text: `${frameMeta}${roleMeta}${titlePrefix}${entryName}odaya katıldı.`, type: 'system'
         });
       }
       await updatePresenceRoom(base44, user.id, room_id);
@@ -201,11 +205,15 @@ export default async function(req) {
       await base44.asServiceRole.entities.Room.update(room_id, { participants, status: 'closed', is_playing: false });
       const roleInfoLeave = getRoleInfo(me, labelOverrides);
       const roleMetaLeave = roleInfoLeave.label ? `{{ROLE|${roleInfoLeave.key || ''}|${roleInfoLeave.color || ''}|${roleInfoLeave.animation || 'pulse'}}}` : '';
-      const rolePrefixLeave = (roleInfoLeave.label && roleInfoLeave.show_in_room) ? `${roleInfoLeave.icon} ${roleInfoLeave.label} ` : '';
-      const leaveName = roleInfoLeave.hide_username_entry ? '' : `${name} `;
+      const frameInfoLeave = await getSpecialFrameInfo(base44, me, false);
+      const frameMetaLeave = frameInfoLeave ? `{{FRAME|${frameInfoLeave.id}|${frameInfoLeave.theme_color}|${frameInfoLeave.text_color}|${frameInfoLeave.glow_color}|${frameInfoLeave.title}}}` : '';
+      const titlePrefixLeave = frameInfoLeave?.title
+        ? `${frameInfoLeave.title} `
+        : (roleInfoLeave.label && roleInfoLeave.show_in_room ? `${roleInfoLeave.icon} ${roleInfoLeave.label} ` : '');
+      const leaveName = frameInfoLeave ? `${name} ` : (roleInfoLeave.hide_username_entry ? '' : `${name} `);
       await base44.asServiceRole.entities.RoomMessage.create({
-        room_id, user_id: user.id, user_name: name,
-        text: `${roleMetaLeave}${rolePrefixLeave}${leaveName}odadan ayrıldı.`, type: 'system'
+        room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
+        text: `${frameMetaLeave}${roleMetaLeave}${titlePrefixLeave}${leaveName}odadan ayrıldı.`, type: 'system'
       });
       return Response.json({ ok: true });
     }
@@ -224,11 +232,15 @@ export default async function(req) {
     });
     const roleInfoLeave2 = getRoleInfo(me, labelOverrides);
     const roleMetaLeave2 = roleInfoLeave2.label ? `{{ROLE|${roleInfoLeave2.key || ''}|${roleInfoLeave2.color || ''}|${roleInfoLeave2.animation || 'pulse'}}}` : '';
-    const rolePrefixLeave2 = (roleInfoLeave2.label && roleInfoLeave2.show_in_room) ? `${roleInfoLeave2.icon} ${roleInfoLeave2.label} ` : '';
-    const leaveName2 = roleInfoLeave2.hide_username_entry ? '' : `${name} `;
+    const frameInfoLeave2 = await getSpecialFrameInfo(base44, me, false);
+    const frameMetaLeave2 = frameInfoLeave2 ? `{{FRAME|${frameInfoLeave2.id}|${frameInfoLeave2.theme_color}|${frameInfoLeave2.text_color}|${frameInfoLeave2.glow_color}|${frameInfoLeave2.title}}}` : '';
+    const titlePrefixLeave2 = frameInfoLeave2?.title
+      ? `${frameInfoLeave2.title} `
+      : (roleInfoLeave2.label && roleInfoLeave2.show_in_room ? `${roleInfoLeave2.icon} ${roleInfoLeave2.label} ` : '');
+    const leaveName2 = frameInfoLeave2 ? `${name} ` : (roleInfoLeave2.hide_username_entry ? '' : `${name} `);
     await base44.asServiceRole.entities.RoomMessage.create({
-      room_id, user_id: user.id, user_name: name,
-      text: `${roleMetaLeave2}${rolePrefixLeave2}${leaveName2}odadan ayrıldı.`, type: 'system'
+      room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
+      text: `${frameMetaLeave2}${roleMetaLeave2}${titlePrefixLeave2}${leaveName2}odadan ayrıldı.`, type: 'system'
     });
     if (ownershipTransferred) {
       await base44.asServiceRole.entities.RoomMessage.create({

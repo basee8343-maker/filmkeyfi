@@ -178,6 +178,34 @@ export default async function(req) {
       return Response.json({ ok: true });
     }
 
+    if (action === 'assign_special_frame') {
+      const { frame_id, frame_title, entry_enabled, exit_enabled } = body;
+      if (frame_id) {
+        const frame = await base44.asServiceRole.entities.SpecialFrame.get(frame_id).catch(() => null);
+        if (!frame) return Response.json({ error: 'çerçeve bulunamadı' }, { status: 400 });
+      }
+      const updates: any = {
+        special_frame_id: frame_id || '',
+        special_frame_title: (frame_title || '').slice(0, 60),
+        special_frame_entry: entry_enabled !== false,
+        special_frame_exit: exit_enabled !== false,
+      };
+      await base44.asServiceRole.entities.User.update(user_id, updates);
+      await base44.asServiceRole.entities.AdminLog.create({
+        admin_id: me.id, admin_name: adminName,
+        action: 'Özel çerçeve atandı', target: target.email || user_id,
+        details: frame_id ? `Çerçeve: ${frame_id}` : 'çerçeve kaldırıldı'
+      }).catch(() => {});
+      if (frame_id) {
+        await base44.asServiceRole.entities.Notification.create({
+          user_id, title: '🖼️ Özel Çerçeveniz Atandı',
+          body: 'Oda girişlerinizde özel çerçeveniz görünecek.',
+          type: 'role'
+        }).catch(() => {});
+      }
+      return Response.json({ ok: true });
+    }
+
     if (action === 'set_name_effect') {
       const { effect } = body;
       const valid = ['', 'flame', 'lightning', 'heart', 'diamond', 'star', 'gold', 'smoke', 'solid'];
