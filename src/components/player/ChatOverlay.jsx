@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, X, Smile, Trash2, MessageSquareOff, Image as ImageIcon, Settings, MessagesSquare, Shield, Crown, Sparkles } from 'lucide-react';
+import { Send, X, Smile, Trash2, MessageSquareOff, Image as ImageIcon, MessagesSquare, Shield, Crown, Sparkles } from 'lucide-react';
 import VoiceControls from '@/components/player/VoiceControls';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
@@ -17,10 +17,11 @@ import RoleMessageEffect from '@/components/role/RoleMessageEffect';
 import RoleNameEffect from '@/components/role/RoleNameEffect';
 import UserProfileCard from '@/components/player/UserProfileCard';
 import EmojiPicker from '@/components/player/EmojiPicker';
+import RoomSettingsContent from '@/components/player/RoomSettingsContent';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
-export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, directUnread = 0, ownerId, roomModerators = [], participants = [], viewerProfiles = {}, presenceMap = {}, onProfileCard }) {
+export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, directUnread = 0, ownerId, roomModerators = [], participants = [], viewerProfiles = {}, presenceMap = {}, onProfileCard, settingsProps }) {
   const { user } = useCurrentUser();
   const { toast } = useToast();
   const [messages, setMessages] = useState([]);
@@ -200,7 +201,6 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       {(voiceEnabled || onSettings || onDirect) && (
         <div className="flex items-center gap-1.5 px-3 py-2 border-b border-white/10">
           <VoiceControls voice={voice} />
-          {isOwner && onSettings && <button onClick={onSettings} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1a1a1a] text-xs font-semibold hover:bg-[#2a2a2a] whitespace-nowrap text-white"><Settings className="w-4 h-4" /> Ayarlar</button>}
           {onDirect && <button onClick={onDirect} className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1a1a1a] text-xs font-semibold hover:bg-[#2a2a2a] whitespace-nowrap text-white"><MessagesSquare className="w-4 h-4" /> Mesaj{directUnread > 0 && <span className="absolute -right-1 -top-1 min-w-4 h-4 rounded-full px-1 text-[9px] font-bold text-white flex items-center justify-center" style={{ background: '#ffcc00', color: '#000' }}>{directUnread > 99 ? '99+' : directUnread}</span>}</button>}
         </div>
       )}
@@ -307,11 +307,8 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
           ))}
           </div>
           ) : (
-          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2 bg-black">
-          <p className="text-xs text-[#888] mb-2">Oda ayarlarını açmak için aşağıdaki butona tıklayın.</p>
-          <button onClick={onSettings} className="w-full flex items-center gap-2 p-3 rounded-xl bg-[#1a1a1a] text-white text-sm font-semibold active:scale-95 transition-transform">
-            <Settings className="w-5 h-5" /> Ayarları Aç
-          </button>
+          <div className="flex-1 min-h-0 flex flex-col bg-card/95 text-white overflow-hidden">
+          <RoomSettingsContent {...(settingsProps || {})} />
           </div>
           )}
           {chatEnabled && msgFilter === 'all' && autoDeleteMinutes > 0 && countdownText && (
