@@ -248,7 +248,7 @@ export default async function(req) {
       for (const p of participants) {
         const presence = await base44.asServiceRole.entities.UserPresence.filter({ user_id: p.user_id }, '-created_date', 1).catch(() => []);
         const rec = presence[0];
-        if (rec && rec.online && rec.last_seen && Date.now() - new Date(rec.last_seen).getTime() < 120000) {
+        if (rec && rec.online && rec.last_seen && Date.now() - new Date(rec.last_seen).getTime() < 30000) {
           hasOnline = true;
           break;
         }

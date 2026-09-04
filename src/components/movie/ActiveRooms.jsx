@@ -5,7 +5,7 @@ import { Image } from '@/components/ui/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
-import { Lock, Instagram, EyeOff } from 'lucide-react';
+import { Lock, EyeOff } from 'lucide-react';
 
 export default function ActiveRooms() {
   const navigate = useNavigate();
@@ -88,7 +88,6 @@ export default function ActiveRooms() {
               </button>
               <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background">{room.room_number || idx + 1}</span>
               <p className="text-[10px] font-medium text-white text-center truncate w-full mt-1.5">{room.movie_title || 'Film'}</p>
-              <button onClick={(e) => shareRoom(e, room)} className="mt-0.5 flex items-center justify-center w-5 h-5 rounded-full bg-white/10 hover:bg-primary/80 text-white transition-colors" title="Instagram'da paylaş"><Instagram className="w-3 h-3" /></button>
             </motion.div>
           ))}
         </AnimatePresence>}

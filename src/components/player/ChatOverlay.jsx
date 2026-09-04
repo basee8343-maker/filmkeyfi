@@ -155,7 +155,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       {(voiceEnabled || onSettings || onDirect) && (
         <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border">
           {voiceEnabled && <VoiceControls voice={voice} />}
-          {onSettings && <button onClick={onSettings} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/60 text-xs font-semibold hover:bg-secondary whitespace-nowrap"><Settings className="w-4 h-4" /> Ayarlar</button>}
+          {isOwner && onSettings && <button onClick={onSettings} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/60 text-xs font-semibold hover:bg-secondary whitespace-nowrap"><Settings className="w-4 h-4" /> Ayarlar</button>}
           {onDirect && <button onClick={onDirect} className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/60 text-xs font-semibold hover:bg-secondary whitespace-nowrap"><MessagesSquare className="w-4 h-4" /> Mesaj{directUnread > 0 && <span className="absolute -right-1 -top-1 min-w-4 h-4 rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground flex items-center justify-center">{directUnread > 99 ? '99+' : directUnread}</span>}</button>}
         </div>
       )}

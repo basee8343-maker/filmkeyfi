@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { DoorOpen, Users, Lock, Loader2, Instagram, EyeOff, Star } from 'lucide-react';
+import { DoorOpen, Users, Lock, Loader2, EyeOff, Star } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
@@ -137,7 +137,6 @@ export default function OpenRooms() {
                  })()}
                  <div className="flex gap-2 items-center">
                    <Link to={`/oda/${r.id}`} className="bg-primary text-primary-foreground text-sm font-semibold px-5 py-1.5 rounded-full hover:bg-primary/90">Katıl</Link>
-                   <button onClick={(e) => shareRoom(e, r)} className="flex items-center justify-center w-8 h-8 rounded-full bg-secondary hover:bg-primary/20 text-foreground hover:text-primary transition-colors border border-border" title="Instagram'da paylaş"><Instagram className="w-4 h-4" /></button>
                  </div>
                </div>
              );
@@ -187,10 +186,11 @@ export default function OpenRooms() {
                    <div className="flex gap-2 items-center">
                      {ownerInRoom ? (
                        <Link to={`/oda/${r.id}`} className="bg-accent text-accent-foreground text-sm font-semibold px-5 py-1.5 rounded-full hover:bg-accent/90">Katıl</Link>
+                     ) : user?.id === r.owner_id ? (
+                       <Link to={`/oda/${r.id}`} className="bg-accent text-accent-foreground text-sm font-semibold px-5 py-1.5 rounded-full hover:bg-accent/90">Aç</Link>
                      ) : (
                        <span className="bg-secondary text-muted-foreground text-sm font-semibold px-5 py-1.5 rounded-full cursor-not-allowed">Kapalı</span>
                      )}
-                     <button onClick={(e) => shareRoom(e, r)} className="flex items-center justify-center w-8 h-8 rounded-full bg-secondary hover:bg-accent/20 text-foreground hover:text-accent transition-colors border border-border" title="Instagram'da paylaş"><Instagram className="w-4 h-4" /></button>
                    </div>
                  </div>
                );

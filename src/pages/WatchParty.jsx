@@ -89,12 +89,12 @@ export default function WatchParty() {
   // Oda adını düzenleme alanını odadan başlat
   useEffect(() => { setRoomNameEdit(room?.name || ''); }, [room?.name]);
 
-  // Kişisel oda: film yoksa otomatik film seçme panelini aç
+  // Kişisel oda: film yoksa sadece oda sahibine otomatik film seçme panelini aç
   useEffect(() => {
-    if (room?.is_personal && !room?.movie_id && joinCount > 0) {
+    if (room?.is_personal && !room?.movie_id && joinCount > 0 && user?.id === room?.owner_id) {
       setMoviePickerOpen(true);
     }
-  }, [room?.is_personal, room?.movie_id, joinCount]);
+  }, [room?.is_personal, room?.movie_id, joinCount, user?.id]);
 
   useEffect(() => {
     if (!user || !room || joinedRef.current) return;

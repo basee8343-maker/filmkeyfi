@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
-const ONLINE_THRESHOLD_MS = 300000; // 5 dakika içinde aktif olan çevrim içi sayılır
+const ONLINE_THRESHOLD_MS = 60000; // 1 dakika içinde aktif olan çevrim içi sayılır
 
 export default async function(req) {
   try {
