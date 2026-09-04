@@ -45,11 +45,19 @@ export default function useFriends() {
       const readCount = payload.action === 'mark_read' ? messages.filter((message) => message.friendship_id === payload.friendship_id && message.recipient_id === user?.id && !(message.read_by || []).includes(user.id)).length : 0;
       const res = await base44.functions.invoke('friend-service', payload);
       if (payload.action === 'send' && res.data.message) setMessages((current) => upsertMessage(current, res.data.message));
-      else if (payload.action !== 'typing') await reload();
+      else if (payload.action !== 'typing' && payload.action !== 'clear_chat' && payload.action !== 'hide') await reload();
       if (payload.action === 'mark_read' && readCount > 0) window.dispatchEvent(new CustomEvent('social-thread-read', { detail: { count: readCount } }));
       window.dispatchEvent(new Event('social-badges-refresh'));
       return res.data;
     } catch (error) { toast({ title: 'İşlem başarısız', description: error.response?.data?.error || error.message, variant: 'destructive' }); throw error; }
   };
-  return { user, relations, messages, loading, reload, invoke };
+  const optimisticHide = useCallback((friendshipId) => {
+    setRelations((current) => current.map((r) =>
+      r.id === friendshipId
+        ? { ...r, hidden_for: [...(r.hidden_for || []), user?.id].filter(Boolean) }
+        : r
+    ));
+  }, [user?.id]);
+
+  return { user, relations, messages, loading, reload, invoke, optimisticHide };
 }

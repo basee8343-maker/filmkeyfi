@@ -287,7 +287,9 @@ export default function WatchParty() {
     Promise.all(ids.map((uid) => base44.entities.UserPresence.filter({ user_id: uid }, '-created_date', 1).then((r) => [uid, r[0]]).catch(() => [uid, null])))
       .then((entries) => { const map = {}; entries.forEach(([uid, rec]) => { if (rec) map[uid] = rec; }); setPresenceMap(map); });
     const unsub = base44.entities.UserPresence.subscribe((ev) => {
-      if (ev.type === 'create' || ev.type === 'update') setPresenceMap((prev) => ({ ...prev, [ev.data.user_id]: ev.data }));
+      if (ev.type !== 'create' && ev.type !== 'update') return;
+      if (!ids.includes(ev.data.user_id)) return;
+      setPresenceMap((prev) => ({ ...prev, [ev.data.user_id]: ev.data }));
     });
     return unsub;
   }, [participantIdsKey]);
@@ -357,12 +359,17 @@ export default function WatchParty() {
   const isMod = user?.role === 'admin' || user?.role === 'moderator';
   const canMod = isOwner || isMod || (room?.room_moderators || []).includes(user?.id);
 
+  const presenceMapRef = useRef({});
+  const participantsRef = useRef([]);
+  useEffect(() => { presenceMapRef.current = presenceMap; }, [presenceMap]);
+  useEffect(() => { participantsRef.current = room?.participants || []; }, [room?.participants]);
+
   useEffect(() => {
     if (!canMod || !room?.participants) return;
     const check = async () => {
-      const offlineUsers = (room.participants || []).filter((p) => {
+      const offlineUsers = (participantsRef.current || []).filter((p) => {
         if (p.user_id === user.id || p.user_id === room.owner_id) return false;
-        const presence = presenceMap[p.user_id];
+        const presence = presenceMapRef.current[p.user_id];
         if (!presence) return false;
         return !presence.online || (Date.now() - new Date(presence.last_seen).getTime() > 30000);
       });
@@ -372,7 +379,7 @@ export default function WatchParty() {
     };
     const interval = setInterval(check, 30000);
     return () => clearInterval(interval);
-  }, [canMod, presenceMap, room?.participants, id, user?.id, room?.owner_id]);
+  }, [canMod, id, user?.id, room?.owner_id]);
 
   // Otomatik sohbet silme sayacı
   useEffect(() => {

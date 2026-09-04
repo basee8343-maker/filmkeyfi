@@ -122,7 +122,7 @@ export default function AppLayout() {
         }
       }
     };
-    const id = setInterval(check, 15000);
+    const id = setInterval(check, 60000);
     return () => clearInterval(id);
   }, [user?.id]);
 

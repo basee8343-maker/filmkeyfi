@@ -98,13 +98,14 @@ export default function useDirectMessages(friendshipId) {
 
   const del = useCallback(async (messageId) => {
     if (!messageId) return;
+    setMessages((prev) => prev.filter((m) => m.id !== messageId));
     try {
       await base44.entities.DirectMessage.delete(messageId);
-      setMessages((prev) => prev.filter((m) => m.id !== messageId));
     } catch (err) {
+      load();
       toast({ title: 'Silinemedi', description: err.response?.data?.error || err.message, variant: 'destructive' });
     }
-  }, [userId, toast]);
+  }, [userId, toast, load]);
 
   const clearAll = useCallback(async () => {
     if (!friendshipId || !userId) return;

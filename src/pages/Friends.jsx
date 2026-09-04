@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { isModerator } from '@/lib/roles';
 
 export default function Friends() {
-  const { user, relations, messages, loading, invoke, reload } = useFriends();
+  const { user, relations, messages, loading, invoke, reload, optimisticHide } = useFriends();
   const { isOnline, getRoomId } = useFriendPresence(user);
   const { toast } = useToast();
   const [adminLoading, setAdminLoading] = useState(false);
@@ -52,7 +52,14 @@ export default function Friends() {
   const latestUnreadRelation = latestUnread && relations.find((r) => r.id === latestUnread.friendship_id && r.status === 'accepted' && !(r.hidden_for || []).includes(user.id));
   const switchView = (next) => { setView(next); setSelected(null); setParams(next === 'chats' ? { view: 'chats' } : {}); };
   const openChat = (relation) => { setSelected(relation); setView('chat'); };
-  const hide = async (relation) => { await invoke({ action: 'clear_chat', friendship_id: relation.id }); await invoke({ action: 'hide', friendship_id: relation.id }); if (selected?.id === relation.id) setSelected(null); };
+  const hide = (relation) => {
+    optimisticHide(relation.id);
+    if (selected?.id === relation.id) setSelected(null);
+    Promise.all([
+      invoke({ action: 'clear_chat', friendship_id: relation.id }),
+      invoke({ action: 'hide', friendship_id: relation.id })
+    ]).catch(() => reload());
+  };
   
   if (view === 'chat') {
     const current = relations.find((relation) => relation.id === selected?.id) || selected;

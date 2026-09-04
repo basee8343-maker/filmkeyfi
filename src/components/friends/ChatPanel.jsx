@@ -22,7 +22,7 @@ export default function ChatPanel({ friendship, userId, invoke, onBack, online, 
   const [uploading, setUploading] = useState(false);
   const [lightbox, setLightbox] = useState(null);
   const [viewport, setViewport] = useState({ height: window.innerHeight, top: 0 });
-  const [, setTypingClock] = useState(0);
+  const [friendTyping, setFriendTyping] = useState(false);
   const messagesRef = useRef(null);
   const typingTimer = useRef(null);
   const typingActive = useRef(false);
@@ -45,9 +45,17 @@ export default function ChatPanel({ friendship, userId, invoke, onBack, online, 
   }, [allMessages, viewport.height]);
 
   useEffect(() => {
-    const timer = setInterval(() => setTypingClock(Date.now()), 1000);
-    return () => { clearInterval(timer); clearTimeout(typingTimer.current); };
+    return () => { clearTimeout(typingTimer.current); };
   }, []);
+
+  useEffect(() => {
+    if (!friendship?.typing_user_id || friendship.typing_user_id === userId) { setFriendTyping(false); return; }
+    const elapsed = Date.now() - new Date(friendship.typing_updated_at || 0).getTime();
+    if (elapsed >= 3000) { setFriendTyping(false); return; }
+    setFriendTyping(true);
+    const timer = setTimeout(() => setFriendTyping(false), 3000 - elapsed);
+    return () => clearTimeout(timer);
+  }, [friendship?.typing_user_id, friendship?.typing_updated_at, userId]);
 
   useEffect(() => {
     if (!friendship?.id) return;
@@ -101,7 +109,7 @@ export default function ChatPanel({ friendship, userId, invoke, onBack, online, 
     }, 1200);
   };
 
-  const friendTyping = friendship.typing_user_id && friendship.typing_user_id !== userId && Date.now() - new Date(friendship.typing_updated_at || 0).getTime() < 3000;
+
   const block = async () => { setBlocking(true); try { await invoke({ action: 'block', friendship_id: friendship.id }); onBack(); } catch {} finally { setBlocking(false); } };
   const clearChat = async () => { setClearing(true); try { await clearAll(); setMenuOpen(false); } catch {} finally { setClearing(false); } };
 
