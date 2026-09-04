@@ -26,7 +26,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 inset-x-0 z-50 pt-[max(env(safe-area-inset-top),1.5rem)] lg:pt-0 overflow-hidden"
+    <header className="fixed top-0 inset-x-0 z-50 pt-[max(env(safe-area-inset-top),1.5rem)] lg:pt-0"
       style={{ background: 'linear-gradient(135deg, #1a1c22 0%, #2b2e36 50%, #1a1c22 100%)', borderBottom: '1px solid rgba(174,184,196,0.12)' }}>
       {/* Animated grid background */}
       <div className="absolute inset-0 pointer-events-none opacity-30"
