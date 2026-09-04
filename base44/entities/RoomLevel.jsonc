@@ -2,7 +2,7 @@
   "name": "RoomLevel",
   "type": "object",
   "properties": {
-    "room_id": {
+    "owner_id": {
       "type": "string"
     },
     "user_id": {
@@ -21,7 +21,7 @@
     }
   },
   "required": [
-    "room_id",
+    "owner_id",
     "user_id"
   ],
   "rls": {

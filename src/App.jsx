@@ -24,8 +24,7 @@ import AdminLayout from '@/pages/admin/AdminLayout';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminUsers from '@/pages/admin/AdminUsers';
 import AdminMovies from '@/pages/admin/AdminMovies';
-import AdminRooms from '@/pages/admin/AdminRooms';
-import AdminRoomMessages from '@/pages/admin/AdminRoomMessages';
+
 import AdminSupport from '@/pages/admin/AdminSupport';
 import AdminPackages from '@/pages/admin/AdminPackages';
 import AdminNotifications from '@/pages/admin/AdminNotifications';
@@ -54,7 +53,7 @@ import PendingApproval from '@/pages/PendingApproval';
 import BannedScreen from '@/pages/BannedScreen';
 import SecurityProtocol from '@/pages/SecurityProtocol';
 import Friends from '@/pages/Friends';
-import AdminFriendMessages from '@/pages/admin/AdminFriendMessages';
+
 import AdminPromoVideo from '@/pages/admin/AdminPromoVideo';
 import AdminSessions from '@/pages/admin/AdminSessions';
 
@@ -120,9 +119,7 @@ const AuthenticatedApp = () => {
           <Route path="filmler" element={<AdminMovies />} />
           <Route path="film-ekle" element={<AdminMovies />} />
           <Route path="kategoriler" element={<AdminCategories />} />
-          <Route path="odalar" element={<AdminRooms />} />
-          <Route path="oda-mesajlari" element={<AdminRoomMessages />} />
-          <Route path="arkadas-mesajlari" element={<AdminFriendMessages />} />
+
           <Route path="destek" element={<AdminSupport />} />
           <Route path="paketler" element={<AdminPackages />} />
           <Route path="odemeler" element={<AdminPaymentHistory />} />

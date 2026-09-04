@@ -241,7 +241,6 @@ export default async function(req) {
     if (action === 'delete-room') {
       if (!isOwner && !isAdmin) return Response.json({ error: 'yetkisiz' }, { status: 403 });
       await base44.asServiceRole.entities.RoomMessage.deleteMany({ room_id }).catch(() => {});
-      await base44.asServiceRole.entities.RoomLevel.deleteMany({ room_id }).catch(() => {});
       await base44.asServiceRole.entities.Room.delete(room_id).catch(() => {});
       return Response.json({ ok: true });
     }
@@ -251,14 +250,14 @@ export default async function(req) {
       const { target_id: tid, level: newLevel } = body || {};
       if (!tid) return Response.json({ error: 'kullanıcı gerekli' }, { status: 400 });
       const clampedLevel = Math.max(1, Math.min(100, parseInt(newLevel) || 1));
-      const levels = await base44.asServiceRole.entities.RoomLevel.filter({ room_id, user_id: tid }, '-created_date', 1).catch(() => []);
+      const levels = await base44.asServiceRole.entities.RoomLevel.filter({ owner_id: room.owner_id, user_id: tid }, '-created_date', 1).catch(() => []);
       if (levels[0]) {
         await base44.asServiceRole.entities.RoomLevel.update(levels[0].id, { level: clampedLevel });
       } else {
         const targetUser = await base44.asServiceRole.entities.User.get(tid).catch(() => null);
         const targetName = targetUser?.username || targetUser?.full_name || 'Kullanıcı';
         await base44.asServiceRole.entities.RoomLevel.create({
-          room_id, user_id: tid, user_name: targetName, level: clampedLevel, message_count: 0
+          owner_id: room.owner_id, user_id: tid, user_name: targetName, level: clampedLevel, message_count: 0
         });
       }
       return Response.json({ ok: true });
@@ -269,7 +268,7 @@ export default async function(req) {
     await updatePresenceRoom(base44, user.id, '');
     let participants = (room.participants || []).filter((p) => p.user_id !== user.id);
     // Çevrim içi katılımcı yoksa odayı kapat
-    if (participants.length > 0) {
+    if (participants.length > 0 && !room.is_personal) {
       let hasOnline = false;
       for (const p of participants) {
         const presence = await base44.asServiceRole.entities.UserPresence.filter({ user_id: p.user_id }, '-created_date', 1).catch(() => []);

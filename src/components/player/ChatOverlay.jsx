@@ -36,16 +36,16 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   useEffect(() => { setBlockedUsers(user?.blocked_users || []); }, [user?.blocked_users]);
   const [roomLevels, setRoomLevels] = useState({});
   useEffect(() => {
-    if (!roomId) return;
-    base44.entities.RoomLevel.filter({ room_id: roomId }, 'created_date', 100)
+    if (!ownerId) return;
+    base44.entities.RoomLevel.filter({ owner_id: ownerId }, 'created_date', 100)
       .then((levels) => { const map = {}; levels.forEach((l) => { map[l.user_id] = l.level; }); setRoomLevels(map); })
       .catch(() => {});
     const unsub = base44.entities.RoomLevel.subscribe((ev) => {
-      if (ev.data?.room_id !== roomId) return;
+      if (ev.data?.owner_id !== ownerId) return;
       setRoomLevels((prev) => ({ ...prev, [ev.data.user_id]: ev.data.level }));
     });
     return unsub;
-  }, [roomId]);
+  }, [ownerId]);
   const scrollRef = useRef(null);
   const profiles = useMessageProfiles(messages.map((message) => message.user_id));
 

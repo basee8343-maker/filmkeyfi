@@ -67,16 +67,16 @@ export default function WatchParty() {
   const [autoDeleteMinutes, setAutoDeleteMinutes] = useState(0);
   const [roomLevels, setRoomLevels] = useState({});
   useEffect(() => {
-    if (!id || !room?.is_personal) return;
-    base44.entities.RoomLevel.filter({ room_id: id }, 'created_date', 100)
+    if (!room?.owner_id || !room?.is_personal) return;
+    base44.entities.RoomLevel.filter({ owner_id: room.owner_id }, 'created_date', 100)
       .then((levels) => { const map = {}; levels.forEach((l) => { map[l.user_id] = l.level; }); setRoomLevels(map); })
       .catch(() => {});
     const unsub = base44.entities.RoomLevel.subscribe((ev) => {
-      if (ev.data?.room_id !== id) return;
+      if (ev.data?.owner_id !== room.owner_id) return;
       setRoomLevels((prev) => ({ ...prev, [ev.data.user_id]: ev.data.level }));
     });
     return unsub;
-  }, [id, room?.is_personal]);
+  }, [room?.owner_id, room?.is_personal]);
   const [roomNameEdit, setRoomNameEdit] = useState('');
 
   useEffect(() => {

@@ -61,11 +61,11 @@ export default async function(req) {
     // Kişisel oda level sistemi
     if (room.is_personal) {
       try {
-        const levels = await base44.asServiceRole.entities.RoomLevel.filter({ room_id, user_id: user.id }, '-created_date', 1);
+        const levels = await base44.asServiceRole.entities.RoomLevel.filter({ owner_id: room.owner_id, user_id: user.id }, '-created_date', 1);
         const levelRec = levels[0];
         if (!levelRec) {
           await base44.asServiceRole.entities.RoomLevel.create({
-            room_id, user_id: user.id, user_name: name, level: 1, message_count: 1
+            owner_id: room.owner_id, user_id: user.id, user_name: name, level: 1, message_count: 1
           });
         } else {
           const newCount = (levelRec.message_count || 0) + 1;

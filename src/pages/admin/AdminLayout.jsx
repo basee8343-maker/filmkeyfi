@@ -13,9 +13,6 @@ const nav = [
   { to: '/admin/filmler', label: 'Filmler', icon: Film },
   { to: '/admin/film-ekle', label: 'Film Yükle', icon: Film },
   { to: '/admin/kategoriler', label: 'Kategoriler', icon: FolderTree },
-  { to: '/admin/odalar', label: 'Odalar', icon: DoorOpen },
-  { to: '/admin/oda-mesajlari', label: 'Oda Mesajları', icon: MessageSquare },
-  { to: '/admin/arkadas-mesajlari', label: 'Arkadaş Mesajları', icon: MessageSquare },
   { to: '/admin/destek', label: 'Destek Mesajları', icon: LifeBuoy },
   { group: 'Ödemeler', items: [
     { to: '/admin/paketler', label: 'Abonelik Ürünleri', icon: PackageIcon },
