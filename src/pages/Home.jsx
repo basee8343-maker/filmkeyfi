@@ -5,6 +5,7 @@ import ContentRow from '@/components/movie/ContentRow';
 import ActiveRooms from '@/components/movie/ActiveRooms';
 import CategoryRow from '@/components/movie/CategoryRow';
 import { SkeletonRow } from '@/components/movie/EmptyState';
+import { MessageCircle } from 'lucide-react';
 
 
 export default function Home() {
@@ -38,6 +39,15 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-catalog text-white">
       <Hero movie={featured} />
+      <div className="px-4 sm:px-6 mt-4">
+        <button
+          onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent('FILMKEYFİ\'ye katıl! 🎬🍿 https://flimkeyfii.base44.app')}`, '_blank', 'noopener,noreferrer')}
+          className="w-full flex items-center justify-center gap-2 rounded-xl py-3 font-bold text-white transition-transform active:scale-95"
+          style={{ background: 'linear-gradient(135deg, #25D366, #128C7E)' }}
+        >
+          <MessageCircle className="w-5 h-5" /> Arkadaşını Davet Et
+        </button>
+      </div>
       <CategoryRow />
       <div className="mt-4">
         {loading ? <><SkeletonRow /><SkeletonRow /><SkeletonRow /></> : (

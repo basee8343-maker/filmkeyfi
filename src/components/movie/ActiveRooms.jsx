@@ -38,13 +38,13 @@ export default function ActiveRooms() {
   return (
     <section className="mb-8">
       <div className="flex items-center justify-between px-4 sm:px-6 mb-3">
-        <h2 className="text-lg sm:text-xl font-bold text-white">Aktif Odalar</h2>
-        <Link to="/acik-odalar" className="text-sm text-[#808080] hover:text-white">Tümü →</Link>
+        <h2 className="text-lg sm:text-xl font-bold" style={{ color: '#b388ff' }}>Aktif Odalar</h2>
+        <Link to="/acik-odalar" className="text-sm hover:text-white" style={{ color: '#8B31FF' }}>Tümü →</Link>
       </div>
       <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 sm:px-6 pb-2">
-        {loading ? Array.from({ length: 3 }).map((_, i) => <div key={i} className="shrink-0 w-56 h-40 rounded-xl bg-[#1a1a1a] animate-pulse" />) :
+        {loading ? Array.from({ length: 3 }).map((_, i) => <div key={i} className="shrink-0 w-56 h-40 rounded-xl animate-pulse" style={{ background: 'rgba(139,49,255,0.1)' }} />) :
         rooms.map((room) => (
-          <Link to={`/oda/${room.id}`} key={room.id} className="shrink-0 w-56 rounded-xl bg-[#1a1a1a] border border-white/10 overflow-hidden active:scale-95 transition-transform">
+          <Link to={`/oda/${room.id}`} key={room.id} className="shrink-0 w-56 rounded-xl border overflow-hidden active:scale-95 transition-transform" style={{ background: 'linear-gradient(135deg, rgba(139,49,255,0.15), rgba(26,26,26,0.95))', borderColor: 'rgba(139,49,255,0.3)' }}>
             <div className="relative h-28">
               {posters[room.movie_id] ? <Image src={posters[room.movie_id]} className="w-full h-full" fittingType="fill" /> : <div className="w-full h-full bg-gradient-to-br from-[#8B31FF]/40 to-[#5F24A1]/40 flex items-center justify-center text-2xl">🎬</div>}
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
