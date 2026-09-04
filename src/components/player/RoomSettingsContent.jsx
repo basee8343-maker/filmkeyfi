@@ -34,9 +34,13 @@ export default function RoomSettingsContent({ room, canMod, participants, roomMo
         <button onClick={onPickMovie} className={button}><Film className="w-4 h-4 text-primary" /> Film Değiştir</button>
         <button onClick={onVoice} className={button}>{room.voice_enabled ? <MicOff className="w-4 h-4 text-destructive" /> : <Mic className="w-4 h-4 text-green-400" />} {room.voice_enabled ? 'Sesli sohbeti kapat' : 'Sesli sohbeti aç'}</button>
         <button onClick={onChat} className={button}>{room.chat_enabled ? <MessageSquareOff className="w-4 h-4 text-destructive" /> : <MessageSquare className="w-4 h-4 text-green-400" />} {room.chat_enabled ? 'Sohbeti kapat' : 'Sohbeti aç'}</button>
-        <button onClick={onHidden} className={button}>{room.hidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />} {room.hidden ? 'Odayı görünür yap' : 'Odayı gizle'}</button>
-        <button onClick={() => room.password ? onRemovePassword() : setPasswordOpen(!passwordOpen)} className={button}>{room.password ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />} {room.password ? 'Şifreyi kaldır' : 'Şifre koy'}</button>
-        {passwordOpen && !room.password && <div className="flex gap-2"><input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Oda şifresi" className="min-w-0 flex-1 rounded-lg bg-secondary px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" /><button onClick={onPassword} disabled={!password.trim()} className="rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50">KAYDET</button></div>}
+        {room.is_personal && (
+          <>
+            <button onClick={onHidden} className={button}>{room.hidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />} {room.hidden ? 'Odayı görünür yap' : 'Odayı gizle'}</button>
+            <button onClick={() => room.password ? onRemovePassword() : setPasswordOpen(!passwordOpen)} className={button}>{room.password ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />} {room.password ? 'Şifreyi kaldır' : 'Şifre koy'}</button>
+            {passwordOpen && !room.password && <div className="flex gap-2"><input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Oda şifresi" className="min-w-0 flex-1 rounded-lg bg-secondary px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" /><button onClick={onPassword} disabled={!password.trim()} className="rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50">KAYDET</button></div>}
+          </>
+        )}
         <button onClick={() => setShowBanned(!showBanned)} className={button}><UserX className="w-4 h-4 text-red-400" /> Atılan Kullanıcılar ({bannedUsers.length})</button>
         {canMod && ((participants && participants.length > 1) || savedMods.length > 0) && (
           <>

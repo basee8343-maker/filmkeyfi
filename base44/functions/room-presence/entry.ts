@@ -339,6 +339,10 @@ export default async function(req) {
     // leave
     if (ghost) return Response.json({ ok: true });
     await updatePresenceRoom(base44, user.id, '');
+    // Kişisel oda: kullanıcı ayrıldığında onay kaydını sil, tekrar katılmak için yeniden onay istesin
+    if (room.is_personal && !isOwner && !isMod) {
+      await base44.asServiceRole.entities.RoomJoinRequest.deleteMany({ room_id, user_id: user.id }).catch(() => {});
+    }
     let participants = (room.participants || []).filter((p) => p.user_id !== user.id);
     // Oda sahibi çıkıyor ve katılımcı varsa: online kontrolü atla, sahipliği devret
     const isOwnerLeavingWithParticipants = isOwner && participants.length > 0 && !room.is_personal;
