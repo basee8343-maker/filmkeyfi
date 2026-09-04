@@ -23,9 +23,8 @@ export default function RoomDirectMessages({ onClose }) {
     setAdminLoading(true);
     try {
       const res = await base44.functions.invoke('friend-service', { action: 'start_admin_chat' });
-      const friendship = res?.data?.friendship;
-      if (!friendship) { toast({ title: 'Yönetici bulunamadı' }); return; }
-      const adminId = friendship.requester_id === user.id ? friendship.recipient_id : friendship.requester_id;
+      const adminId = res?.data?.admin_id;
+      if (!adminId) { toast({ title: 'Yönetici bulunamadı' }); return; }
       const convoRes = await base44.functions.invoke('dm-service', { action: 'start', target_id: adminId });
       if (convoRes?.data?.conversation) { setSelected(convoRes.data.conversation); }
     } catch (e) {

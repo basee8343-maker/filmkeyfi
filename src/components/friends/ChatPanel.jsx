@@ -34,6 +34,7 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
   const typingTimer = useRef(null);
   const typingActive = useRef(false);
   const touchStart = useRef({ x: 0, y: 0 });
+  const prevFriendStatus = useRef(null);
 
   useEffect(() => {
     const visualViewport = window.visualViewport;
@@ -90,6 +91,15 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
     const unsub = base44.entities.Friendship.subscribe(() => fetchFriendship());
     return () => { active = false; unsub(); };
   }, [conversation?.id, userId]);
+
+  // İstek onaylandığında gerçek zamanlı bildirim (istek gönderen tarafa)
+  useEffect(() => {
+    if (!friendship) return;
+    if (prevFriendStatus.current === 'pending' && friendship.status === 'accepted') {
+      toast({ title: 'Arkadaşlık isteğiniz onaylandı' });
+    }
+    prevFriendStatus.current = friendship.status;
+  }, [friendship?.status]);
 
   if (!conversation) return <section className="bg-card border border-border rounded-xl min-h-80 flex items-center justify-center text-sm text-muted-foreground">Mesajlaşmak için bir arkadaş seçin.</section>;
 
@@ -173,6 +183,7 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
     try {
       await base44.functions.invoke('friend-service', { action: 'respond', friendship_id: friendship.id, accept: true });
       setFriendship((prev) => prev ? { ...prev, status: 'accepted' } : prev);
+      toast({ title: 'Arkadaşlık isteğiniz onaylandı' });
     } catch { toast({ title: 'Kabul edilemedi', variant: 'destructive' }); }
   };
   const rejectRequest = async () => {
