@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Users, Lock, Loader2, Shield, Star, DoorOpen, Search } from 'lucide-react';
+import { Users, Lock, Loader2, Shield, Star, DoorOpen, Search, SlidersHorizontal } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 
@@ -76,38 +76,38 @@ export default function OpenRooms() {
     const o = owners[r.owner_id];
     const isAdmin = user?.role === 'admin';
     return (
-      <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#1c1c1c] border border-white/5">
+      <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#16161e] border border-white/5">
         <div className="flex flex-col items-center gap-1 shrink-0">
-          <div className="w-14 h-14 rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, #8e44ad, #e91e63)' }}>
+          <div className="w-14 h-14 rounded-full p-[2px]" style={{ background: 'linear-gradient(135deg, #7c3aed, #db2777)' }}>
             <div className="w-full h-full rounded-full overflow-hidden bg-[#0d0d0d] flex items-center justify-center">
               {isPersonal && o?.avatar ? <Image src={o.avatar} className="w-full h-full" fittingType="fill" /> :
-               mv?.poster ? <Image src={mv.poster} className="w-full h-full" fittingType="fill" /> :
-               <span className="text-xl font-bold text-white">{(r.owner_name || r.name || '?')[0]}</span>}
+                mv?.poster ? <Image src={mv.poster} className="w-full h-full" fittingType="fill" /> :
+                <span className="text-xl font-bold text-white">{(r.owner_name || r.name || '?')[0]}</span>}
             </div>
           </div>
-          <span className="flex items-center gap-0.5 text-[10px] text-[#a0a0a0]"><Users className="w-2.5 h-2.5" /> {r.participants?.length || 0}/{r.max_users}</span>
+          <span className="flex items-center gap-0.5 text-[10px] text-gray-400"><Users className="w-2.5 h-2.5" /> {r.participants?.length || 0}/{r.max_users}</span>
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-white truncate">{r.name}</p>
           <div className="flex items-center gap-1.5 mt-1">
-            {o?.avatar ? <img src={o.avatar} className="w-4 h-4 rounded-full object-cover" alt="" /> : <span className="w-4 h-4 rounded-full bg-gradient-to-br from-[#8e44ad] to-[#e91e63] flex items-center justify-center text-[8px] font-bold text-white">{(r.owner_name || '?')[0]}</span>}
-            <span className="text-xs text-[#a0a0a0] truncate">{r.owner_name || o?.username || 'Kullanıcı'}</span>
+            {o?.avatar ? <img src={o.avatar} className="w-4 h-4 rounded-full object-cover" alt="" /> : <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #db2777)' }}>{(r.owner_name || '?')[0]}</span>}
+            <span className="text-xs text-gray-400 truncate">{r.owner_name || o?.username || 'Kullanıcı'}</span>
           </div>
           <div className="flex flex-wrap gap-1.5 mt-2">
-            {isPersonal && <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[#8e44ad]/20 text-[#c39bd3]"><Lock className="w-2.5 h-2.5" /> Kişisel Oda</span>}
-            {isPersonal && r.personal_room_code && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8e44ad]/20 text-[#c39bd3] font-mono font-bold">Kod: {r.personal_room_code}</span>}
-            {!isPersonal && r.room_number ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[#a0a0a0] font-bold">Oda No: {r.room_number}</span> : null}
-            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[#a0a0a0]"><Users className="w-2.5 h-2.5" /> {r.participants?.length || 0}/{r.max_users}</span>
+            {isPersonal && <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300"><Lock className="w-2.5 h-2.5" /> Kişisel Oda</span>}
+            {isPersonal && r.personal_room_code && <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-mono font-bold">Kod: {r.personal_room_code}</span>}
+            {!isPersonal && r.room_number ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-gray-400 font-bold">Oda No: {r.room_number}</span> : null}
+            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-gray-400"><Users className="w-2.5 h-2.5" /> {r.participants?.length || 0}/{r.max_users}</span>
             {r.password && <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400"><Lock className="w-2.5 h-2.5" /> Kilitli</span>}
           </div>
         </div>
         <div className="shrink-0">
           {isPersonal ? (
-            <Link to={`/oda/${r.id}`} className={`px-4 py-2 rounded-xl text-xs font-bold ${ownerInRoom || user?.id === r.owner_id || isAdmin ? 'text-white' : 'text-[#808080] bg-[#2a2a2a] pointer-events-none'}`} style={ownerInRoom || user?.id === r.owner_id || isAdmin ? { background: 'linear-gradient(135deg, #8e44ad, #7d3c98)' } : {}}>
+            <Link to={`/oda/${r.id}`} className={`px-4 py-2 rounded-xl text-xs font-bold ${ownerInRoom || user?.id === r.owner_id || isAdmin ? 'text-white' : 'text-gray-500 bg-[#2a2a2a] pointer-events-none'}`} style={ownerInRoom || user?.id === r.owner_id || isAdmin ? { background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' } : {}}>
               {ownerInRoom || user?.id === r.owner_id || isAdmin ? 'Açık' : 'Kapalı'}
             </Link>
           ) : (
-            <Link to={`/oda/${r.id}`} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #8e44ad, #7d3c98)' }}>Katıl</Link>
+            <Link to={`/oda/${r.id}`} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>Katıl</Link>
           )}
         </div>
       </div>
@@ -115,47 +115,52 @@ export default function OpenRooms() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d0d0d] text-white px-4 py-6 max-w-3xl mx-auto">
+    <div className="min-h-screen bg-[#0a0a0f] text-white px-4 py-6 max-w-3xl mx-auto">
       <div className="flex items-start justify-between mb-1">
-        <h1 className="text-2xl font-extrabold">Odalar</h1>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#1a1a1a] border border-white/5">
-          <span className="w-7 h-7 rounded-full bg-[#8e44ad]/30 flex items-center justify-center">
-            <DoorOpen className="w-4 h-4 text-[#c39bd3]" />
+        <div>
+          <h1 className="text-2xl font-extrabold">Odalar</h1>
+          <p className="text-sm text-gray-400 mt-1">Aktif Watch Party odalarına katıl.</p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#16161e] border border-white/5">
+          <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.2)' }}>
+            <DoorOpen className="w-4 h-4 text-purple-400" />
           </span>
           <span className="text-sm font-bold">{activeCount}</span>
-          <span className="text-xs text-[#a0a0a0]">Aktif Oda</span>
+          <span className="text-xs text-gray-400">Aktif Oda</span>
           <span className="w-2 h-2 rounded-full bg-green-400" />
         </div>
       </div>
-      <p className="text-sm text-[#808080] mb-5">Aktif Watch Party odalarına katıl.</p>
 
-      <div className="flex gap-2 p-1 rounded-xl bg-[#1a1a1a] mb-5">
-        <button onClick={() => setTab('open')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all ${tab === 'open' ? 'text-white' : 'text-[#808080]'}`} style={tab === 'open' ? { background: 'rgba(255, 77, 77, 0.15)' } : {}}>
-          {tab === 'open' && <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full" style={{ background: '#ff4d4d' }} />}
+      <div className="flex gap-2 p-1 rounded-xl bg-[#16161e] mt-5 mb-4">
+        <button onClick={() => setTab('open')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all ${tab === 'open' ? 'text-white' : 'text-gray-400'}`} style={tab === 'open' ? { background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' } : {}}>
           <DoorOpen className="w-4 h-4" /> Açık Odalar
         </button>
-        <button onClick={() => setTab('personal')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all ${tab === 'personal' ? 'text-white' : 'text-[#808080]'}`} style={tab === 'personal' ? { background: 'rgba(142, 68, 173, 0.15)' } : {}}>
+        <button onClick={() => setTab('personal')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all ${tab === 'personal' ? 'text-white' : 'text-gray-400'}`} style={tab === 'personal' ? { background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' } : {}}>
           <Star className="w-4 h-4" /> Özel Odalar
         </button>
       </div>
 
       <div className="mb-4 relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
         <input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Oda numarası veya özel oda kodu ara..."
-          className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#1a1a1a] border border-white/5 text-sm text-white placeholder:text-[#606060] outline-none focus:border-[#8e44ad]/50"
+          className="w-full pl-9 pr-10 py-2.5 rounded-xl bg-[#16161e] border border-white/5 text-sm text-white placeholder:text-gray-500 outline-none focus:border-purple-500/50"
         />
+        <SlidersHorizontal className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
       </div>
 
-      {loading ? <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#8e44ad]" /></div> :
+      {loading ? <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-purple-500" /></div> :
         tab === 'open' ? (
           rooms.length === 0 ? (
-            <div className="text-center py-20 text-[#808080]">
-              <DoorOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="mb-2">Açık oda yok.</p>
-              <Link to="/oda-kur" className="text-[#8e44ad] text-sm hover:underline">İlk odayı sen kur</Link>
+            <div className="text-center py-20">
+              <div className="relative w-24 h-24 mx-auto mb-4">
+                <div className="absolute inset-0 rounded-full blur-2xl opacity-40" style={{ background: 'radial-gradient(circle, #7c3aed, transparent 70%)' }} />
+                <DoorOpen className="relative w-16 h-16 mx-auto text-purple-400" />
+              </div>
+              <p className="text-white font-bold text-lg mb-1">Açık oda yok.</p>
+              <Link to="/oda-kur" className="text-purple-400 text-sm hover:underline">İlk odayı sen kur!</Link>
             </div>
           ) : (
             <div className="space-y-3">
@@ -164,10 +169,13 @@ export default function OpenRooms() {
           )
         ) : (
           personalRooms.length === 0 ? (
-            <div className="text-center py-20 text-[#808080]">
-              <Star className="w-12 h-12 mx-auto mb-3 opacity-50" />
-              <p className="mb-2">Özel oda yok.</p>
-              <Link to="/oda-kur" className="text-[#8e44ad] text-sm hover:underline">İlk odayı sen kur</Link>
+            <div className="text-center py-20">
+              <div className="relative w-24 h-24 mx-auto mb-4">
+                <div className="absolute inset-0 rounded-full blur-2xl opacity-40" style={{ background: 'radial-gradient(circle, #7c3aed, transparent 70%)' }} />
+                <Star className="relative w-16 h-16 mx-auto text-purple-400" />
+              </div>
+              <p className="text-white font-bold text-lg mb-1">Özel oda yok.</p>
+              <Link to="/oda-kur" className="text-purple-400 text-sm hover:underline">İlk odayı sen kur!</Link>
             </div>
           ) : (
             <div className="space-y-3">
@@ -178,15 +186,15 @@ export default function OpenRooms() {
       }
 
       {tab === 'open' && personalRooms.length > 0 && (
-        <Link to="/acik-odalar" onClick={() => setTab('personal')} className="mt-5 flex items-center gap-3 p-4 rounded-2xl bg-gradient-to-r from-[#1a1a1a] to-[#1a1a1a] border border-[#8e44ad]/30 active:scale-95 transition-transform">
-          <span className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(142, 68, 173, 0.2)' }}>
-            <Shield className="w-5 h-5 text-[#c39bd3]" />
+        <Link to="/acik-odalar" onClick={() => setTab('personal')} className="mt-5 flex items-center gap-3 p-4 rounded-2xl bg-[#16161e] border border-purple-500/20 active:scale-95 transition-transform">
+          <span className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.2)' }}>
+            <Shield className="w-5 h-5 text-purple-400" />
           </span>
           <div className="flex-1">
             <p className="text-sm font-bold text-white">Özel Odalar</p>
-            <p className="text-xs text-[#808080]">Kişisel odalar. Oda sahibi odadayken katılabilirsiniz.</p>
+            <p className="text-xs text-gray-400">Kişisel odalar. Oda sahibi odadayken katılabilirsiniz.</p>
           </div>
-          <span className="text-[#808080]">→</span>
+          <span className="text-gray-400">→</span>
         </Link>
       )}
     </div>

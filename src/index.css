@@ -11,13 +11,13 @@
     --card-foreground: 240 10% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 10%;
-    --primary: 0 72% 51%;
+    --primary: 265 76% 56%;
     --primary-foreground: 0 0% 100%;
     --secondary: 240 14% 95%;
     --secondary-foreground: 240 10% 15%;
     --muted: 240 14% 95%;
     --muted-foreground: 240 5% 40%;
-    --accent: 265 83% 58%;
+    --accent: 330 70% 50%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -53,13 +53,13 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 8% 7%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 72% 51%;
+    --primary: 265 76% 56%;
     --primary-foreground: 0 0% 100%;
     --secondary: 240 6% 12%;
     --secondary-foreground: 0 0% 98%;
     --muted: 240 6% 12%;
     --muted-foreground: 240 5% 65%;
-    --accent: 265 83% 60%;
+    --accent: 330 70% 52%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
@@ -112,7 +112,7 @@
     -webkit-backdrop-filter: blur(16px);
   }
   .text-gradient {
-    background: linear-gradient(135deg, hsl(0 72% 51%), hsl(265 83% 60%), hsl(217 91% 60%));
+    background: linear-gradient(135deg, #a855f7, #ec4899);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;

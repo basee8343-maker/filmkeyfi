@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Lock, MessageSquare, Mic, DoorOpen, Check, Home } from 'lucide-react';
+import { Users, Lock, MessageSquare, Mic, DoorOpen, Check, Home, Settings, Eye, EyeOff, Minus, Plus, Video } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 
 export default function CreateRoom() {
@@ -13,6 +13,7 @@ export default function CreateRoom() {
   const [movies, setMovies] = useState([]);
   const [form, setForm] = useState({ name: '', movie_id: '', password: '', max_users: 10, chat_enabled: true, voice_enabled: false, hidden: false });
   const [nameEdited, setNameEdited] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
   useEffect(() => {
     base44.entities.Movie.filter({ published: true }, '-views', 100).then(setMovies).catch(() => {});
@@ -42,36 +43,62 @@ export default function CreateRoom() {
     }
   };
 
-  const field = "w-full bg-secondary/60 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring border border-border";
+  const inputCls = "w-full bg-[#16161e] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-purple-500/40 border border-white/5 placeholder:text-gray-500";
+
+  const toggleCards = [
+    { key: 'chat_enabled', icon: MessageSquare, label: 'Sohbet açık' },
+    { key: 'voice_enabled', icon: Mic, label: 'Sesli sohbet' },
+    { key: 'hidden', icon: Lock, label: 'Gizli oda' },
+  ];
 
   return (
-    <div className="px-4 sm:px-6 py-6 max-w-2xl mx-auto">
-      <div className="flex items-center justify-between mb-1">
-        <h1 className="text-2xl font-extrabold flex items-center gap-2"><Users className="w-6 h-6 text-primary" /> Oda Kur</h1>
-        <Link to="/acik-odalar" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"><DoorOpen className="w-4 h-4" /> Açık Odalar</Link>
-      </div>
-      <p className="text-sm text-muted-foreground mb-6">Arkadaşlarınla birlikte izlemek için bir Watch Party odası oluştur.</p>
-      <button onClick={openMyRoom} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold py-3 rounded-lg flex items-center justify-center gap-2 mb-4"><Home className="w-5 h-5" /> Kendi Odamı Aç</button>
-      <form onSubmit={submit} className="space-y-4">
-        <div>
-          <label className="text-sm font-medium block mb-1.5">Oda Adı</label>
-          <input className={field} value={form.name} onChange={(e) => { setForm({ ...form, name: e.target.value }); setNameEdited(true); }} placeholder="Örn: Cuma Gecesi Sineması" required />
+    <div className="px-4 sm:px-6 py-6 max-w-2xl mx-auto text-white">
+      {/* Hero Panel */}
+      <div className="relative rounded-2xl overflow-hidden mb-6 p-5" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(219,39,119,0.08))', border: '1px solid rgba(168,85,247,0.2)' }}>
+        <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full blur-2xl opacity-30" style={{ background: 'radial-gradient(circle, #7c3aed, transparent 70%)' }} />
+        <div className="relative flex items-center gap-4">
+          <span className="w-12 h-12 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(124,58,237,0.2)' }}>
+            <Users className="w-6 h-6 text-purple-400" />
+          </span>
+          <div className="flex-1">
+            <h1 className="text-xl font-extrabold">Oda Kur</h1>
+            <p className="text-sm text-gray-400">Arkadaşlarınla birlikte izlemek için bir Watch Party odası oluştur.</p>
+          </div>
         </div>
+        <button onClick={openMyRoom} className="relative mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white active:scale-95 transition-transform" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>
+          <Home className="w-5 h-5" /> Kendi Odamı Aç
+        </button>
+      </div>
+
+      <form onSubmit={submit} className="space-y-5">
+        {/* Oda Adı */}
         <div>
-          <label className="text-sm font-medium block mb-1.5">Film / Dizi Seç</label>
+          <label className="text-sm font-medium block mb-1.5 text-gray-300">Oda Adı</label>
+          <div className="relative">
+            <input className={inputCls + ' pr-10'} value={form.name} onChange={(e) => { setForm({ ...form, name: e.target.value }); setNameEdited(true); }} placeholder="Örn: Cuma Gecesi Sineması" required />
+            <Settings className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          </div>
+        </div>
+
+        {/* Film Seç */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="text-sm font-medium text-gray-300">Film / Dizi Seç</label>
+            <Link to="/filmler" className="text-xs text-purple-400 hover:underline">Tümünü Gör →</Link>
+          </div>
           {movies.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">Yüklü içerik yok.</p>
+            <p className="text-sm text-gray-500 py-4 text-center bg-[#16161e] rounded-xl">Yüklü içerik yok.</p>
           ) : (
             <div className="flex gap-2 overflow-x-auto no-scrollbar p-1 -m-1">
               {movies.map((m) => (
                 <button key={m.id} type="button" onClick={() => setForm({ ...form, movie_id: m.id, name: nameEdited ? form.name : m.title })}
-                  className={`relative shrink-0 w-28 rounded-lg overflow-hidden border-2 transition-all ${form.movie_id === m.id ? 'border-primary ring-2 ring-primary' : 'border-transparent hover:border-border'}`}>
+                  className={`relative shrink-0 w-28 rounded-xl overflow-hidden border-2 transition-all ${form.movie_id === m.id ? 'border-purple-500 ring-2 ring-purple-500/30' : 'border-transparent hover:border-white/10'}`}>
                   <Image src={m.poster || m.backdrop} alt={m.title} className="aspect-[2/3] w-full" fittingType="fill" />
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-1.5">
                     <p className="text-xs font-medium text-white line-clamp-2">{m.title}</p>
                   </div>
                   {form.movie_id === m.id && (
-                    <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                    <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #7c3aed, #db2777)' }}>
                       <Check className="w-3 h-3 text-white" />
                     </div>
                   )}
@@ -80,35 +107,50 @@ export default function CreateRoom() {
             </div>
           )}
         </div>
+
+        {/* Advanced Options */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-sm font-medium block mb-1.5 flex items-center gap-1"><Lock className="w-4 h-4" /> Şifre (opsiyonel)</label>
-            <div className="flex gap-2">
-              <input className={field} type="text" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Boş = şifresiz" />
-              <button type="button" onClick={() => setForm({ ...form, password: Math.random().toString(36).slice(2, 8).toUpperCase() })} className="shrink-0 px-3 rounded-lg bg-secondary border border-border text-sm font-medium hover:bg-secondary/70">Oluştur</button>
+            <label className="text-sm font-medium block mb-1.5 text-gray-300">Şifre (opsiyonel)</label>
+            <div className="relative">
+              <input className={inputCls + ' pr-10'} type={showPass ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Boş = şifresiz" />
+              <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">{showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
             </div>
+            <button type="button" onClick={() => setForm({ ...form, password: Math.random().toString(36).slice(2, 8).toUpperCase() })} className="mt-2 text-xs px-3 py-1.5 rounded-lg border border-purple-500/40 text-purple-400 hover:bg-purple-500/10">Oluştur</button>
           </div>
           <div>
-            <label className="text-sm font-medium block mb-1.5">Maks. Kullanıcı</label>
-            <input className={field} type="number" min={2} max={250} value={form.max_users} onChange={(e) => setForm({ ...form, max_users: e.target.value })} />
+            <label className="text-sm font-medium block mb-1.5 text-gray-300">Maks. Kullanıcı</label>
+            <div className="flex items-center gap-2 bg-[#16161e] rounded-xl border border-white/5 px-2 py-2">
+              <button type="button" onClick={() => setForm({ ...form, max_users: Math.max(2, Number(form.max_users) - 1) })} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-gray-300 hover:bg-white/10"><Minus className="w-4 h-4" /></button>
+              <span className="flex-1 text-center text-sm font-bold">{form.max_users}</span>
+              <button type="button" onClick={() => setForm({ ...form, max_users: Math.min(250, Number(form.max_users) + 1) })} className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-gray-300 hover:bg-white/10"><Plus className="w-4 h-4" /></button>
+            </div>
           </div>
         </div>
-        {Number(form.max_users) > 100 && <p className="text-xs text-amber-500 -mt-1 flex items-center gap-1">⚠️ Yüksek kapasite: çok sayıda katılımcı oda performansını etkileyebilir.</p>}
-        <div className="flex gap-3">
-          <label className={`flex-1 flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${form.chat_enabled ? 'border-primary bg-primary/10' : 'border-border bg-secondary/40'}`}>
-            <input type="checkbox" checked={form.chat_enabled} onChange={(e) => setForm({ ...form, chat_enabled: e.target.checked })} className="accent-primary" />
-            <MessageSquare className="w-4 h-4" /> <span className="text-sm">Sohbet açık</span>
-          </label>
-          <label className={`flex-1 flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${form.voice_enabled ? 'border-accent bg-accent/10' : 'border-border bg-secondary/40'}`}>
-            <input type="checkbox" checked={form.voice_enabled} onChange={(e) => setForm({ ...form, voice_enabled: e.target.checked })} className="accent-accent" />
-            <Mic className="w-4 h-4" /> <span className="text-sm">Sesli sohbet</span>
-          </label>
-          <label className={`flex-1 flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${form.hidden ? 'border-amber-500 bg-amber-500/10' : 'border-border bg-secondary/40'}`}>
-            <input type="checkbox" checked={form.hidden} onChange={(e) => setForm({ ...form, hidden: e.target.checked })} className="accent-amber-500" />
-            <Lock className="w-4 h-4" /> <span className="text-sm">Gizli oda</span>
-          </label>
+
+        {Number(form.max_users) > 100 && <p className="text-xs text-amber-500 -mt-1">⚠️ Yüksek kapasite: çok sayıda katılımcı oda performansını etkileyebilir.</p>}
+
+        {/* Toggle Cards */}
+        <div className="grid grid-cols-3 gap-2">
+          {toggleCards.map(({ key, icon: Icon, label }) => {
+            const active = form[key];
+            return (
+              <button key={key} type="button" onClick={() => setForm({ ...form, [key]: !active })}
+                className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all ${active ? 'border-purple-500 bg-purple-500/10' : 'border-white/10 bg-[#16161e]'}`}>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center ${active ? 'bg-purple-500' : 'border border-white/20'}`}>
+                  {active && <Check className="w-3 h-3 text-white" />}
+                </span>
+                <Icon className={`w-5 h-5 ${active ? 'text-purple-400' : 'text-gray-500'}`} />
+                <span className={`text-xs font-medium text-center ${active ? 'text-white' : 'text-gray-400'}`}>{label}</span>
+              </button>
+            );
+          })}
         </div>
-        <button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 rounded-lg">Odayı Oluştur</button>
+
+        {/* Submit */}
+        <button type="submit" className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-white active:scale-95 transition-transform" style={{ background: 'linear-gradient(135deg, #e11d48, #7c3aed)' }}>
+          <Video className="w-5 h-5" /> Odayı Oluştur
+        </button>
       </form>
     </div>
   );
