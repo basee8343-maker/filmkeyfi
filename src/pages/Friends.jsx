@@ -44,11 +44,12 @@ export default function Friends() {
   const startAdminChat = async () => {
     setAdminLoading(true);
     try {
-      const admins = await base44.entities.User.filter({ role: 'admin' }, 'created_date', 1);
-      const admin = admins[0];
-      if (!admin) { toast({ title: 'Yönetici bulunamadı' }); return; }
-      const res = await base44.functions.invoke('dm-service', { action: 'start', target_id: admin.id });
-      if (res?.data?.conversation) { setSelected(res.data.conversation); setView('chat'); }
+      const res = await base44.functions.invoke('friend-service', { action: 'start_admin_chat' });
+      const friendship = res?.data?.friendship;
+      if (!friendship) { toast({ title: 'Yönetici bulunamadı' }); return; }
+      const adminId = friendship.requester_id === user.id ? friendship.recipient_id : friendship.requester_id;
+      const convoRes = await base44.functions.invoke('dm-service', { action: 'start', target_id: adminId });
+      if (convoRes?.data?.conversation) { setSelected(convoRes.data.conversation); setView('chat'); }
     } catch (e) {
       toast({ title: 'Başlatılamadı', description: e.response?.data?.error || e.message, variant: 'destructive' });
     } finally { setAdminLoading(false); }

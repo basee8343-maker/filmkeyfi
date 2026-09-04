@@ -71,7 +71,7 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
     return () => window.dispatchEvent(new Event('social-thread-close'));
   }, [conversation?.id, markRead]);
 
-  // Arkadaş profilini ve friendship kaydını çek
+  // Arkadaş profilini ve friendship kaydını çek — gerçek zamanlı abonelik
   useEffect(() => {
     if (!conversation) return;
     setOnlineEnabled(!(conversation.offline_for || []).includes(userId));
@@ -81,10 +81,14 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
     base44.functions.invoke('user-profile', { user_id: friendId })
       .then((res) => { if (active) setFriendProfile(res.data); })
       .catch(() => {});
-    base44.entities.Friendship.filter({ members: userId }, '-updated_date', 200)
-      .then((items) => { if (active) setFriendship(items.find((f) => (f.members || []).includes(friendId)) || null); })
-      .catch(() => {});
-    return () => { active = false; };
+    const fetchFriendship = () => {
+      base44.entities.Friendship.filter({ members: userId }, '-updated_date', 200)
+        .then((items) => { if (active) setFriendship(items.find((f) => (f.members || []).includes(friendId)) || null); })
+        .catch(() => {});
+    };
+    fetchFriendship();
+    const unsub = base44.entities.Friendship.subscribe(() => fetchFriendship());
+    return () => { active = false; unsub(); };
   }, [conversation?.id, userId]);
 
   if (!conversation) return <section className="bg-card border border-border rounded-xl min-h-80 flex items-center justify-center text-sm text-muted-foreground">Mesajlaşmak için bir arkadaş seçin.</section>;
