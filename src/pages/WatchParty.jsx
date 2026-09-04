@@ -268,21 +268,25 @@ export default function WatchParty() {
 
   useEffect(() => {
     if (!user?.id) return;
-    const onVisible = async () => {
-      if (document.visibilityState !== 'visible') return;
+    let hiddenAt = null;
+    const onVisibilityChange = async () => {
       if (!joinedRef.current) return;
-      try {
-        const presence = await base44.entities.UserPresence.filter({ user_id: user.id }, '-created_date', 1);
-        const rec = presence[0];
-        if (rec && !rec.online) {
-          toast({ title: 'Çevrim dışı olduğunuz için ana sayfaya yönlendirildiniz', variant: 'destructive' });
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+      } else if (document.visibilityState === 'visible' && hiddenAt) {
+        const awayTime = Date.now() - hiddenAt;
+        hiddenAt = null;
+        if (awayTime > 60000) {
+          joinedRef.current = false;
+          try { await base44.functions.invoke('room-presence', { action: 'leave', room_id: id }); } catch {}
+          toast({ title: '1 dakikadan fazla çevrim dışı olduğunuz için odadan ayrıldınız', variant: 'destructive' });
           navigate('/');
         }
-      } catch {}
+      }
     };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [user?.id]);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+  }, [user?.id, id, navigate]);
 
   const isOwner = user?.id === room?.owner_id;
   const isMod = user?.role === 'admin' || user?.role === 'moderator';
