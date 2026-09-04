@@ -1,7 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { findProfanity } from '../../shared/profanity.ts';
-import { upsertNotification } from '../../shared/upsertNotification.ts';
-import { sendPushToUser } from '../../shared/webPush.ts';
+import { notifyUser } from '../../shared/notifyUser.ts';
 
 const cleanUser = (user) => ({
   id: user.id,
@@ -93,7 +92,11 @@ export default async function(req) {
     if (action === 'clear_chat') {
       const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
       if (!friendship || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
-      await base44.asServiceRole.entities.DirectMessage.updateMany({ friendship_id: friendship.id }, { $addToSet: { hidden_for: user.id } });
+      const messages = await base44.asServiceRole.entities.DirectMessage.filter({ friendship_id: friendship.id }, 'created_date', 500);
+      const updates = messages
+        .filter((m) => !(m.hidden_for || []).includes(user.id))
+        .map((m) => ({ id: m.id, hidden_for: [...(m.hidden_for || []), user.id] }));
+      if (updates.length) await base44.asServiceRole.entities.DirectMessage.bulkUpdate(updates);
       return Response.json({ ok: true });
     }
 
@@ -142,17 +145,10 @@ export default async function(req) {
       const visibleToBoth = (friendship.hidden_for || []).filter((id) => id !== user.id && id !== recipientId);
       if (visibleToBoth.length !== (friendship.hidden_for || []).length) await base44.asServiceRole.entities.Friendship.update(friendship.id, { hidden_for: visibleToBoth });
       const message = await base44.asServiceRole.entities.DirectMessage.create({ friendship_id: friendship.id, sender_id: user.id, sender_name: senderName, recipient_id: recipientId, recipient_name: recipientName, participants: friendship.members, read_by: [user.id], text });
-      // Alıcıya bildirim oluştur (uygulama kapalıyken bile görünsün)
-      await upsertNotification(base44, {
+      await notifyUser(base44, {
         user_id: recipientId, title: senderName, body: text.substring(0, 100),
         type: 'dm', link: '/arkadaslar', ref_id: friendship.id
       });
-      // Çevrimdışıysa web push gönder
-      const presence = await base44.asServiceRole.entities.UserPresence.filter({ user_id: recipientId }, '-created_date', 1).catch(() => []);
-      const isOnline = presence[0] && presence[0].online && (Date.now() - new Date(presence[0].last_seen).getTime() < 30000);
-      if (!isOnline) {
-        await sendPushToUser(base44, recipientId, `Yeni mesaj: ${senderName}`, text.substring(0, 100), '/arkadaslar');
-      }
       return Response.json({ message });
     }
 
