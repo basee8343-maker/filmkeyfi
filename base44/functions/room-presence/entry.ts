@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimit, safeErrorResponse, logSecurity } from '../../shared/security.ts';
 import { isModerator, isSiteOwner, immuneToModeration, getRoleInfo, getRoleLabelOverrides, getSpecialFrameInfo } from '../../shared/roles.ts';
+import { upsertNotification } from '../../shared/upsertNotification.ts';
 
 async function sha256Hex(salt, pw) {
   const data = new TextEncoder().encode(salt + pw);
@@ -131,11 +132,12 @@ export default async function(req) {
         user_id: user.id, user_name: name, user_avatar: user.avatar || '',
         owner_id: room.owner_id, status: 'pending'
       });
-      // Oda sahibine bildirim
-      await base44.asServiceRole.entities.Notification.create({
+      // Oda sahibine bildirim (tek kayıt üzerinden güncelle)
+      await upsertNotification(base44, {
         user_id: room.owner_id, title: 'Oda katılım isteği',
-        body: `${name} odaya katılmak istiyor.`, type: 'room', link: `/oda/${room_id}`
-      }).catch(() => {});
+        body: `${name} odaya katılmak istiyor.`, type: 'room_join_request', link: `/oda/${room_id}`,
+        ref_id: room_id
+      });
       return Response.json({ ok: true, pending: true });
     }
 
@@ -147,11 +149,12 @@ export default async function(req) {
       const req = await base44.asServiceRole.entities.RoomJoinRequest.get(request_id).catch(() => null);
       if (!req || req.room_id !== room_id) return Response.json({ error: 'istek bulunamadı' }, { status: 404 });
       await base44.asServiceRole.entities.RoomJoinRequest.update(request_id, { status: 'approved' });
-      // Kullanıcıya bildirim
-      await base44.asServiceRole.entities.Notification.create({
+      // Kullanıcıya bildirim (tek kayıt üzerinden güncelle)
+      await upsertNotification(base44, {
         user_id: req.user_id, title: 'Oda isteği onaylandı',
-        body: `${room.name || 'Oda'} sahibi katılım isteğinizi onayladı.`, type: 'room', link: `/oda/${room_id}`
-      }).catch(() => {});
+        body: `${room.name || 'Oda'} sahibi katılım isteğinizi onayladı.`, type: 'room_join_approved', link: `/oda/${room_id}`,
+        ref_id: room_id
+      });
       return Response.json({ ok: true });
     }
 
@@ -163,10 +166,11 @@ export default async function(req) {
       const req = await base44.asServiceRole.entities.RoomJoinRequest.get(request_id).catch(() => null);
       if (!req || req.room_id !== room_id) return Response.json({ error: 'istek bulunamadı' }, { status: 404 });
       await base44.asServiceRole.entities.RoomJoinRequest.update(request_id, { status: 'rejected' });
-      await base44.asServiceRole.entities.Notification.create({
+      await upsertNotification(base44, {
         user_id: req.user_id, title: 'Oda isteği reddedildi',
-        body: `${room.name || 'Oda'} sahibi katılım isteğinizi reddetti.`, type: 'room', link: `/oda/${room_id}`
-      }).catch(() => {});
+        body: `${room.name || 'Oda'} sahibi katılım isteğinizi reddetti.`, type: 'room_join_rejected', link: `/oda/${room_id}`,
+        ref_id: room_id
+      });
       return Response.json({ ok: true });
     }
 
@@ -291,10 +295,11 @@ export default async function(req) {
         text: action === 'assign-mod' ? `${targetName} oda moderatörü yapıldı.` : `${targetName}'in oda moderatörliği kaldırıldı.`, type: 'system'
       }).catch(() => {});
       if (action === 'assign-mod') {
-        await base44.asServiceRole.entities.Notification.create({
+        await upsertNotification(base44, {
           user_id: target_id, title: 'Oda moderatörü oldunuz',
-          body: `${room.name} odasında moderatör yetkisi verildi.`, type: 'room', link: `/oda/${room_id}`
-        }).catch(() => {});
+          body: `${room.name} odasında moderatör yetkisi verildi.`, type: 'room_mod_assigned', link: `/oda/${room_id}`,
+          ref_id: room_id
+        });
         const existingMods = await base44.asServiceRole.entities.RoomMod.filter({ owner_id: room.owner_id, user_id: target_id }, '-created_date', 1).catch(() => []);
         if (!existingMods[0]) {
           await base44.asServiceRole.entities.RoomMod.create({
@@ -302,10 +307,11 @@ export default async function(req) {
           }).catch(() => {});
         }
       } else {
-        await base44.asServiceRole.entities.Notification.create({
+        await upsertNotification(base44, {
           user_id: target_id, title: 'Oda moderatörliği kaldırıldı',
-          body: `${room.name} odasında moderatör yetkiniz kaldırıldı.`, type: 'room', link: `/oda/${room_id}`
-        }).catch(() => {});
+          body: `${room.name} odasında moderatör yetkiniz kaldırıldı.`, type: 'room_mod_removed', link: `/oda/${room_id}`,
+          ref_id: room_id
+        });
         await base44.asServiceRole.entities.RoomMod.deleteMany({ owner_id: room.owner_id, user_id: target_id }).catch(() => {});
       }
       return Response.json({ ok: true });
@@ -409,13 +415,14 @@ export default async function(req) {
         room_id, user_id: owner_id, user_name: owner_name,
         text: `${owner_name} yeni oda sahibi oldu.`, type: 'system'
       });
-      await base44.asServiceRole.entities.Notification.create({
+      await upsertNotification(base44, {
         user_id: owner_id,
         title: 'Oda sahipliği size devredildi',
         body: `${room.name} odasının yeni sahibi sizsiniz.`,
-        type: 'room',
-        link: `/oda/${room_id}`
-      }).catch(() => {});
+        type: 'room_ownership',
+        link: `/oda/${room_id}`,
+        ref_id: room_id
+      });
     }
     return Response.json({ ok: true });
   } catch (e) {
