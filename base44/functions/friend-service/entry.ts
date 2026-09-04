@@ -92,11 +92,9 @@ export default async function(req) {
     if (action === 'clear_chat') {
       const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
       if (!friendship || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
-      const messages = await base44.asServiceRole.entities.DirectMessage.filter({ friendship_id: friendship.id }, 'created_date', 500);
-      const updates = messages
-        .filter((m) => !(m.hidden_for || []).includes(user.id))
-        .map((m) => ({ id: m.id, hidden_for: [...(m.hidden_for || []), user.id] }));
-      if (updates.length) await base44.asServiceRole.entities.DirectMessage.bulkUpdate(updates);
+      const clearedAt = { ...(friendship.cleared_at || {}) };
+      clearedAt[user.id] = new Date().toISOString();
+      await base44.asServiceRole.entities.Friendship.update(friendship.id, { cleared_at: clearedAt });
       return Response.json({ ok: true });
     }
 

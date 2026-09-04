@@ -17,12 +17,22 @@ export default function useDirectMessages(friendshipId) {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const seenRef = useRef(new Set());
+  const clearedAtRef = useRef(null);
 
   const load = useCallback(() => {
     if (!friendshipId) return;
-    base44.entities.DirectMessage.filter({ friendship_id: friendshipId }, 'created_date', 500)
+    base44.entities.Friendship.get(friendshipId)
+      .then((fship) => {
+        clearedAtRef.current = fship?.cleared_at?.[userId] || null;
+        return base44.entities.DirectMessage.filter({ friendship_id: friendshipId }, 'created_date', 500);
+      })
       .then((items) => {
-        const visible = items.filter((m) => !(m.hidden_for || []).includes(userId));
+        const clearedAt = clearedAtRef.current;
+        const visible = items.filter((m) => {
+          if ((m.hidden_for || []).includes(userId)) return false;
+          if (clearedAt && new Date(m.created_date) <= new Date(clearedAt)) return false;
+          return true;
+        });
         seenRef.current = new Set(visible.map((m) => m.id));
         setMessages((current) => {
           const temps = current.filter((m) => m.id?.startsWith('temp-'));
@@ -47,6 +57,10 @@ export default function useDirectMessages(friendshipId) {
       }
       if ((event.data?.hidden_for || []).includes(userId)) {
         setMessages((prev) => prev.filter((m) => m.id !== event.data.id));
+        return;
+      }
+      const clearedAt = clearedAtRef.current;
+      if (clearedAt && event.data?.created_date && new Date(event.data.created_date) <= new Date(clearedAt)) {
         return;
       }
       seenRef.current.add(event.data.id);
@@ -112,6 +126,7 @@ export default function useDirectMessages(friendshipId) {
   const clearAll = useCallback(async () => {
     if (!friendshipId || !userId) return;
     setMessages([]);
+    clearedAtRef.current = new Date().toISOString();
     try {
       await base44.functions.invoke('friend-service', { action: 'clear_chat', friendship_id: friendshipId });
       window.dispatchEvent(new Event('social-badges-refresh'));
