@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import Hero from '@/components/movie/Hero';
 import ContentRow from '@/components/movie/ContentRow';
-import ActiveRooms from '@/components/movie/ActiveRooms';
 import CategoryRow from '@/components/movie/CategoryRow';
 import { SkeletonRow } from '@/components/movie/EmptyState';
 
@@ -43,7 +42,6 @@ export default function Home() {
         {loading ? <><SkeletonRow /><SkeletonRow /><SkeletonRow /></> : (
           <>
             <ContentRow title="Popüler Filmler" movies={rows.popular} to="/filmler" />
-            <ActiveRooms />
             <ContentRow title="Öne Çıkanlar" movies={rows.featured} to="/filmler" />
             <ContentRow title="Yeni Eklenenler" movies={rows.new} to="/filmler" />
             <ContentRow title="En Çok İzlenenler" movies={rows.most} to="/filmler" />

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import VideoPlayer from '@/components/player/VideoPlayer';
@@ -387,16 +387,16 @@ export default function WatchParty() {
     catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
-  const updateRoom = async (patch, immediate = false) => {
+  const updateRoom = useCallback(async (patch, immediate = false) => {
     if (!canMod) return;
     if (!immediate && Date.now() - lastUpdateRef.current < 2000) return;
     lastUpdateRef.current = Date.now();
     await base44.entities.Room.update(id, { ...patch, last_sync: new Date().toISOString() }).catch(() => {});
-  };
+  }, [canMod, id]);
 
-  const onPlayPause = (playing) => updateRoom({ is_playing: playing }, true);
-  const onTimeUpdate = (t) => updateRoom({ current_time: t });
-  const onSeek = (t) => updateRoom({ current_time: t, is_playing: true }, true);
+  const onPlayPause = useCallback((playing) => updateRoom({ is_playing: playing }, true), [updateRoom]);
+  const onTimeUpdate = useCallback((t) => updateRoom({ current_time: t }), [updateRoom]);
+  const onSeek = useCallback((t) => updateRoom({ current_time: t, is_playing: true }, true), [updateRoom]);
 
   const changeMovie = async (newMovie) => {
     try {
@@ -522,6 +522,7 @@ export default function WatchParty() {
         )}
         <div className="absolute top-[max(env(safe-area-inset-top),0.75rem)] left-3 z-[55] flex items-center gap-2">
           <button onClick={handleBack} className="flex items-center justify-center w-9 h-9 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/10 active:scale-95 transition"><ArrowLeft className="w-5 h-5" /></button>
+          {room?.is_personal && room?.personal_room_code ? <span className="bg-black/60 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1.5 rounded-full border border-white/10 whitespace-nowrap">Kod: {room.personal_room_code}</span> : null}
           {room?.room_number ? <span className="bg-black/60 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1.5 rounded-full border border-white/10 whitespace-nowrap">Oda No: {room.room_number}</span> : null}
         </div>
         {!chatOpen && <button onClick={() => { setShowViewers(!showViewers); setShowSettings(false); }} className={`absolute top-[max(env(safe-area-inset-top),0.75rem)] right-3 z-[55] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white border border-white/10 backdrop-blur-md transition active:scale-95 ${showViewers ? 'bg-primary/80' : 'bg-black/60'}`}><Eye className="w-4 h-4" /><span>{visibleParticipants.length}</span></button>}

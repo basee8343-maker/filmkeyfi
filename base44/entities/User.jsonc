@@ -14,6 +14,10 @@
     "member_id": {
       "type": "string"
     },
+    "personal_room_code": {
+      "type": "string",
+      "default": ""
+    },
     "title": {
       "type": "string"
     },

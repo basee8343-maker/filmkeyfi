@@ -14,7 +14,25 @@ export default async function(req) {
     }, '-created_date', 1).catch(() => []);
 
     if (existing[0]) {
+      // Eski odada kod yoksa ekle
+      if (!existing[0].personal_room_code) {
+        const meExisting = await base44.asServiceRole.entities.User.get(user.id).catch(() => null);
+        let codeExisting = meExisting?.personal_room_code || '';
+        if (!codeExisting) {
+          codeExisting = String(Math.floor(10000000 + Math.random() * 90000000));
+          await base44.asServiceRole.entities.User.update(user.id, { personal_room_code: codeExisting }).catch(() => {});
+        }
+        await base44.asServiceRole.entities.Room.update(existing[0].id, { personal_room_code: codeExisting }).catch(() => {});
+      }
       return Response.json({ id: existing[0].id });
+    }
+
+    // Kullanıcının kalıcı oda kodunu al veya oluştur
+    const me = await base44.asServiceRole.entities.User.get(user.id).catch(() => null);
+    let personalRoomCode = me?.personal_room_code || '';
+    if (!personalRoomCode) {
+      personalRoomCode = String(Math.floor(10000000 + Math.random() * 90000000));
+      await base44.asServiceRole.entities.User.update(user.id, { personal_room_code: personalRoomCode }).catch(() => {});
     }
 
     // Yeni kişisel oda oluştur
@@ -28,6 +46,7 @@ export default async function(req) {
       owner_name,
       is_personal: true,
       room_number: 0,
+      personal_room_code: personalRoomCode,
       max_users: 10,
       chat_enabled: true,
       voice_enabled: true,

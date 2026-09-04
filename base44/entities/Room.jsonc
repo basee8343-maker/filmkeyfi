@@ -28,6 +28,10 @@
       "type": "integer",
       "default": 0
     },
+    "personal_room_code": {
+      "type": "string",
+      "default": ""
+    },
     "max_users": {
       "type": "integer",
       "default": 10

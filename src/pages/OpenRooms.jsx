@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Users, Lock, Loader2, Shield, Star, DoorOpen } from 'lucide-react';
+import { Users, Lock, Loader2, Shield, Star, DoorOpen, Search } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 
@@ -13,6 +13,7 @@ export default function OpenRooms() {
   const [owners, setOwners] = useState({});
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('open');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchOwners = async (rs) => {
     const ids = [...new Set(rs.map((r) => r.owner_id).filter(Boolean))];
@@ -94,7 +95,9 @@ export default function OpenRooms() {
           </div>
           <div className="flex flex-wrap gap-1.5 mt-2">
             {isPersonal && <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-[#8e44ad]/20 text-[#c39bd3]"><Lock className="w-2.5 h-2.5" /> Kişisel Oda</span>}
-            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[#a0a0a0]"><Users className="w-2.5 h-2.5" /> {r.participants?.length || 0}/{r.max_users} Katılımcı</span>
+            {isPersonal && r.personal_room_code && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#8e44ad]/20 text-[#c39bd3] font-mono font-bold">Kod: {r.personal_room_code}</span>}
+            {!isPersonal && r.room_number ? <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[#a0a0a0] font-bold">Oda No: {r.room_number}</span> : null}
+            <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-[#a0a0a0]"><Users className="w-2.5 h-2.5" /> {r.participants?.length || 0}/{r.max_users}</span>
             {r.password && <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-400"><Lock className="w-2.5 h-2.5" /> Kilitli</span>}
           </div>
         </div>
@@ -134,6 +137,16 @@ export default function OpenRooms() {
         </button>
       </div>
 
+      <div className="mb-4 relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
+        <input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Oda numarası veya özel oda kodu ara..."
+          className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-[#1a1a1a] border border-white/5 text-sm text-white placeholder:text-[#606060] outline-none focus:border-[#8e44ad]/50"
+        />
+      </div>
+
       {loading ? <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-[#8e44ad]" /></div> :
         tab === 'open' ? (
           rooms.length === 0 ? (
@@ -144,7 +157,7 @@ export default function OpenRooms() {
             </div>
           ) : (
             <div className="space-y-3">
-              {rooms.map((r) => <RoomCard key={r.id} r={r} isPersonal={false} />)}
+              {rooms.filter((r) => !searchQuery.trim() || String(r.room_number) === searchQuery.trim()).map((r) => <RoomCard key={r.id} r={r} isPersonal={false} />)}
             </div>
           )
         ) : (
@@ -156,7 +169,7 @@ export default function OpenRooms() {
             </div>
           ) : (
             <div className="space-y-3">
-              {personalRooms.map((r) => <RoomCard key={r.id} r={r} isPersonal={true} />)}
+              {personalRooms.filter((r) => !searchQuery.trim() || r.personal_room_code === searchQuery.trim()).map((r) => <RoomCard key={r.id} r={r} isPersonal={true} />)}
             </div>
           )
         )

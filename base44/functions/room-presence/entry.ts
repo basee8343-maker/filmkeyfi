@@ -279,8 +279,10 @@ export default async function(req) {
     if (ghost) return Response.json({ ok: true });
     await updatePresenceRoom(base44, user.id, '');
     let participants = (room.participants || []).filter((p) => p.user_id !== user.id);
-    // Çevrim içi katılımcı yoksa odayı kapat
-    if (participants.length > 0 && !room.is_personal) {
+    // Oda sahibi çıkıyor ve katılımcı varsa: online kontrolü atla, sahipliği devret
+    const isOwnerLeavingWithParticipants = isOwner && participants.length > 0 && !room.is_personal;
+    // Çevrim içi katılımcı yoksa odayı kapat (sadece sahipsiz çıkışlarda)
+    if (!isOwnerLeavingWithParticipants && participants.length > 0 && !room.is_personal) {
       let hasOnline = false;
       for (const p of participants) {
         const presence = await base44.asServiceRole.entities.UserPresence.filter({ user_id: p.user_id }, '-created_date', 1).catch(() => []);
