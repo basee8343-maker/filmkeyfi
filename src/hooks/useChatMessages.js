@@ -127,8 +127,6 @@ export default function useChatMessages(conversationId) {
       }
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      const errorMsg = err.response?.data?.error || err.error || err.message || 'Mesaj gönderilemedi';
-      toast({ title: errorMsg, variant: 'destructive' });
       throw err;
     } finally {
       setSending(false);

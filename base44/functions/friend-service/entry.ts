@@ -98,6 +98,14 @@ export default async function(req) {
       return Response.json({ ok: true });
     }
 
+    if (action === 'refriend') {
+      const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
+      if (!friendship || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
+      if (friendship.status !== 'removed') return Response.json({ error: 'Bu arkadaşlık geri eklenemez' }, { status: 400 });
+      await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: 'accepted' });
+      return Response.json({ ok: true });
+    }
+
     if (['hide', 'unfriend', 'block', 'unblock'].includes(action)) {
       const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
       if (!friendship || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });

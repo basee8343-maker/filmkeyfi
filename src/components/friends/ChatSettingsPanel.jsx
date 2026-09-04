@@ -1,12 +1,12 @@
 import { useRef } from 'react';
-import { ChevronLeft, Ban, UserMinus, Trash, Flag, CheckCheck, Wifi } from 'lucide-react';
+import { ChevronLeft, Ban, UserMinus, UserPlus, Trash, Flag, CheckCheck, Wifi } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import RoleBadge from '@/components/RoleBadge';
 
 export default function ChatSettingsPanel({
-  name, avatar, friendProfile, isBlocked, onlineEnabled,
+  name, avatar, friendProfile,   isBlocked, isFriend, onlineEnabled,
   readReceiptsEnabled, onToggleReadReceipts, onToggleOnline,
-  onBlock, onUnfriend, onClearChat, onReport, onClose,
+  onBlock, onUnfriend, onRefriend, onClearChat, onReport, onClose,
   blocking, unfriending, clearing
 }) {
   const touchStart = useRef({ x: 0, y: 0 });
@@ -57,10 +57,10 @@ export default function ChatSettingsPanel({
               <span className={`block w-5 h-5 bg-white rounded-full transition-transform ${onlineEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
-          {/* Arkadaşı Sil */}
-          <button onClick={onUnfriend} disabled={unfriending} className="w-full flex items-center gap-3 px-4 py-4 hover:bg-secondary disabled:opacity-50">
-            <UserMinus className="w-5 h-5 text-destructive shrink-0" />
-            <span className="font-medium text-destructive">{unfriending ? 'Kaldırılıyor...' : 'Arkadaşı Sil'}</span>
+          {/* Arkadaşı Sil / Arkadaş olarak ekle */}
+          <button onClick={isFriend ? onUnfriend : onRefriend} disabled={unfriending} className="w-full flex items-center gap-3 px-4 py-4 hover:bg-secondary disabled:opacity-50">
+            {isFriend ? <UserMinus className="w-5 h-5 text-destructive shrink-0" /> : <UserPlus className="w-5 h-5 text-primary shrink-0" />}
+            <span className={`font-medium ${isFriend ? 'text-destructive' : 'text-primary'}`}>{unfriending ? 'İşleniyor...' : isFriend ? 'Arkadaşı Sil' : 'Arkadaş olarak ekle'}</span>
           </button>
           {/* Sohbeti Sil */}
           <button onClick={onClearChat} disabled={clearing} className="w-full flex items-center gap-3 px-4 py-4 hover:bg-secondary disabled:opacity-50">
