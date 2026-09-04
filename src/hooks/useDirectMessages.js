@@ -11,10 +11,11 @@ import { upsertMessage, sortMessages } from '@/lib/realtimeMessages';
  *    başka bir sohbete geçildikten sonra tamamlanırsa, sonuç ignore edilir.
  * 2. readyRef: cleared_at yüklenene kadar realtime event'ler bloklanır.
  *    Bu, eski mesajların subscription'dan içeri sızmasını engeller.
+ *    Hata durumunda açılır ki realtime mesajlar gelebilsin.
  * 3. clearedAtRef: "sohbeti sil" zaman damgası. Bu tarihten önceki mesajlar
  *    sadece silene gizlenir, karşı taraf görmeye devam eder.
  * 4. seenRef: duplicate mesaj önlemi — aynı messageId iki kez eklenmez.
- * 5. loadRef: effect'in sadece friendshipId değişince yeniden çalışmasını sağlar.
+ * 5. loadRef: effect'in sadece friendshipId/userId değişince yeniden çalışmasını sağlar.
  */
 export default function useDirectMessages(friendshipId) {
   const { user } = useCurrentUser();
@@ -32,39 +33,42 @@ export default function useDirectMessages(friendshipId) {
     activeIdRef.current = friendshipId;
   }, [friendshipId]);
 
-  const load = useCallback(() => {
-    if (!friendshipId || !userId) return;
+  const load = useCallback(async () => {
+    if (!friendshipId || !userId) {
+      setLoading(false);
+      return;
+    }
     readyRef.current = false;
     const reqId = friendshipId;
-    base44.entities.Friendship.get(friendshipId)
-      .then((fship) => {
-        if (activeIdRef.current !== reqId) return; // stale request — başka sohbete geçildi
-        clearedAtRef.current = fship?.cleared_at?.[userId] || null;
-        readyRef.current = true; // cleared_at hazır — artık realtime event'ler işlenebilir
-        return base44.entities.DirectMessage.filter({ friendship_id: friendshipId }, 'created_date', 500);
-      })
-      .then((items) => {
-        if (activeIdRef.current !== reqId) return; // stale request
-        const clearedAt = clearedAtRef.current;
-        const visible = (items || []).filter((m) => {
-          if ((m.hidden_for || []).includes(userId)) return false; // kullanıcı bazlı silme
-          if (clearedAt && new Date(m.created_date) <= new Date(clearedAt)) return false; // sohbet silme
-          return true;
-        });
-        seenRef.current = new Set(visible.map((m) => m.id));
-        setMessages((current) => {
-          const temps = current.filter((m) => m.id?.startsWith('temp-'));
-          return sortMessages([...temps, ...visible]);
-        });
-        setLoading(false);
-      })
-      .catch(() => {
-        if (activeIdRef.current !== reqId) return;
-        setLoading(false);
+    try {
+      const fship = await base44.entities.Friendship.get(friendshipId);
+      if (activeIdRef.current !== reqId) return; // stale request — başka sohbete geçildi
+      clearedAtRef.current = fship?.cleared_at?.[userId] || null;
+      readyRef.current = true; // cleared_at hazır — artık realtime event'ler işlenebilir
+      const items = await base44.entities.DirectMessage.filter({ friendship_id: friendshipId }, 'created_date', 500);
+      if (activeIdRef.current !== reqId) return; // stale request
+      const clearedAt = clearedAtRef.current;
+      const visible = (items || []).filter((m) => {
+        if ((m.hidden_for || []).includes(userId)) return false; // kullanıcı bazlı silme
+        if (clearedAt && new Date(m.created_date) <= new Date(clearedAt)) return false; // sohbet silme
+        return true;
       });
+      seenRef.current = new Set(visible.map((m) => m.id));
+      setMessages((current) => {
+        const temps = current.filter((m) => m.id?.startsWith('temp-'));
+        return sortMessages([...temps, ...visible]);
+      });
+      setLoading(false);
+    } catch {
+      if (activeIdRef.current !== reqId) return;
+      // Yükleme başarısız olsa bile realtime event'leri işle — karşı taraf mesajları görebilsin
+      readyRef.current = true;
+      clearedAtRef.current = null;
+      setLoading(false);
+    }
   }, [friendshipId, userId]);
 
-  // load'u ref'te tut — effect sadece friendshipId değişince yeniden çalışsın
+  // load'u ref'te tut — effect her render'da güncel load'u çağırsın
   const loadRef = useRef(load);
   loadRef.current = load;
 
@@ -110,7 +114,7 @@ export default function useDirectMessages(friendshipId) {
     const reconnect = () => loadRef.current();
     window.addEventListener('online', reconnect);
     return () => { unsub(); window.removeEventListener('online', reconnect); };
-  }, [friendshipId]);
+  }, [friendshipId, userId]); // userId değişince de yeniden çalış — user async yüklenir
 
   const send = useCallback(async (text) => {
     if (!friendshipId || !userId || !text.trim()) return;
