@@ -20,7 +20,13 @@ export default function ProfileDropdown() {
       base44.entities.Notification.filter({ user_id: user.id, read: false }, '-created_date', 50)
         .then((r) => setUnread(r.length)).catch(() => {});
     });
-    return unsub;
+    // social-badges-refresh event'ini dinle — DM geldiğinde anlık güncelle
+    const onBadgesRefresh = () => {
+      base44.entities.Notification.filter({ user_id: user.id, read: false }, '-created_date', 50)
+        .then((r) => setUnread(r.length)).catch(() => {});
+    };
+    window.addEventListener('social-badges-refresh', onBadgesRefresh);
+    return () => { unsub(); window.removeEventListener('social-badges-refresh', onBadgesRefresh); };
   }, [user?.id]);
 
   useEffect(() => {

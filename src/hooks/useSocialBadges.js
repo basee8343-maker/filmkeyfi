@@ -32,6 +32,13 @@ export default function useSocialBadges(userId) {
       if (!convo || !(convo.members || []).includes(userId)) return;
       debouncedLoad();
     });
+    // ChatMessage subscription — yeni mesaj geldiğinde de badge'i anlık güncelle
+    const offMsgs = base44.entities.ChatMessage.subscribe((event) => {
+      const msg = event.data;
+      if (!msg) return;
+      if (msg.sender_id !== userId && msg.receiver_id !== userId) return;
+      debouncedLoad();
+    });
     const openThread = (event) => { openThreadRef.current = event.detail?.conversationId || null; setBadges((current) => ({ ...current, messages: 0 })); debouncedLoad(); };
     const closeThread = () => { openThreadRef.current = null; };
     window.addEventListener('social-badges-refresh', debouncedLoad);
@@ -43,6 +50,7 @@ export default function useSocialBadges(userId) {
       if (loadTimer) clearTimeout(loadTimer);
       offFriends();
       offConvos();
+      offMsgs();
       window.removeEventListener('social-badges-refresh', debouncedLoad);
       window.removeEventListener('social-thread-open', openThread);
       window.removeEventListener('social-thread-close', closeThread);
