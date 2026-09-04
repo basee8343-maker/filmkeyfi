@@ -46,6 +46,17 @@ export default function UserProfile() {
     } finally { setRequesting(false); }
   };
 
+  const startChat = async () => {
+    try {
+      const res = await base44.functions.invoke('dm-service', { action: 'start', target_id: id });
+      if (res?.data?.conversation) {
+        navigate(`/arkadaslar?view=chats&chat=${res.data.conversation.id}`);
+      }
+    } catch (error) {
+      toast({ title: 'Sohbet açılamadı', description: error.response?.data?.error || error.message, variant: 'destructive' });
+    }
+  };
+
   if (loading) return <div className="h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   const isSelf = me?.id === id;
@@ -72,7 +83,7 @@ export default function UserProfile() {
           {profile.created_date && <p className="text-xs text-muted-foreground mt-3">Katılım: {new Date(profile.created_date).toLocaleDateString('tr-TR')}</p>}
           {!isSelf && (!relation || ['removed', 'rejected'].includes(relation.status)) && <button onClick={addFriend} disabled={requesting} className="mt-5 inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"><UserPlus className="w-4 h-4" />{requesting ? 'Gönderiliyor...' : 'Arkadaş Ekle'}</button>}
           {!isSelf && relation?.status === 'pending' && <p className="mt-5 text-sm font-semibold text-amber-400">Arkadaşlık isteği bekliyor</p>}
-          {!isSelf && relation?.status === 'accepted' && <div className="mt-5 flex flex-col items-center gap-3"><p className="text-sm font-semibold text-green-400">Arkadaşsınız</p><Link to={`/arkadaslar?view=chats&chat=${relation.id}`} className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold"><MessageCircle className="w-4 h-4" /> Mesaj Yaz</Link></div>}
+          {!isSelf && relation?.status === 'accepted' && <div className="mt-5 flex flex-col items-center gap-3"><p className="text-sm font-semibold text-green-400">Arkadaşsınız</p><button onClick={startChat} className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold"><MessageCircle className="w-4 h-4" /> Mesaj Yaz</button></div>}
           {isSelf && <Link to="/profil" className="mt-5 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold">Profili Düzenle</Link>}
           {!isSelf && <button onClick={() => setReportOpen(true)} className="mt-3 inline-flex items-center gap-2 bg-destructive/10 text-destructive border border-destructive/20 px-4 py-2 rounded-lg text-sm font-semibold"><Flag className="w-4 h-4" /> Şikayet Et</button>}
         </div>

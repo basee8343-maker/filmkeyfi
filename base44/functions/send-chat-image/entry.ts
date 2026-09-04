@@ -52,18 +52,33 @@ export default async function(req) {
     }
 
     if (context === 'dm') {
-      const friendship = await base44.asServiceRole.entities.Friendship.get(context_id).catch(() => null);
-      if (!friendship || friendship.status !== 'accepted' || !friendship.members.includes(user.id)) {
-        return Response.json({ error: 'Yalnızca arkadaşlarınıza mesaj gönderebilirsiniz' }, { status: 403 });
+      const conversation = await base44.asServiceRole.entities.Conversation.get(context_id).catch(() => null);
+      if (!conversation || !(conversation.members || []).includes(user.id)) {
+        return Response.json({ error: 'Sohbet bulunamadı veya yetkisiz' }, { status: 403 });
       }
-      const recipientId = friendship.requester_id === user.id ? friendship.recipient_id : friendship.requester_id;
-      const recipientName = friendship.requester_id === user.id ? friendship.recipient_name : friendship.requester_name;
-      await base44.asServiceRole.entities.DirectMessage.create({
-        friendship_id: context_id, sender_id: user.id, sender_name: senderName,
-        recipient_id: recipientId, recipient_name: recipientName,
-        participants: friendship.members, read_by: [user.id],
-        text: caption, file_url
+      if ((conversation.deleted_for || []).includes(user.id)) {
+        return Response.json({ error: 'Bu sohbeti sildiniz' }, { status: 403 });
+      }
+      const receiverId = conversation.user1_id === user.id ? conversation.user2_id : conversation.user1_id;
+      const receiverName = conversation.user1_id === user.id ? conversation.user2_name : conversation.user1_name;
+      await base44.asServiceRole.entities.ChatMessage.create({
+        conversation_id: context_id,
+        sender_id: user.id, sender_name: senderName,
+        receiver_id: receiverId,
+        content: caption, file_url,
+        deleted_for: [], read_by: [user.id]
       });
+      const updates: any = {
+        last_message_text: caption || '[Görsel]',
+        last_message_at: new Date().toISOString(),
+        last_sender_id: user.id, last_sender_name: senderName
+      };
+      if (conversation.user1_id === user.id) {
+        updates.unread_user2 = (conversation.unread_user2 || 0) + 1;
+      } else {
+        updates.unread_user1 = (conversation.unread_user1 || 0) + 1;
+      }
+      await base44.asServiceRole.entities.Conversation.update(context_id, updates);
       return Response.json({ ok: true });
     }
 

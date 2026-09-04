@@ -1,0 +1,85 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "conversation_id": {
+      "type": "string"
+    },
+    "sender_id": {
+      "type": "string"
+    },
+    "sender_name": {
+      "type": "string"
+    },
+    "receiver_id": {
+      "type": "string"
+    },
+    "content": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "deleted_for": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "read_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "conversation_id",
+    "sender_id",
+    "receiver_id",
+    "content"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.sender_id": "{{user.id}}"
+        },
+        {
+          "data.receiver_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.sender_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.sender_id": "{{user.id}}"
+        },
+        {
+          "data.receiver_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
