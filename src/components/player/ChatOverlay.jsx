@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, X, Smile, Trash2, MessageSquareOff, Image as ImageIcon, Settings, MessagesSquare, Shield, Crown } from 'lucide-react';
+import { Send, X, Smile, Trash2, MessageSquareOff, Image as ImageIcon, Settings, MessagesSquare, Shield, Crown, Sparkles } from 'lucide-react';
 import VoiceControls from '@/components/player/VoiceControls';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
@@ -34,6 +34,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   const [menuProfile, setMenuProfile] = useState(null);
   const [lightbox, setLightbox] = useState(null);
   const [showAutoDeleteMenu, setShowAutoDeleteMenu] = useState(false);
+  const [msgFilter, setMsgFilter] = useState('all');
   const [blockedUsers, setBlockedUsers] = useState(user?.blocked_users || []);
   useEffect(() => { setBlockedUsers(user?.blocked_users || []); }, [user?.blocked_users]);
   const [roomLevels, setRoomLevels] = useState({});
@@ -159,48 +160,58 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   };
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-card/95 backdrop-blur">
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-border gap-1.5">
-        <h3 className="font-bold flex items-center gap-2">💬 Sohbet {chatEnabled && <span className="text-xs text-muted-foreground font-normal">({messages.length})</span>}</h3>
+    <div className="h-full min-h-0 flex flex-col bg-black text-white">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/10 gap-1.5">
+        <h3 className="font-bold flex items-center gap-1.5 text-white">💬 Sohbet {chatEnabled && <span className="text-xs text-[#888] font-normal">({messages.length})</span>}</h3>
         <div className="flex items-center gap-1.5">
           {isOwner && chatEnabled && (
             <div className="relative">
-              <button onClick={() => setShowAutoDeleteMenu(!showAutoDeleteMenu)} className="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400 text-xs font-semibold whitespace-nowrap">⏱ Oto-sil: {autoDeleteMinutes ? `${autoDeleteMinutes}dk` : 'Kapalı'}</button>
+              <button onClick={() => setShowAutoDeleteMenu(!showAutoDeleteMenu)} className="px-2 py-1 rounded-lg text-xs font-semibold whitespace-nowrap" style={{ background: 'rgba(255, 204, 0, 0.15)', color: '#ffcc00' }}>⏱ Oto-sil: {autoDeleteMinutes ? `${autoDeleteMinutes}dk` : 'Kapalı'}</button>
               {showAutoDeleteMenu && (
-                <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-xl p-2 w-36">
-                  <p className="text-xs text-muted-foreground mb-1.5 text-center">Otomatik Silme Süresi</p>
+                <div className="absolute right-0 top-full mt-1 z-50 bg-[#1a1a1a] border border-white/10 rounded-lg shadow-xl p-2 w-36">
+                  <p className="text-xs text-[#888] mb-1.5 text-center">Otomatik Silme Süresi</p>
                   <div className="grid grid-cols-3 gap-1">
-                    <button onClick={() => { onSetAutoDelete?.(0); setShowAutoDeleteMenu(false); }} className={`px-1.5 py-1 rounded text-xs font-semibold ${!autoDeleteMinutes ? 'bg-blue-500/30 text-blue-400' : 'hover:bg-secondary'}`}>Kapalı</button>
+                    <button onClick={() => { onSetAutoDelete?.(0); setShowAutoDeleteMenu(false); }} className={`px-1.5 py-1 rounded text-xs font-semibold ${!autoDeleteMinutes ? 'text-[#ffcc00]' : 'text-[#888] hover:bg-white/5'}`} style={!autoDeleteMinutes ? { background: 'rgba(255, 204, 0, 0.15)' } : {}}>Kapalı</button>
                     {[2,3,4,5,6,7,8,9,10].map((m) => (
-                      <button key={m} onClick={() => { onSetAutoDelete?.(m); setShowAutoDeleteMenu(false); }} className={`px-1.5 py-1 rounded text-xs font-semibold ${autoDeleteMinutes === m ? 'bg-blue-500/30 text-blue-400' : 'hover:bg-secondary'}`}>{m}dk</button>
+                      <button key={m} onClick={() => { onSetAutoDelete?.(m); setShowAutoDeleteMenu(false); }} className={`px-1.5 py-1 rounded text-xs font-semibold ${autoDeleteMinutes === m ? 'text-[#ffcc00]' : 'text-[#888] hover:bg-white/5'}`} style={autoDeleteMinutes === m ? { background: 'rgba(255, 204, 0, 0.15)' } : {}}>{m}dk</button>
                     ))}
                   </div>
                 </div>
               )}
             </div>
           )}
-          {isOwner && chatEnabled && <button onClick={clearAll} className="px-2 py-1 rounded-lg bg-destructive/20 text-destructive text-xs font-semibold">TÜMÜNÜ SİL</button>}
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary"><X className="w-5 h-5" /></button>
+          {isOwner && chatEnabled && <button onClick={clearAll} className="px-2 py-1 rounded-lg text-xs font-semibold text-white" style={{ background: '#a32e2e' }}>TÜMÜNÜ SİL</button>}
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10"><X className="w-5 h-5 text-white" /></button>
         </div>
       </div>
       {(voiceEnabled || onSettings || onDirect) && (
-        <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border">
+        <div className="flex items-center gap-1.5 px-3 py-2 border-b border-white/10">
           <VoiceControls voice={voice} />
-          {isOwner && onSettings && <button onClick={onSettings} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/60 text-xs font-semibold hover:bg-secondary whitespace-nowrap"><Settings className="w-4 h-4" /> Ayarlar</button>}
-          {onDirect && <button onClick={onDirect} className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/60 text-xs font-semibold hover:bg-secondary whitespace-nowrap"><MessagesSquare className="w-4 h-4" /> Mesaj{directUnread > 0 && <span className="absolute -right-1 -top-1 min-w-4 h-4 rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground flex items-center justify-center">{directUnread > 99 ? '99+' : directUnread}</span>}</button>}
+          {isOwner && onSettings && <button onClick={onSettings} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1a1a1a] text-xs font-semibold hover:bg-[#2a2a2a] whitespace-nowrap text-white"><Settings className="w-4 h-4" /> Ayarlar</button>}
+          {onDirect && <button onClick={onDirect} className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1a1a1a] text-xs font-semibold hover:bg-[#2a2a2a] whitespace-nowrap text-white"><MessagesSquare className="w-4 h-4" /> Mesaj{directUnread > 0 && <span className="absolute -right-1 -top-1 min-w-4 h-4 rounded-full px-1 text-[9px] font-bold text-white flex items-center justify-center" style={{ background: '#ffcc00', color: '#000' }}>{directUnread > 99 ? '99+' : directUnread}</span>}</button>}
+        </div>
+      )}
+      {chatEnabled && (
+        <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-[#0d0d0d]">
+          {['all', 'system', 'user', 'admin'].map((f) => (
+            <button key={f} onClick={() => setMsgFilter(f)} className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${msgFilter === f ? 'text-[#ffcc00]' : 'text-[#888] hover:text-white'}`} style={msgFilter === f ? { borderBottom: '2px solid #ffcc00', background: 'rgba(255, 204, 0, 0.08)' } : {}}>
+              {f === 'all' ? 'Tümü' : f === 'system' ? 'Sistem' : f === 'user' ? 'Kullanıcı' : 'Yönetici'}
+            </button>
+          ))}
+          {isOwner && <button onClick={clearAll} className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-[#ffcc00] hover:bg-white/5"><Sparkles className="w-3 h-3" /> Temizle</button>}
         </div>
       )}
       {!chatEnabled ? (
-        <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-6 text-[#888] bg-black">
           <MessageSquareOff className="w-10 h-10 mb-3" />
-          <p className="font-semibold">Sohbet kapalı</p>
+          <p className="font-semibold text-white">Sohbet kapalı</p>
           <p className="text-sm">Oda sahibi sohbeti kapatmış.</p>
         </div>
       ) : (
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
-        {loading ? <p className="text-center text-sm text-muted-foreground py-8">Yükleniyor...</p> :
-         messages.length === 0 ? <p className="text-center text-sm text-muted-foreground py-8">Henüz mesaj yok. İlk mesajı sen at! 🍿</p> :
-         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { const lower = (m.text || '').toLowerCase(); if (lower.includes('katıldı') || lower.includes('ayrıldı')) return false; } return true; }).map((m) => (
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2 bg-black" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
+        {loading ? <p className="text-center text-sm text-[#888] py-8">Yükleniyor...</p> :
+         messages.length === 0 ? <p className="text-center text-sm text-[#888] py-8">Henüz mesaj yok. İlk mesajı sen at! 🍿</p> :
+         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { const lower = (m.text || '').toLowerCase(); if (lower.includes('katıldı') || lower.includes('ayrıldı')) return false; } return true; }).filter((m) => { if (msgFilter === 'all') return true; if (msgFilter === 'system') return m.type === 'system'; if (msgFilter === 'user') return m.type === 'user'; if (msgFilter === 'admin') return profiles[m.user_id]?.role === 'admin'; return true; }).map((m) => (
             <div key={m.id} className={`flex gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
               {m.type === 'system' ? (
                 (() => {
@@ -208,7 +219,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                   const isRole = hasRole && /^\p{Extended_Pictographic}/u.test(cleanText);
                   return (
                     <span
-                      className={`text-xs px-3 py-1.5 rounded-full ${isRole ? 'font-bold neon-entrance' : 'text-muted-foreground bg-secondary/50'}`}
+                      className={`text-xs px-3 py-1.5 rounded-full ${isRole ? 'font-bold neon-entrance' : 'text-[#888] bg-[#1a1a1a]'}`}
                       style={isRole ? {
                         background: `linear-gradient(135deg, ${color}33, ${color}22)`,
                         color: color,
@@ -238,7 +249,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                    </div>
                    <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')} msgEffect={getRoleInfo(profiles[m.user_id] || m)?.msg_effect} msgColor={getRoleInfo(profiles[m.user_id] || m)?.color}>
                       {m.file_url && <Image src={m.file_url} alt="foto" className="rounded-lg max-w-[180px] max-h-44 object-cover mb-1 cursor-pointer block" fittingType="fit" onClick={() => setLightbox(m.file_url)} />}
-                      {m.text && (() => { const trimmed = m.text.trim(); const animEmojis = ['😂','❤️','🔥','👏','🎉','😍','😱','😢','👍','🍿','🎬','💀']; if (animEmojis.includes(trimmed) && trimmed.length <= 3) { const ac = ['😂','👏','😢','👍'].includes(trimmed) ? 'anim-emoji-bounce' : ['❤️','🎉','😍','🍿'].includes(trimmed) ? 'anim-emoji-pulse' : 'anim-emoji-shake'; return <span className={`text-3xl inline-block anim-emoji ${ac}`}>{trimmed}</span>; } return <p className="text-sm break-words bg-secondary/50 rounded-lg px-2.5 py-1.5 inline-block">{m.text}</p>; })()}
+                      {m.text && (() => { const trimmed = m.text.trim(); const animEmojis = ['😂','❤️','🔥','👏','🎉','😍','😱','😢','👍','🍿','🎬','💀']; if (animEmojis.includes(trimmed) && trimmed.length <= 3) { const ac = ['😂','👏','😢','👍'].includes(trimmed) ? 'anim-emoji-bounce' : ['❤️','🎉','😍','🍿'].includes(trimmed) ? 'anim-emoji-pulse' : 'anim-emoji-shake'; return <span className={`text-3xl inline-block anim-emoji ${ac}`}>{trimmed}</span>; } return <p className="text-sm break-words rounded-lg px-2.5 py-1.5 inline-block text-white" style={{ background: 'rgba(26, 26, 26, 0.9)', border: '1px solid rgba(255, 204, 0, 0.2)', borderLeft: '2px solid #ffcc00', borderBottom: '2px solid #ffcc00' }}>{m.text}</p>; })()}
                     </RoleMessageEffect>
                   </div>
                   {(isOwner || user?.id === m.user_id) && (
@@ -251,22 +262,22 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
           </div>
       )}
       {chatEnabled && autoDeleteMinutes > 0 && countdownText && (
-        <div className="px-3 py-1.5 bg-blue-500/10 border-t border-blue-500/20 text-center">
-          <p className="text-xs text-blue-400 font-semibold animate-pulse">⏱ Otomatik silme: {autoDeleteMinutes} dk (kalan: {countdownText})</p>
+        <div className="px-3 py-1.5 border-t border-white/10 text-center" style={{ background: 'rgba(255, 204, 0, 0.08)' }}>
+          <p className="text-xs font-semibold animate-pulse" style={{ color: '#ffcc00' }}>⏱ Otomatik silme: {autoDeleteMinutes} dk (kalan: {countdownText})</p>
         </div>
       )}
       {chatEnabled && showEmoji && (
         <EmojiPicker onSelect={(e) => { setText((t) => t + e); setShowEmoji(false); }} />
       )}
-      {chatEnabled && <form onSubmit={send} className="p-2.5 border-t border-border flex items-center gap-2">
-        <label className="p-2 rounded-lg hover:bg-secondary cursor-pointer">
+      {chatEnabled && <form onSubmit={send} className="p-2.5 border-t border-white/10 flex items-center gap-2 bg-black">
+        <label className="p-2 rounded-lg hover:bg-white/10 cursor-pointer text-white">
           <ImageIcon className="w-5 h-5" />
           <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhoto} disabled={uploading} />
         </label>
-        <button type="button" onClick={() => setShowEmoji(!showEmoji)} className="p-2 rounded-lg hover:bg-secondary"><Smile className="w-5 h-5" /></button>
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Mesaj yazın..." className="flex-1 bg-secondary/60 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" />
-        <button type="submit" disabled={!text.trim() || uploading} className="p-2.5 rounded-full bg-primary text-primary-foreground disabled:opacity-50"><Send className="w-4 h-4" /></button>
-        {uploading && <span className="text-xs text-muted-foreground animate-pulse shrink-0">...</span>}
+        <button type="button" onClick={() => setShowEmoji(!showEmoji)} className="p-2 rounded-lg hover:bg-white/10 text-white"><Smile className="w-5 h-5" /></button>
+        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Mesaj yazın..." className="flex-1 bg-[#1a1a1a] rounded-full px-4 py-2 text-sm outline-none text-white placeholder:text-[#666]" />
+        <button type="submit" disabled={!text.trim() || uploading} className="p-2.5 rounded-full disabled:opacity-50" style={{ background: '#ffcc00' }}><Send className="w-4 h-4 text-black" /></button>
+        {uploading && <span className="text-xs text-[#888] animate-pulse shrink-0">...</span>}
       </form>}
 
       {modTarget && (

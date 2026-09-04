@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import Hero from '@/components/movie/Hero';
 import ContentRow from '@/components/movie/ContentRow';
 import ActiveRooms from '@/components/movie/ActiveRooms';
+import CategoryRow from '@/components/movie/CategoryRow';
 import { SkeletonRow } from '@/components/movie/EmptyState';
 
 
@@ -37,20 +38,21 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-catalog text-white">
       <Hero movie={featured} />
-      <ActiveRooms />
-      <div className="mt-6">
+      <CategoryRow />
+      <div className="mt-4">
         {loading ? <><SkeletonRow /><SkeletonRow /><SkeletonRow /></> : (
           <>
-            <ContentRow title="Öne Çıkanlar" movies={rows.featured} />
-            <ContentRow title="Popüler Filmler" movies={rows.popular} />
-            <ContentRow title="Yeni Eklenenler" movies={rows.new} />
-            <ContentRow title="En Çok İzlenenler" movies={rows.most} />
-            <ContentRow title="Aksiyon" movies={rows.action} />
-            <ContentRow title="Bilim Kurgu" movies={rows.scifi} />
-            <ContentRow title="Komedi" movies={rows.comedy} />
-            <ContentRow title="Korku" movies={rows.horror} />
-            <ContentRow title="Dram" movies={rows.drama} />
-            <ContentRow title="Animasyon" movies={rows.anim} />
+            <ContentRow title="Popüler Filmler" movies={rows.popular} to="/filmler" />
+            <ActiveRooms />
+            <ContentRow title="Öne Çıkanlar" movies={rows.featured} to="/filmler" />
+            <ContentRow title="Yeni Eklenenler" movies={rows.new} to="/filmler" />
+            <ContentRow title="En Çok İzlenenler" movies={rows.most} to="/filmler" />
+            <ContentRow title="Aksiyon" movies={rows.action} to="/filmler?genre=Aksiyon" />
+            <ContentRow title="Bilim Kurgu" movies={rows.scifi} to="/filmler?genre=Bilim Kurgu" />
+            <ContentRow title="Komedi" movies={rows.comedy} to="/filmler?genre=Komedi" />
+            <ContentRow title="Korku" movies={rows.horror} to="/filmler?genre=Korku" />
+            <ContentRow title="Dram" movies={rows.drama} to="/filmler?genre=Dram" />
+            <ContentRow title="Animasyon" movies={rows.anim} to="/filmler?genre=Animasyon" />
           </>
         )}
       </div>
