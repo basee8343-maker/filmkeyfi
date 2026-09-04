@@ -21,7 +21,8 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, password
   };
 
   return (
-    <div className="absolute bottom-24 right-3 z-[60] max-h-[calc(100dvh-7rem-max(env(safe-area-inset-top),1rem))] w-64 overflow-y-auto rounded-2xl border border-border bg-card/95 p-3 shadow-2xl backdrop-blur-xl">
+    <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-2xl border border-border bg-card p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
       <div className="mb-3 flex items-center justify-between"><p className="font-bold">Oda Ayarları</p><button onClick={onClose} className="rounded-lg p-1.5 hover:bg-secondary"><X className="w-4 h-4" /></button></div>
       {!canMod ? <p className="text-sm text-muted-foreground">Bu ayarları yalnızca oda sahibi değiştirebilir.</p> : <div className="space-y-2">
         <button onClick={onPickMovie} className={button}><Film className="w-4 h-4 text-primary" /> Film Değiştir</button>
@@ -45,6 +46,7 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, password
         )}
       </div>}
       <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2"><button onClick={shareWhatsApp} className={button}><MessageCircle className="w-4 h-4 text-green-500" /> WhatsApp</button><button onClick={shareInstagram} className={button}><Instagram className="w-4 h-4 text-pink-500" /> Instagram</button></div>
+      </div>
     </div>
   );
 }
