@@ -30,11 +30,18 @@ export default async function(req) {
         ]
       }, '-created_date', 10).catch(() => []);
       const between = allConvos || [];
-      // Kullanıcının silmediği aktif bir sohbet varsa onu aç
-      const active = between.find((c) => !(c.deleted_for || []).includes(user.id));
-      if (active) return Response.json({ conversation: active });
+      // Mevcut sohbet varsa onu kullan — silinmişse bile geri aç (yeni oluşturma)
+      if (between.length > 0) {
+        const convo = between[0];
+        if ((convo.deleted_for || []).includes(user.id)) {
+          const newDeletedFor = (convo.deleted_for || []).filter((id) => id !== user.id);
+          await base44.asServiceRole.entities.Conversation.update(convo.id, { deleted_for: newDeletedFor });
+          return Response.json({ conversation: { ...convo, deleted_for: newDeletedFor } });
+        }
+        return Response.json({ conversation: convo });
+      }
 
-      // Yeni sohbet oluştur — eski conversationId kesinlikle kullanılmaz
+      // Hiç sohbet yoksa yeni oluştur
       const conversation = await base44.asServiceRole.entities.Conversation.create({
         user1_id: user.id, user1_name: userName, user1_avatar: userAvatar,
         user2_id: targetId, user2_name: targetName, user2_avatar: targetAvatar,
