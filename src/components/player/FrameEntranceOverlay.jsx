@@ -30,7 +30,7 @@ export default function FrameEntranceOverlay({ frame, avatar, name, title, isEnt
     : (phase === 'out' ? 'frame-exit-scale' : 'frame-entry-quick');
 
   return (
-    <div className="fixed inset-0 z-[200] pointer-events-none flex flex-col items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 z-[200] pointer-events-none flex flex-col items-center justify-start overflow-hidden pt-[max(env(safe-area-inset-top),10vh)] px-[max(env(safe-area-inset-left),1rem)]">
       {/* Hafif radial glow — siyah arka plan yok */}
       <div
         className="absolute inset-0"
@@ -110,7 +110,7 @@ export default function FrameEntranceOverlay({ frame, avatar, name, title, isEnt
 
       {/* Unvan + İsim + Aksiyon yazısı */}
       <div
-        className="absolute bottom-[14%] text-center w-full px-6"
+        className="relative text-center w-full px-6 mt-4"
         style={{ animation: phase === 'out' ? 'frame-text-fade-out 0.5s ease-out forwards' : 'frame-text-appear 0.6s ease-out 0.2s forwards', opacity: phase === 'out' ? undefined : 0 }}
       >
         {title && (

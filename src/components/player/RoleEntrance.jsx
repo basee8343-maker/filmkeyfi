@@ -166,7 +166,7 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
   const charAnim = current.isEntry ? 'celebration-char-in' : 'role-text-disappear';
 
   return (
-    <div className="fixed inset-0 z-[200] pointer-events-none flex items-center justify-center overflow-hidden" style={{ animation: `celebration-overlay-fade ${overlayDuration} ease-out forwards` }}>
+    <div className="fixed inset-0 z-[200] pointer-events-none flex items-center justify-start overflow-hidden pt-[max(env(safe-area-inset-top),10vh)] px-[max(env(safe-area-inset-left),1rem)]" style={{ animation: `celebration-overlay-fade ${overlayDuration} ease-out forwards` }}>
       <div className="absolute inset-0 bg-black/60" />
       <div className="absolute inset-0" style={{
         background: `radial-gradient(ellipse at center, ${current.color}30, transparent 65%)`,

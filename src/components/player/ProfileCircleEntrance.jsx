@@ -19,7 +19,7 @@ export default function ProfileCircleEntrance({ avatar, name, isEntry, onDone, t
   }, [isEntry, onDone, duration]);
 
   return (
-    <div className="fixed inset-0 z-[200] pointer-events-none flex flex-col items-center justify-center gap-5 overflow-hidden" style={{ animation: `admin-overlay-fade ${duration}ms ease-out forwards` }}>
+    <div className="fixed inset-0 z-[200] pointer-events-none flex flex-col items-center justify-start gap-5 overflow-hidden pt-[max(env(safe-area-inset-top),12vh)]" style={{ animation: `admin-overlay-fade ${duration}ms ease-out forwards` }}>
       <div className="absolute inset-0 bg-black/30" />
       <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${theme.glowBg}, transparent 60%)` }} />
 
