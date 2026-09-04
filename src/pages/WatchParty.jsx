@@ -10,7 +10,7 @@ import { Mic, MicOff, Crown, X, Eye, ArrowLeft } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
-import RoomControlPanel from '@/components/player/RoomControlPanel';
+
 import LiveKitDebugPanel from '@/components/player/LiveKitDebugPanel';
 import RoomDirectMessages from '@/components/player/RoomDirectMessages';
 import RoomNotifications from '@/components/player/RoomNotifications';
@@ -57,7 +57,6 @@ export default function WatchParty() {
   const seenRoomMessagesRef = useRef(new Set());
   const voice = useVoiceChat({ roomId: id, user, participants: room?.participants, voiceEnabled: !!room?.voice_enabled && voiceReady });
   const { messages: directUnread } = useSocialBadges(user?.id);
-  const [controlPanelOpen, setControlPanelOpen] = useState(false);
   const [dmNotif, setDmNotif] = useState(null);
   const [dmNotifLeaving, setDmNotifLeaving] = useState(false);
   const dmNotifTimer = useRef(null);
@@ -354,8 +353,8 @@ export default function WatchParty() {
       return;
     }
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx < 0) setControlPanelOpen(true);
-      else { setControlPanelOpen(false); setChatOpen(false); }
+      if (dx < 0) setChatOpen(true);
+      else setChatOpen(false);
     }
   };
 
@@ -409,7 +408,7 @@ export default function WatchParty() {
 
         {chatOpen && (
           <div className="absolute right-0 top-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] landscape:bottom-0 landscape:pt-0 z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] shadow-2xl backdrop-blur-xl">
-            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} />
+            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} directUnread={directUnread} />
           </div>
         )}
 
@@ -457,7 +456,6 @@ export default function WatchParty() {
       </div>
 
       <LiveKitDebugPanel voice={voice} />
-      <RoomControlPanel open={controlPanelOpen} onClose={() => setControlPanelOpen(false)} voice={voice} voiceEnabled={room.voice_enabled} unread={unread} directUnread={directUnread} settingsOpen={showSettings} chatOpen={chatOpen} directOpen={directOpen} viewersCount={visibleParticipants.length} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => { const next = !chatOpen; setChatOpen(next); if (next) setUnread(0); setDirectOpen(false); setShowViewers(false); setShowSettings(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} />
 
       <ConfirmDialog
         open={showPwRemoveConfirm}
