@@ -127,22 +127,12 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
     catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
-  if (!chatEnabled) {
-    return (
-      <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
-        <MessageSquareOff className="w-10 h-10 mb-3" />
-        <p className="font-semibold">Sohbet kapalı</p>
-        <p className="text-sm">Oda sahibi sohbeti kapatmış.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full min-h-0 flex flex-col bg-card/95 backdrop-blur">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-2">
-        <h3 className="font-bold flex items-center gap-2">💬 Sohbet <span className="text-xs text-muted-foreground font-normal">({messages.length})</span></h3>
+        <h3 className="font-bold flex items-center gap-2">💬 Sohbet {chatEnabled && <span className="text-xs text-muted-foreground font-normal">({messages.length})</span>}</h3>
         <div className="flex items-center gap-1.5">
-          {isOwner && (
+          {isOwner && chatEnabled && (
             <div className="relative">
               <button onClick={() => setShowAutoDeleteMenu(!showAutoDeleteMenu)} className="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400 text-xs font-semibold whitespace-nowrap">⏱ Oto-sil: {autoDeleteMinutes ? `${autoDeleteMinutes}dk` : 'Kapalı'}</button>
               {showAutoDeleteMenu && (
@@ -158,7 +148,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
               )}
             </div>
           )}
-          {isOwner && <button onClick={clearAll} className="px-2 py-1 rounded-lg bg-destructive/20 text-destructive text-xs font-semibold">TÜMÜNÜ SİL</button>}
+          {isOwner && chatEnabled && <button onClick={clearAll} className="px-2 py-1 rounded-lg bg-destructive/20 text-destructive text-xs font-semibold">TÜMÜNÜ SİL</button>}
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary"><X className="w-5 h-5" /></button>
         </div>
       </div>
@@ -169,65 +159,73 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
           {onDirect && <button onClick={onDirect} className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/60 text-xs font-semibold hover:bg-secondary whitespace-nowrap"><MessagesSquare className="w-4 h-4" /> Mesaj{directUnread > 0 && <span className="absolute -right-1 -top-1 min-w-4 h-4 rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground flex items-center justify-center">{directUnread > 99 ? '99+' : directUnread}</span>}</button>}
         </div>
       )}
+      {!chatEnabled ? (
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
+          <MessageSquareOff className="w-10 h-10 mb-3" />
+          <p className="font-semibold">Sohbet kapalı</p>
+          <p className="text-sm">Oda sahibi sohbeti kapatmış.</p>
+        </div>
+      ) : (
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
         {loading ? <p className="text-center text-sm text-muted-foreground py-8">Yükleniyor...</p> :
          messages.length === 0 ? <p className="text-center text-sm text-muted-foreground py-8">Henüz mesaj yok. İlk mesajı sen at! 🍿</p> :
          messages.map((m) => (
-           <div key={m.id} className={`flex gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
-             {m.type === 'system' ? (
-               (() => {
-                 const { text: cleanText, color, hasRole } = parseRoleMetadata(m.text);
-                 const isRole = hasRole && /^\p{Extended_Pictographic}/u.test(cleanText);
-                 return (
-                   <span
-                     className={`text-xs px-3 py-1.5 rounded-full ${isRole ? 'font-bold neon-entrance' : 'text-muted-foreground bg-secondary/50'}`}
-                     style={isRole ? {
-                       background: `linear-gradient(135deg, ${color}33, ${color}22)`,
-                       color: color,
-                       boxShadow: `0 0 10px -1px ${color}80`,
-                       border: `1px solid ${color}55`,
-                     } : {}}
-                   >
-                     {cleanText}
-                   </span>
-                 );
-               })()
-             ) : (
-               <>
-                 <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="shrink-0">
-                   {profiles[m.user_id]?.profile_frame ? <ProfileFrame frame={profiles[m.user_id].profile_frame} size="sm" avatar={profiles[m.user_id]?.avatar || m.user_avatar} name={m.user_name} /> : (profiles[m.user_id]?.avatar || m.user_avatar) ? <Image src={profiles[m.user_id]?.avatar || m.user_avatar} className="w-7 h-7 rounded-full object-cover" fittingType="fill" /> : <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold">{(m.user_name || '?')[0]}</span>}
-                 </Link>
-                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="text-xs font-semibold truncate hover:underline">
-                      <RoleNameEffect nameEffect={getRoleInfo(profiles[m.user_id] || m)?.name_effect} color={getRoleInfo(profiles[m.user_id] || m)?.color}>{m.user_name}{user?.id === m.user_id && ' (Sen)'}</RoleNameEffect>
-                    </Link>
-                    {profiles[m.user_id] && (profiles[m.user_id].display_role || profiles[m.user_id].custom_role?.name) && <RoleBadge user={profiles[m.user_id]} size="sm" showLabel={false} />}
+            <div key={m.id} className={`flex gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
+              {m.type === 'system' ? (
+                (() => {
+                  const { text: cleanText, color, hasRole } = parseRoleMetadata(m.text);
+                  const isRole = hasRole && /^\p{Extended_Pictographic}/u.test(cleanText);
+                  return (
+                    <span
+                      className={`text-xs px-3 py-1.5 rounded-full ${isRole ? 'font-bold neon-entrance' : 'text-muted-foreground bg-secondary/50'}`}
+                      style={isRole ? {
+                        background: `linear-gradient(135deg, ${color}33, ${color}22)`,
+                        color: color,
+                        boxShadow: `0 0 10px -1px ${color}80`,
+                        border: `1px solid ${color}55`,
+                      } : {}}
+                    >
+                      {cleanText}
+                    </span>
+                  );
+                })()
+              ) : (
+                <>
+                  <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="shrink-0">
+                    {profiles[m.user_id]?.profile_frame ? <ProfileFrame frame={profiles[m.user_id].profile_frame} size="sm" avatar={profiles[m.user_id]?.avatar || m.user_avatar} name={m.user_name} /> : (profiles[m.user_id]?.avatar || m.user_avatar) ? <Image src={profiles[m.user_id]?.avatar || m.user_avatar} className="w-7 h-7 rounded-full object-cover" fittingType="fill" /> : <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold">{(m.user_name || '?')[0]}</span>}
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                   <div className="flex items-center gap-1.5">
+                     <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="text-xs font-semibold truncate hover:underline">
+                       <RoleNameEffect nameEffect={getRoleInfo(profiles[m.user_id] || m)?.name_effect} color={getRoleInfo(profiles[m.user_id] || m)?.color}>{m.user_name}{user?.id === m.user_id && ' (Sen)'}</RoleNameEffect>
+                     </Link>
+                     {profiles[m.user_id] && (profiles[m.user_id].display_role || profiles[m.user_id].custom_role?.name) && <RoleBadge user={profiles[m.user_id]} size="sm" showLabel={false} />}
+                   </div>
+                   <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')} msgEffect={getRoleInfo(profiles[m.user_id] || m)?.msg_effect} msgColor={getRoleInfo(profiles[m.user_id] || m)?.color}>
+                      {m.file_url && <Image src={m.file_url} alt="foto" className="rounded-lg max-w-[180px] max-h-44 object-cover mb-1 cursor-pointer block" fittingType="fit" onClick={() => setLightbox(m.file_url)} />}
+                      {m.text && <p className="text-sm break-words bg-secondary/50 rounded-lg px-2.5 py-1.5 inline-block">{m.text}</p>}
+                    </RoleMessageEffect>
                   </div>
-                  <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')} msgEffect={getRoleInfo(profiles[m.user_id] || m)?.msg_effect} msgColor={getRoleInfo(profiles[m.user_id] || m)?.color}>
-                     {m.file_url && <Image src={m.file_url} alt="foto" className="rounded-lg max-w-[180px] max-h-44 object-cover mb-1 cursor-pointer block" fittingType="fit" onClick={() => setLightbox(m.file_url)} />}
-                     {m.text && <p className="text-sm break-words bg-secondary/50 rounded-lg px-2.5 py-1.5 inline-block">{m.text}</p>}
-                   </RoleMessageEffect>
-                 </div>
-                 {(isOwner || user?.id === m.user_id) && (
-                   <button onClick={() => del(m.id)} className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive" title={isOwner && user?.id !== m.user_id ? 'Sahip: herkesten sil' : 'Sil'}><Trash2 className="w-3.5 h-3.5" /></button>
-                 )}
-               </>
-             )}
-           </div>
-         ))}
-         </div>
-      {autoDeleteMinutes > 0 && countdownText && (
+                  {(isOwner || user?.id === m.user_id) && (
+                    <button onClick={() => del(m.id)} className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive" title={isOwner && user?.id !== m.user_id ? 'Sahip: herkesten sil' : 'Sil'}><Trash2 className="w-3.5 h-3.5" /></button>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+          </div>
+      )}
+      {chatEnabled && autoDeleteMinutes > 0 && countdownText && (
         <div className="px-3 py-1.5 bg-blue-500/10 border-t border-blue-500/20 text-center">
           <p className="text-xs text-blue-400 font-semibold animate-pulse">⏱ Otomatik silme: {autoDeleteMinutes} dk (kalan: {countdownText})</p>
         </div>
       )}
-      {showEmoji && (
+      {chatEnabled && showEmoji && (
         <div className="px-3 py-2 border-t border-border flex flex-wrap gap-1">
           {EMOJIS.map((e) => <button key={e} onClick={() => setText((t) => t + e)} className="text-xl hover:bg-secondary rounded p-1">{e}</button>)}
         </div>
       )}
-      <form onSubmit={send} className="p-3 border-t border-border flex items-center gap-2">
+      {chatEnabled && <form onSubmit={send} className="p-3 border-t border-border flex items-center gap-2">
         <label className="p-2 rounded-lg hover:bg-secondary cursor-pointer">
           <ImageIcon className="w-5 h-5" />
           <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhoto} disabled={uploading} />
@@ -236,7 +234,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
         <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Mesaj yazın..." className="flex-1 bg-secondary/60 rounded-full px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" />
         <button type="submit" disabled={!text.trim() || uploading} className="p-2.5 rounded-full bg-primary text-primary-foreground disabled:opacity-50"><Send className="w-4 h-4" /></button>
         {uploading && <span className="text-xs text-muted-foreground animate-pulse shrink-0">...</span>}
-      </form>
+      </form>}
 
       {modTarget && (
         <ChatUserMenu
