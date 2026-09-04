@@ -120,7 +120,7 @@ function MethodForm({ method, onSave, onClose }) {
   const submit = (e) => {
     e.preventDefault();
     const data = { provider_key: providerKey, display_name: displayName, type, enabled, sort_order: Number(sortOrder), description };
-    if (type === 'bank_transfer') Object.assign(data, { bank_name: bankName, account_holder: accountHolder, iban, branch, payment_instructions });
+    if (type === 'bank_transfer') Object.assign(data, { bank_name: bankName, account_holder: accountHolder, iban, branch, payment_instructions: paymentInstructions });
     if (type === 'card') Object.assign(data, { merchant_id: merchantId, test_mode: testMode });
     onSave(data);
   };
