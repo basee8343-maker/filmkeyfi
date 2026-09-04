@@ -19,7 +19,9 @@ export default async function(req) {
     const geo = await geoLookup(ip);
 
     // Önceki aktif oturum varsa ve bu cihazın oturumu değilse — hesap başka cihazdan açılıyor, admin paneline bildir
-    if (prevSession && deviceSession !== prevSession) {
+    // Admin hesapları için bu bildirim atlanır (admin birden fazla cihazdan giriş yapabilir)
+    const isAdmin = user.role === 'admin';
+    if (!isAdmin && prevSession && deviceSession !== prevSession) {
       await base44.asServiceRole.entities.AdminLog.create({
         admin_id: user.id, admin_name: userName,
         action: 'Hesap başka cihazdan açıldı', target: user.email || user.id,

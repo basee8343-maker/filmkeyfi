@@ -104,6 +104,8 @@ export default function AppLayout() {
       try {
         const u = await base44.auth.me();
         if (u?.is_banned) { triggerBanNotice('banned'); base44.auth.logout().catch(() => {}); window.location.href = '/login?banned=1'; return; }
+        // Admin hesapları için cihaz/session kontrolü atlanır — çoklu cihaz girişine izin verilir
+        if (u?.role === 'admin') return;
         const stored = localStorage.getItem('filmkeyfi_session_' + u.id);
         if (stored && u?.active_session_id && stored !== u.active_session_id) {
           triggerBanNotice('kicked');
