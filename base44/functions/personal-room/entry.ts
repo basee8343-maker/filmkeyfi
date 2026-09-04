@@ -18,6 +18,8 @@ export default async function(req) {
     }
 
     // Yeni kişisel oda oluştur
+    const savedMods = await base44.asServiceRole.entities.RoomMod.filter({ owner_id: user.id }, '-created_date', 100).catch(() => []);
+    const room_moderators = savedMods.map((m) => m.user_id);
     const room = await base44.asServiceRole.entities.Room.create({
       name: `${owner_name}'in Odası`,
       movie_id: '',
@@ -28,12 +30,14 @@ export default async function(req) {
       room_number: 0,
       max_users: 10,
       chat_enabled: true,
-      voice_enabled: false,
+      voice_enabled: true,
       is_playing: false,
       current_time: 0,
       status: 'active',
       hidden: false,
-      room_moderators: [],
+      room_moderators,
+      chat_auto_delete_minutes: 3,
+      chat_auto_delete_at: new Date(Date.now() + 3 * 60000).toISOString(),
       participants: [{ user_id: user.id, name: owner_name, avatar: user.avatar || '', muted: false, speaking: false }]
     });
 

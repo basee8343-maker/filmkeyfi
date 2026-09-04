@@ -234,6 +234,18 @@ export default async function(req) {
           user_id: target_id, title: 'Oda moderatörü oldunuz',
           body: `${room.name} odasında moderatör yetkisi verildi.`, type: 'room', link: `/oda/${room_id}`
         }).catch(() => {});
+        const existingMods = await base44.asServiceRole.entities.RoomMod.filter({ owner_id: room.owner_id, user_id: target_id }, '-created_date', 1).catch(() => []);
+        if (!existingMods[0]) {
+          await base44.asServiceRole.entities.RoomMod.create({
+            owner_id: room.owner_id, user_id: target_id, user_name: targetName
+          }).catch(() => {});
+        }
+      } else {
+        await base44.asServiceRole.entities.Notification.create({
+          user_id: target_id, title: 'Oda moderatörliği kaldırıldı',
+          body: `${room.name} odasında moderatör yetkiniz kaldırıldı.`, type: 'room', link: `/oda/${room_id}`
+        }).catch(() => {});
+        await base44.asServiceRole.entities.RoomMod.deleteMany({ owner_id: room.owner_id, user_id: target_id }).catch(() => {});
       }
       return Response.json({ ok: true });
     }

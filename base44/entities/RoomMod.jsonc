@@ -1,0 +1,29 @@
+{
+  "name": "RoomMod",
+  "type": "object",
+  "properties": {
+    "owner_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "owner_id",
+    "user_id"
+  ],
+  "rls": {
+    "read": {},
+    "create": {},
+    "update": {},
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

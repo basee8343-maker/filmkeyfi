@@ -34,6 +34,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const touchX = useRef(null);
+  const touchY = useRef(null);
   const [twofaOk, setTwofaOk] = useState(() => sessionStorage.getItem('admin2fa') === 'ok');
   const [twofaCode, setTwofaCode] = useState('');
   const [twofaErr, setTwofaErr] = useState('');
@@ -112,12 +113,12 @@ export default function AdminLayout() {
       </aside>
       {open && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setOpen(false)} />}
       <div className="flex-1 min-w-0 overflow-x-hidden"
-        onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
-        onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); if (dx > 55) setOpen(true); else if (dx < -55) setOpen(false); }}>
+        onTouchStart={(e) => { touchX.current = e.touches[0].clientX; touchY.current = e.touches[0].clientY; }}
+        onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); const dy = e.changedTouches[0].clientY - (touchY.current ?? 0); if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 80) setOpen(true); else if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx < -80) setOpen(false); }}>
           <header className="lg:hidden sticky top-0 z-20 glass border-b border-border min-h-14 flex items-center px-4 pb-2 pt-[max(env(safe-area-inset-top),0.75rem)]"
           style={{ touchAction: 'pan-y' }}
-          onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
-          onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); if (dx > 55) setOpen(true); else if (dx < -55) setOpen(false); }}>
+          onTouchStart={(e) => { touchX.current = e.touches[0].clientX; touchY.current = e.touches[0].clientY; }}
+          onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); const dy = e.changedTouches[0].clientY - (touchY.current ?? 0); if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 80) setOpen(true); else if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx < -80) setOpen(false); }}>
           <button onClick={() => setOpen(true)}><Menu className="w-6 h-6" /></button>
           <span className="ml-1 hidden min-[390px]:block font-bold whitespace-nowrap">Admin Panel</span>
           <div className="ml-auto flex min-w-0 items-center gap-1">

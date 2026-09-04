@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
+import { Trash2 } from 'lucide-react';
 
 const EVENT_LABELS = {
   new_user: 'Yeni Kullanıcı',
@@ -109,6 +110,11 @@ export default function AdminTelegram() {
     }
   };
 
+  const deleteAllLogs = async () => {
+    if (!confirm('Tüm Telegram bildirim geçmişi silinsin mi?')) return;
+    try { await base44.entities.TelegramLog.deleteMany({}); setHistory([]); toast({ title: 'Tüm geçmiş silindi' }); }
+    catch { toast({ title: 'Silinemedi', variant: 'destructive' }); }
+  };
   const delLog = async () => {
     try { await call({ action: 'delete_log', log_id: deleteLog.id }); toast({ title: 'Silindi' }); setDeleteLog(null); load(); }
     catch (e) { toast({ title: 'Silinemedi', variant: 'destructive' }); }
@@ -206,6 +212,7 @@ export default function AdminTelegram() {
       {/* History tab */}
       {tab === 'history' && (
         <div className="space-y-2">
+          {history.length > 0 && <div className="flex justify-end mb-2"><button onClick={deleteAllLogs} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/15 text-destructive text-xs font-semibold border border-destructive/30"><Trash2 className="w-3.5 h-3.5" /> Tümünü Sil</button></div>}
           {history.length === 0 ? <p className="text-sm text-muted-foreground text-center py-8">Henüz Telegram bildirim geçmişi yok.</p> :
             history.map((log) => (
               <div key={log.id} className="bg-card border border-border rounded-xl p-3 flex items-start gap-3">

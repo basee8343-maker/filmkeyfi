@@ -252,6 +252,24 @@ export default function WatchParty() {
     return () => { unsub(); clearTimeout(dmNotifTimer.current); };
   }, [user?.id]);
 
+  useEffect(() => {
+    if (!user?.id) return;
+    const onVisible = async () => {
+      if (document.visibilityState !== 'visible') return;
+      if (!joinedRef.current) return;
+      try {
+        const presence = await base44.entities.UserPresence.filter({ user_id: user.id }, '-created_date', 1);
+        const rec = presence[0];
+        if (rec && !rec.online) {
+          toast({ title: 'Çevrim dışı olduğunuz için ana sayfaya yönlendirildiniz', variant: 'destructive' });
+          navigate('/');
+        }
+      } catch {}
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [user?.id]);
+
   const isOwner = user?.id === room?.owner_id;
   const isMod = user?.role === 'admin' || user?.role === 'moderator';
   const canMod = isOwner || isMod || (room?.room_moderators || []).includes(user?.id);
@@ -421,7 +439,7 @@ export default function WatchParty() {
     const t = e.changedTouches[0];
     const dx = t.clientX - touchStart.current.x;
     const dy = t.clientY - touchStart.current.y;
-    if (canMod && dy > 80 && Math.abs(dy) > Math.abs(dx) * 1.5) {
+    if (canMod && dy > 80 && Math.abs(dy) > Math.abs(dx) * 1.5 && !chatOpen && !showSettings && !directOpen && !showViewers) {
       setMoviePickerOpen(true);
       return;
     }

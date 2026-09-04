@@ -31,11 +31,13 @@ export default async function(req) {
       return Response.json({ error: 'sohbet kapalı' }, { status: 403 });
     }
 
-    // Rate limit: 15 mesaj / 30 saniye / kullanıcı
-    const key = 'chat:' + user.id;
-    const rl = await rateLimit(base44, key, user.id, 15, 30000);
-    if (!rl.allowed) {
-      return Response.json({ error: 'çok hızlı mesaj gönderiyorsunuz' }, { status: 429 });
+    // Rate limit: 15 mesaj / 30 saniye / kullanıcı (admin/mod muaf)
+    if (!isMod) {
+      const key = 'chat:' + user.id;
+      const rl = await rateLimit(base44, key, user.id, 15, 30000);
+      if (!rl.allowed) {
+        return Response.json({ error: 'çok hızlı mesaj gönderiyorsunuz' }, { status: 429 });
+      }
     }
 
     // XSS sanitizasyonu
@@ -43,7 +45,7 @@ export default async function(req) {
     if (!clean) return Response.json({ error: 'boş mesaj' }, { status: 400 });
     const name = user.username || user.full_name || 'Kullanıcı';
     // Küfür/argo filtresi — mesajı engeller, yönetici paneline düşürür
-    const badWords = findProfanity(clean);
+    const badWords = isMod ? [] : findProfanity(clean);
     if (badWords.length) {
       await base44.asServiceRole.entities.Report.create({
         reporter_id: user.id, reporter_name: name,

@@ -51,6 +51,8 @@ export default async function(req) {
       chat_enabled: chat_enabled !== false,
       voice_enabled: !!voice_enabled,
       is_playing: false, current_time: 0, status: 'active', hidden: !!hidden,
+      chat_auto_delete_minutes: 3,
+      chat_auto_delete_at: new Date(Date.now() + 3 * 60000).toISOString(),
       participants: [{ user_id: user.id, name: owner_name, avatar: user.avatar || '', muted: false, speaking: false }]
     });
     await base44.asServiceRole.entities.RoomMessage.create({

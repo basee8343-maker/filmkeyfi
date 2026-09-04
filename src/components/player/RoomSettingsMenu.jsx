@@ -63,12 +63,17 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, particip
           <div className="space-y-1.5">
             <p className="text-xs font-bold text-muted-foreground px-1">Seviye Yönetimi (1-100)</p>
             <div className="rounded-xl border border-border bg-secondary/40 p-2 space-y-1.5 max-h-40 overflow-y-auto">
-              {participants.filter((p) => p.user_id !== room.owner_id).map((p) => (
-                <div key={p.user_id} className="flex items-center gap-2">
-                  <span className="text-xs truncate flex-1">{p.name}</span>
-                  <input type="number" min={1} max={100} defaultValue={roomLevels?.[p.user_id] || 1} onBlur={(e) => onSetLevel(p.user_id, parseInt(e.target.value) || 1)} className="w-16 rounded-lg bg-secondary px-2 py-1 text-xs outline-none" />
-                </div>
-              ))}
+              {participants.filter((p) => p.user_id !== room.owner_id).map((p) => {
+                const lvl = roomLevels?.[p.user_id] || 1;
+                return (
+                  <div key={p.user_id} className="flex items-center gap-2">
+                    <span className="text-xs truncate flex-1">{p.name}</span>
+                    <button onClick={() => onSetLevel(p.user_id, Math.max(1, lvl - 1))} className="w-6 h-6 rounded-lg bg-secondary text-xs font-bold">-</button>
+                    <span className="text-xs font-bold w-8 text-center">{lvl}</span>
+                    <button onClick={() => onSetLevel(p.user_id, Math.min(100, lvl + 1))} className="w-6 h-6 rounded-lg bg-secondary text-xs font-bold">+</button>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
