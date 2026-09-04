@@ -202,30 +202,8 @@ export default function Register() {
           <ArrowLeft className="w-4 h-4" /> Geri Dön
         </button>
 
-        {/* Stepper */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between max-w-2xl mx-auto">
-            {[
-              { n: 1, label: "Hesap Bilgileri" },
-              { n: 2, label: "Üyelik Seçimi" },
-              { n: 3, label: "Ödeme & Aktivasyon" },
-            ].map((s, i) => (
-              <React.Fragment key={s.n}>
-                <div className="flex flex-col items-center gap-1.5">
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${s.n === 1 ? "bg-[#e50914] text-white" : "bg-[#2a2a2a] text-[#a0a0a0]"}`}>
-                    {s.n}
-                  </div>
-                  <span className={`text-xs ${s.n === 1 ? "text-white" : "text-[#a0a0a0]"}`}>{s.label}</span>
-                </div>
-                {i < 2 && <div className={`flex-1 h-0.5 mx-2 mb-5 ${s.n < 2 ? "bg-[#e50914]" : "bg-[#2a2a2a]"}`} />}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-
-        {/* İçerik: 2 kolon */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Sol: Form */}
+        {/* İçerik */}
+        <div className="max-w-md mx-auto">
           <div className="bg-[#141414]/95 backdrop-blur-sm rounded-2xl border border-[#2a2a2a] p-6 shadow-2xl">
             <h2 className="text-xl font-bold text-white mb-1">Hesap Oluştur</h2>
             <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">⚠️ Hesabınız admin onayından sonra aktif olacaktır.</div>
@@ -296,37 +274,6 @@ export default function Register() {
             </form>
           </div>
 
-          {/* Sağ: Üyelik kartı */}
-          <div className="flex flex-col gap-4">
-            <div className="relative bg-[#141414]/95 backdrop-blur-sm rounded-2xl border-2 border-[#e50914] p-6 shadow-2xl">
-              <div className="absolute -top-3 left-6 px-3 py-1 bg-[#e50914] text-white text-xs font-bold rounded-full">ÖNERİLEN</div>
-              <div className="flex items-start justify-between mb-4 mt-2">
-                <div>
-                  <h3 className="text-lg font-bold text-white">Film Keyfi Üyeliği</h3>
-                  <p className="text-2xl font-bold text-white mt-1">50 TL <span className="text-sm font-normal text-[#a0a0a0]">/ Üyelik</span></p>
-                </div>
-                <div className="w-8 h-8 rounded-full bg-[#e50914] flex items-center justify-center">
-                  <Check className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <ul className="space-y-3 mb-6">
-                {pricingFeatures.map((f) => (
-                  <li key={f} className="flex items-center gap-2 text-sm text-[#d0d0d0]">
-                    <CheckCircle2 className="w-4 h-4 text-[#e50914] shrink-0" /> {f}
-                  </li>
-                ))}
-              </ul>
-              <p className="text-center text-xs text-[#a0a0a0] py-2">Kayıt olduktan sonra abonelik seçebilirsiniz.</p>
-            </div>
-
-            {/* Alt bildirim */}
-            <div className="bg-[#141414]/95 backdrop-blur-sm rounded-xl border border-[#2a2a2a] p-4 flex items-start gap-3">
-              <ShieldCheck className="w-5 h-5 text-[#e50914] shrink-0 mt-0.5" />
-              <p className="text-xs text-[#a0a0a0] leading-relaxed">
-                Ödeme yaptıktan sonra aboneliğiniz otomatik olarak aktif olacaktır. Admin onayı gerekmez.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

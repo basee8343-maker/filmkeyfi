@@ -2,11 +2,20 @@
   "name": "PaymentMethod",
   "type": "object",
   "properties": {
-    "provider": {
+    "provider_key": {
       "type": "string"
     },
     "display_name": {
       "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "bank_transfer",
+        "card",
+        "other"
+      ],
+      "default": "other"
     },
     "enabled": {
       "type": "boolean",
@@ -18,10 +27,32 @@
     },
     "description": {
       "type": "string"
+    },
+    "bank_name": {
+      "type": "string"
+    },
+    "account_holder": {
+      "type": "string"
+    },
+    "iban": {
+      "type": "string"
+    },
+    "branch": {
+      "type": "string"
+    },
+    "payment_instructions": {
+      "type": "string"
+    },
+    "merchant_id": {
+      "type": "string"
+    },
+    "test_mode": {
+      "type": "boolean",
+      "default": false
     }
   },
   "required": [
-    "provider",
+    "provider_key",
     "display_name"
   ],
   "rls": {

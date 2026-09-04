@@ -48,12 +48,8 @@ const navGroups = [
   },
   {
     title: 'Ödemeler',
-    tree: true,
     items: [
-      { to: '/admin/paketler', label: 'Abonelik Ürünleri', icon: PackageIcon },
-      { to: '/admin/odemeler', label: 'Ödeme Geçmişi', icon: CreditCard },
-      { to: '/admin/abonelikler', label: 'Abonelikler', icon: CreditCard },
-      { to: '/admin/odeme-ayarlari', label: 'Ödeme Ayarları', icon: Settings },
+      { to: '/admin/odeme', label: 'Ödemeler & Abonelikler', icon: CreditCard },
     ],
   },
 ];

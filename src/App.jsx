@@ -26,21 +26,18 @@ import AdminUsers from '@/pages/admin/AdminUsers';
 import AdminMovies from '@/pages/admin/AdminMovies';
 
 import AdminSupport from '@/pages/admin/AdminSupport';
-import AdminPackages from '@/pages/admin/AdminPackages';
+import AdminPayments from '@/pages/admin/AdminPayments';
 import AdminNotifications from '@/pages/admin/AdminNotifications';
 import AdminTelegram from '@/pages/admin/AdminTelegram';
 import AdminCategories from '@/pages/admin/AdminCategories';
 import OpenRooms from '@/pages/OpenRooms';
 import AdminReports from '@/pages/admin/AdminReports';
 import AdminUserReports from '@/pages/admin/AdminUserReports';
-import AdminShopier from '@/pages/admin/AdminShopier';
-import AdminPaymentSettings from '@/pages/admin/AdminPaymentSettings';
-import AdminPaymentHistory from '@/pages/admin/AdminPaymentHistory';
-import AdminSubscriptions from '@/pages/admin/AdminSubscriptions';
 import AdminSettings from '@/pages/admin/AdminSettings';
 import AdminSecurity from '@/pages/admin/AdminSecurity';
 import Subscription from '@/pages/Subscription';
 import PaymentResult from '@/pages/PaymentResult';
+import PaymentHistory from '@/pages/PaymentHistory';
 import MaintenanceMode from '@/pages/MaintenanceMode';
 import { ThemeProvider } from '@/lib/ThemeContext';
 import UserProfile from '@/pages/UserProfile';
@@ -109,6 +106,7 @@ const AuthenticatedApp = () => {
           <Route path="/kullanici/:id" element={<UserProfile />} />
           <Route path="/güvenlik-protokolü" element={<SecurityProtocol />} />
           <Route path="/abonelik" element={<Subscription />} />
+          <Route path="/odeme-gecmisim" element={<PaymentHistory />} />
           <Route path="/odeme/basarili" element={<PaymentResult />} />
           <Route path="/odeme/basarisiz" element={<PaymentResult />} />
           <Route path="/bakim" element={<MaintenanceMode />} />
@@ -122,11 +120,7 @@ const AuthenticatedApp = () => {
           <Route path="kategoriler" element={<AdminCategories />} />
 
           <Route path="destek" element={<AdminSupport />} />
-          <Route path="paketler" element={<AdminPackages />} />
-          <Route path="odemeler" element={<AdminPaymentHistory />} />
-          <Route path="abonelikler" element={<AdminSubscriptions />} />
-          <Route path="shopier" element={<AdminShopier />} />
-          <Route path="odeme-ayarlari" element={<AdminPaymentSettings />} />
+          <Route path="odeme" element={<AdminPayments />} />
           <Route path="bildirimler" element={<AdminNotifications />} />
           <Route path="telegram" element={<AdminTelegram />} />
           <Route path="guvenlik" element={<AdminSecurity />} />

@@ -1,0 +1,47 @@
+{
+  "name": "PaymentProviderConfig",
+  "type": "object",
+  "properties": {
+    "provider_key": {
+      "type": "string"
+    },
+    "merchant_key": {
+      "type": "string"
+    },
+    "merchant_salt": {
+      "type": "string"
+    },
+    "config": {
+      "type": "object"
+    },
+    "test_mode": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "provider_key"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
