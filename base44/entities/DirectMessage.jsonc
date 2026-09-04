@@ -63,11 +63,6 @@
         },
         {
           "data.participants": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
         }
       ]
     },
@@ -85,9 +80,7 @@
           "data.recipient_id": "{{user.id}}"
         },
         {
-          "user_condition": {
-            "role": "admin"
-          }
+          "data.participants": "{{user.id}}"
         }
       ]
     },
@@ -97,9 +90,10 @@
           "data.sender_id": "{{user.id}}"
         },
         {
-          "user_condition": {
-            "role": "admin"
-          }
+          "data.recipient_id": "{{user.id}}"
+        },
+        {
+          "data.participants": "{{user.id}}"
         }
       ]
     }
