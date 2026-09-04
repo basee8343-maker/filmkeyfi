@@ -127,8 +127,7 @@ export default async function(req) {
       return Response.json({ message });
     }
 
-    // delete_conversation: Sohbeti SADECE bu kullanıcı için sil
-    // Karşı tarafın sohbeti ve mesajları etkilenmez
+    // delete_conversation: Sohbeti SADECE bu kullanıcı için sil + tüm mesajları temizle (clean slate)
     if (action === 'delete_conversation') {
       const conversationId = String(body.conversation_id || '');
       const conversation = await base44.asServiceRole.entities.Conversation.get(conversationId).catch(() => null);
@@ -136,7 +135,26 @@ export default async function(req) {
       if (!(conversation.members || []).includes(user.id)) return Response.json({ error: 'yetkisiz' }, { status: 403 });
       const deletedFor = [...new Set([...(conversation.deleted_for || []), user.id])];
       await base44.asServiceRole.entities.Conversation.update(conversationId, { deleted_for: deletedFor });
+      // Tüm mesajları bu kullanıcı için sil — tekrar açınca eski mesajlar görünmesin
+      const messages = await base44.asServiceRole.entities.ChatMessage.filter({ conversation_id: conversationId }, 'created_date', 500).catch(() => []);
+      if (messages.length) {
+        await base44.asServiceRole.entities.ChatMessage.bulkUpdate(messages.map((m) => ({ id: m.id, deleted_for: [...new Set([...(m.deleted_for || []), user.id])] })));
+      }
       return Response.json({ ok: true });
+    }
+
+    // toggle_offline: Bu sohbette çevrim dışı görün (sadece bu sohbet, odalar etkilenmez)
+    if (action === 'toggle_offline') {
+      const conversationId = String(body.conversation_id || '');
+      const conversation = await base44.asServiceRole.entities.Conversation.get(conversationId).catch(() => null);
+      if (!conversation) return Response.json({ error: 'Sohbet bulunamadı' }, { status: 404 });
+      if (!(conversation.members || []).includes(user.id)) return Response.json({ error: 'yetkisiz' }, { status: 403 });
+      const offlineFor = conversation.offline_for || [];
+      const newOfflineFor = offlineFor.includes(user.id)
+        ? offlineFor.filter((id) => id !== user.id)
+        : [...offlineFor, user.id];
+      await base44.asServiceRole.entities.Conversation.update(conversationId, { offline_for: newOfflineFor });
+      return Response.json({ ok: true, offline_for: newOfflineFor });
     }
 
     // delete_message: Tek mesajı SADECE bu kullanıcı için sil

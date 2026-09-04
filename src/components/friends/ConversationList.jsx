@@ -16,8 +16,11 @@ export default function ConversationList({ conversations, userId, onOpen, onHide
   }).sort((a, b) => new Date(b.conversation.last_message_at || b.conversation.updated_date || 0) - new Date(a.conversation.last_message_at || a.conversation.updated_date || 0));
   if (!chats.length) return <p className="py-16 text-center text-sm text-muted-foreground">Henüz sohbetiniz yok.</p>;
   return <div>{chats.map(({ conversation, name, avatar, otherId, unread }) => {
-    const online = isOnline ? isOnline(otherId) : false;
+    // Çevrim dışı mod: arkadaş bu sohbette offline görünüyorsa
+    const friendOffline = (conversation.offline_for || []).includes(otherId);
+    const online = !friendOffline && isOnline ? isOnline(otherId) : false;
     return <div key={conversation.id} className="relative overflow-hidden border-b border-border">
+      {/* Sil butonu — sadece swipe ile görünür */}
       <button
         onClick={(e) => { e.stopPropagation(); e.preventDefault(); onHide(conversation); }}
         onTouchEnd={(e) => e.stopPropagation()}

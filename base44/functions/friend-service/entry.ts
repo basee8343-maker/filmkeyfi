@@ -112,7 +112,7 @@ export default async function(req) {
       } else {
         if (!(friendship.blocked_by || []).includes(user.id)) return Response.json({ error: 'Bu engeli kaldıramazsınız' }, { status: 403 });
         const blockedBy = (friendship.blocked_by || []).filter((id) => id !== user.id);
-        await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: blockedBy.length ? 'blocked' : 'removed', blocked_by: blockedBy });
+        await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: blockedBy.length ? 'blocked' : 'accepted', blocked_by: blockedBy });
       }
       return Response.json({ ok: true });
     }
