@@ -43,7 +43,6 @@ export default function ConversationList({ conversations, userId, onOpen, onHide
         }}
         onClick={() => {
           if (swipingRef.current) return;
-          if (swiped === conversation.id) { setSwiped(null); return; }
           onOpen(conversation);
         }}
         className={`relative z-10 w-full flex items-center gap-3 px-4 py-4 cursor-pointer transition-transform bg-background ${swiped === conversation.id ? '-translate-x-20' : 'translate-x-0'} ${unread > 0 ? 'bg-primary/5' : ''}`}
