@@ -1,6 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Bell, Menu, X, LogOut, Shield, Smartphone, Headphones } from 'lucide-react';
-import DownloadButtons from '@/components/DownloadButtons';
+import { Search, Bell, Menu, X, LogOut, Shield, Headphones } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
@@ -121,10 +120,6 @@ export default function Navbar() {
             className="block px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground flex items-center gap-2 hover:bg-secondary">
             <Shield className="w-4 h-4" /> Güvenlik Protokolü
           </Link>
-          <div className="pt-2 mt-2 border-t border-border">
-            <p className="px-3 py-1.5 text-xs font-semibold text-muted-foreground flex items-center gap-2"><Smartphone className="w-4 h-4" /> Telefona İndir</p>
-            <DownloadButtons variant="dark" />
-          </div>
           <button onClick={logout} className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-destructive flex items-center gap-2">
             <LogOut className="w-4 h-4" /> Çıkış Yap
           </button>
