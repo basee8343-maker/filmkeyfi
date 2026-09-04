@@ -111,14 +111,15 @@ export default function useDirectMessages(friendshipId) {
 
   const clearAll = useCallback(async () => {
     if (!friendshipId || !userId) return;
+    setMessages([]);
     try {
       await base44.functions.invoke('friend-service', { action: 'clear_chat', friendship_id: friendshipId });
-      setMessages([]);
       window.dispatchEvent(new Event('social-badges-refresh'));
     } catch (err) {
+      load();
       toast({ title: 'Temizlenemedi', description: err.response?.data?.error || err.message, variant: 'destructive' });
     }
-  }, [friendshipId, userId, toast]);
+  }, [friendshipId, userId, toast, load]);
 
   return { messages, loading, sending, send, markRead, del, clearAll };
 }
