@@ -35,8 +35,9 @@ export default async function(req) {
         const convo = between[0];
         if ((convo.deleted_for || []).includes(user.id)) {
           const newDeletedFor = (convo.deleted_for || []).filter((id) => id !== user.id);
-          await base44.asServiceRole.entities.Conversation.update(convo.id, { deleted_for: newDeletedFor });
-          return Response.json({ conversation: { ...convo, deleted_for: newDeletedFor } });
+          // Clean slate: son mesajı temizle — tekrar açınca eski mesaj görünmesin
+          await base44.asServiceRole.entities.Conversation.update(convo.id, { deleted_for: newDeletedFor, last_message_text: '', last_message_at: null });
+          return Response.json({ conversation: { ...convo, deleted_for: newDeletedFor, last_message_text: '', last_message_at: null } });
         }
         return Response.json({ conversation: convo });
       }
