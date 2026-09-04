@@ -407,49 +407,51 @@ export default function WatchParty() {
         </div>
 
         {chatOpen && (
-          <div className="absolute right-0 top-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] landscape:bottom-0 landscape:pt-0 z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] shadow-2xl backdrop-blur-xl">
+          <div className="absolute right-0 top-0 bottom-0 z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] pb-[max(env(safe-area-inset-bottom),0.5rem)] shadow-2xl backdrop-blur-xl"
+            onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+            onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setChatOpen(false); }}
+          >
             <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} directUnread={directUnread} />
           </div>
         )}
 
-        {directOpen && <div className="absolute inset-x-0 top-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-[70]"><RoomDirectMessages onClose={() => setDirectOpen(false)} /></div>}
+        {directOpen && (
+          <div className="absolute right-0 top-0 bottom-0 z-[70] w-full max-w-sm"
+            onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+            onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setDirectOpen(false); }}
+          >
+            <RoomDirectMessages onClose={() => setDirectOpen(false)} />
+          </div>
+        )}
 
         {showViewers && (
-          <div className="absolute bottom-24 right-3 bg-card/95 border border-border rounded-xl p-3 z-[60] w-56 max-h-[65%] overflow-y-auto shadow-2xl backdrop-blur-xl">
-            <div className="flex items-center justify-between mb-2">
-              <p className="font-semibold text-sm">İzleyiciler</p>
-              <button onClick={() => setShowViewers(false)} className="text-muted-foreground"><X className="w-4 h-4" /></button>
+          <div className="absolute top-[max(env(safe-area-inset-top),3.5rem)] right-3 bg-card/95 border border-border rounded-xl p-2 z-[60] w-40 max-h-[55vh] overflow-y-auto shadow-2xl backdrop-blur-xl">
+            <div className="flex items-center justify-between mb-1.5 px-0.5">
+              <p className="font-semibold text-xs">İzleyiciler</p>
+              <button onClick={() => setShowViewers(false)} className="text-muted-foreground"><X className="w-3.5 h-3.5" /></button>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               {visibleParticipants.map((p) => {
                 const prof = viewerProfiles[p.user_id];
                 const avatar = p.avatar || prof?.avatar;
-                const speaking = p.user_id === user.id ? voice.localSpeaking : voice.speakingIds.includes(p.user_id);
                 const micActive = voice.participantMicStates[p.user_id] ?? false;
                 return (
-                  <div key={p.user_id} className="flex items-center gap-2 text-sm">
+                  <div key={p.user_id} className="flex items-center gap-1.5 text-xs py-0.5">
                     <Link to={`/kullanici/${p.user_id}`} className="shrink-0">
-                      {prof?.profile_frame ? (
-                        <ProfileFrame frame={prof.profile_frame} size="sm" avatar={avatar} name={p.name} />
-                      ) : (
-                        avatar ? <Image src={avatar} className={`w-7 h-7 rounded-full object-cover ${speaking ? 'speaking-glow' : ''}`} fittingType="fill" /> : <span className={`w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold ${speaking ? 'speaking-glow' : ''}`}>{(p.name || '?')[0]}</span>
-                      )}
+                      {avatar ? <Image src={avatar} className="w-6 h-6 rounded-full object-cover" fittingType="fill" /> : <span className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[10px] font-bold">{(p.name || '?')[0]}</span>}
                     </Link>
-                    <Link to={`/kullanici/${p.user_id}`} className="flex-1 truncate hover:underline">{p.name}{p.user_id === room.owner_id && <Crown className="w-3 h-3 text-amber-400 inline ml-1" />}</Link>
-                    {(viewerProfiles[p.user_id]?.display_role || viewerProfiles[p.user_id]?.custom_role?.name) && <RoleBadge user={viewerProfiles[p.user_id]} size="sm" showLabel={false} />}
-                    {micActive ? <Mic className="w-3.5 h-3.5 text-green-400 shrink-0" /> : <MicOff className="w-3.5 h-3.5 text-red-400 shrink-0" />}
-                    {canMod && p.user_id !== user.id && room.voice_enabled && (
-                      <button onClick={() => toggleMuteUser(p.user_id)} className={`p-1 rounded shrink-0 ${p.muted ? 'text-red-400' : 'text-green-400'}`} title={p.muted ? 'Mikrofonu aç' : 'Mikrofonu kapat'}>
+                    <Link to={`/kullanici/${p.user_id}`} className="flex-1 truncate min-w-0">{p.name}{p.user_id === room.owner_id && <Crown className="w-3 h-3 text-amber-400 inline ml-0.5 shrink-0" />}</Link>
+                    {canMod && p.user_id !== user.id && room.voice_enabled ? (
+                      <button onClick={() => toggleMuteUser(p.user_id)} className={`p-0.5 rounded shrink-0 ${p.muted ? 'text-red-400' : 'text-green-400'}`} title={p.muted ? 'Mikrofonu aç' : 'Mikrofonu kapat'}>
                         {p.muted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
                       </button>
+                    ) : (
+                      micActive ? <Mic className="w-3.5 h-3.5 text-green-400 shrink-0" /> : <MicOff className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                     )}
-                    {canMod && p.user_id !== user.id && <button onClick={() => banUser(p.user_id)} className="text-xs text-red-400 shrink-0">Yasakla</button>}
-                    {canMod && p.user_id !== user.id && <button onClick={() => removeUser(p.user_id)} className="text-xs text-destructive shrink-0">Çıkar</button>}
                   </div>
                 );
               })}
             </div>
-
           </div>
         )}
         <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} />
