@@ -117,8 +117,8 @@ export const AuthProvider = ({ children }) => {
           const res = await base44.functions.invoke('register-session', { connection_type: detectConnectionType() });
           if (res?.data?.session_id) localStorage.setItem(sessionKey, res.data.session_id);
         } catch {}
-      } else if (currentUser.active_session_id && storedSession !== currentUser.active_session_id) {
-        // Hesap başka cihazdan açılmış — bu cihazı kapat
+      } else if (currentUser.role !== 'admin' && currentUser.active_session_id && storedSession !== currentUser.active_session_id) {
+        // Hesap başka cihazdan açılmış — bu cihazı kapat (admin hariç)
         await base44.auth.logout();
         localStorage.removeItem(sessionKey);
         window.location.href = '/login?kicked=1';

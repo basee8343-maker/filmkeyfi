@@ -34,32 +34,53 @@ export default async function(req) {
       }).catch(() => {});
     }
 
-    // Önceki aktif oturumları pasife çek
-    if (prevSession) {
-      await base44.asServiceRole.entities.UserSession.updateMany(
-        { user_id: user.id, status: 'active' },
-        { $set: { status: 'inactive', ended_at: new Date().toISOString() } }
-      ).catch(() => {});
+    // Admin hesapları için önceki oturumlar pasife çekilmez ve active_session_id güncellenmez
+    // — admin birden fazla cihazdan aynı anda giriş yapabilir
+    if (!isAdmin) {
+      if (prevSession) {
+        await base44.asServiceRole.entities.UserSession.updateMany(
+          { user_id: user.id, status: 'active' },
+          { $set: { status: 'inactive', ended_at: new Date().toISOString() } }
+        ).catch(() => {});
+      }
+
+      // Yeni oturum kaydı oluştur
+      await base44.asServiceRole.entities.UserSession.create({
+        user_id: user.id,
+        user_name: userName,
+        session_id: sessionId,
+        ip, last_ip: ip,
+        country: geo.country, city: geo.city, region: geo.region, isp: geo.isp,
+        device_type: dev.deviceType, os: dev.os, browser: dev.browser,
+        model: dev.model || '', connection_type: connectionType,
+        first_login: new Date().toISOString(),
+        last_active: new Date().toISOString(),
+        status: 'active'
+      }).catch(() => {});
+
+      await base44.asServiceRole.entities.User.update(user.id, {
+        active_session_id: sessionId,
+        last_login: new Date().toISOString()
+      });
+    } else {
+      // Admin için sadece yeni oturum kaydı oluştur (öncekileri kapatma)
+      await base44.asServiceRole.entities.UserSession.create({
+        user_id: user.id,
+        user_name: userName,
+        session_id: sessionId,
+        ip, last_ip: ip,
+        country: geo.country, city: geo.city, region: geo.region, isp: geo.isp,
+        device_type: dev.deviceType, os: dev.os, browser: dev.browser,
+        model: dev.model || '', connection_type: connectionType,
+        first_login: new Date().toISOString(),
+        last_active: new Date().toISOString(),
+        status: 'active'
+      }).catch(() => {});
+
+      await base44.asServiceRole.entities.User.update(user.id, {
+        last_login: new Date().toISOString()
+      });
     }
-
-    // Yeni oturum kaydı oluştur
-    await base44.asServiceRole.entities.UserSession.create({
-      user_id: user.id,
-      user_name: userName,
-      session_id: sessionId,
-      ip, last_ip: ip,
-      country: geo.country, city: geo.city, region: geo.region, isp: geo.isp,
-      device_type: dev.deviceType, os: dev.os, browser: dev.browser,
-      model: dev.model || '', connection_type: connectionType,
-      first_login: new Date().toISOString(),
-      last_active: new Date().toISOString(),
-      status: 'active'
-    }).catch(() => {});
-
-    await base44.asServiceRole.entities.User.update(user.id, {
-      active_session_id: sessionId,
-      last_login: new Date().toISOString()
-    });
     return Response.json({ session_id: sessionId });
   } catch (e) {
     return Response.json({ error: 'işlem başarısız' }, { status: 500 });
