@@ -65,22 +65,26 @@ export default async function(req) {
       if (!(conversation.members || []).includes(user.id)) return Response.json({ error: 'Bu sohbette yetkiniz yok' }, { status: 403 });
       if ((conversation.deleted_for || []).includes(user.id)) return Response.json({ error: 'Bu sohbeti sildiniz' }, { status: 403 });
 
-      // Arkadaşlık durumu kontrolü — engelli veya silinmişse uyarı ver
+      // Arkadaşlık durumu kontrolü — admin sohbetlerinde arkadaşlık şartı aranmaz
       const friendId = conversation.user1_id === user.id ? conversation.user2_id : conversation.user1_id;
-      const friendships = await base44.asServiceRole.entities.Friendship.filter({
-        $or: [
-          { requester_id: user.id, recipient_id: friendId },
-          { requester_id: friendId, recipient_id: user.id }
-        ]
-      }, '-created_date', 10).catch(() => []);
-      const friendship = friendships[0];
-      if (friendship) {
-        if (friendship.status === 'blocked') {
-          const blockedBy = friendship.blocked_by || [];
-          if (blockedBy.includes(friendId)) return Response.json({ error: 'Kullanıcı sizi engelledi' }, { status: 403 });
-          if (blockedBy.includes(user.id)) return Response.json({ error: 'Bu kullanıcıyı engellediniz' }, { status: 403 });
+      const friendUser = await base44.asServiceRole.entities.User.get(friendId).catch(() => null);
+      const isAdminChat = user.role === 'admin' || friendUser?.role === 'admin';
+      if (!isAdminChat) {
+        const friendships = await base44.asServiceRole.entities.Friendship.filter({
+          $or: [
+            { requester_id: user.id, recipient_id: friendId },
+            { requester_id: friendId, recipient_id: user.id }
+          ]
+        }, '-created_date', 10).catch(() => []);
+        const friendship = friendships[0];
+        if (friendship) {
+          if (friendship.status === 'blocked') {
+            const blockedBy = friendship.blocked_by || [];
+            if (blockedBy.includes(friendId)) return Response.json({ error: 'Kullanıcı sizi engelledi' }, { status: 403 });
+            if (blockedBy.includes(user.id)) return Response.json({ error: 'Bu kullanıcıyı engellediniz' }, { status: 403 });
+          }
+          if (friendship.status !== 'accepted') return Response.json({ error: 'Arkadaş olmanız gerek' }, { status: 403 });
         }
-        if (friendship.status !== 'accepted') return Response.json({ error: 'Arkadaş olmanız gerek' }, { status: 403 });
       }
 
       // Küfür filtresi

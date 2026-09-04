@@ -101,8 +101,23 @@ export default async function(req) {
     if (action === 'refriend') {
       const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
       if (!friendship || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
-      if (friendship.status !== 'removed') return Response.json({ error: 'Bu arkadaşlık geri eklenemez' }, { status: 400 });
-      await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: 'accepted' });
+      if (friendship.status !== 'removed' && friendship.status !== 'rejected') return Response.json({ error: 'Bu arkadaşlık geri eklenemez' }, { status: 400 });
+      // İsteyeni requester yap ki karşı taraf onaylayabilsin
+      const isRequester = friendship.requester_id === user.id;
+      const myName = user.username || user.full_name || 'Kullanıcı';
+      const myMemberId = user.member_id || '';
+      const myAvatar = user.avatar || '';
+      const otherId = friendship.members.find((id) => id !== user.id);
+      const otherName = isRequester ? friendship.recipient_name : friendship.requester_name;
+      const otherMemberId = isRequester ? friendship.recipient_member_id : friendship.requester_member_id;
+      const otherAvatar = isRequester ? friendship.recipient_avatar : friendship.requester_avatar;
+      const update = isRequester ? { status: 'pending' } : {
+        status: 'pending',
+        requester_id: user.id, requester_name: myName, requester_member_id: myMemberId, requester_avatar: myAvatar,
+        recipient_id: otherId, recipient_name: otherName, recipient_member_id: otherMemberId, recipient_avatar: otherAvatar
+      };
+      await base44.asServiceRole.entities.Friendship.update(friendship.id, update);
+      await base44.asServiceRole.entities.Notification.create({ user_id: otherId, title: 'Yeni arkadaşlık isteği', body: `${myName} sizi arkadaş olarak eklemek istiyor.`, type: 'friend_request', link: '/arkadaslar' });
       return Response.json({ ok: true });
     }
 
