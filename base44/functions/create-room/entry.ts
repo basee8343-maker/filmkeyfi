@@ -21,9 +21,13 @@ export default async function(req) {
     movie_title = sanitizeText(movie_title, 200);
     if (!name) return Response.json({ error: 'geçersiz oda adı' }, { status: 400 });
 
-    // Rate limit: 5 oda / 10 dakika / kullanıcı
-    const rl = await rateLimit(base44, 'create-room:' + user.id, user.id, 5, 600000);
-    if (!rl.allowed) return Response.json({ error: 'çok hızlı oda oluşturuyorsunuz, lütfen bekleyin' }, { status: 429 });
+    // Admin rate limit'ten muaf
+    const me = await base44.asServiceRole.entities.User.get(user.id).catch(() => null);
+    const isAdmin = me?.role === 'admin';
+    if (!isAdmin) {
+      const rl = await rateLimit(base44, 'create-room:' + user.id, user.id, 5, 600000);
+      if (!rl.allowed) return Response.json({ error: 'çok hızlı oda oluşturuyorsunuz, lütfen bekleyin' }, { status: 429 });
+    }
 
     // max_users doğrula
     const mu = Math.min(Math.max(Number(max_users) || 10, 2), 50);

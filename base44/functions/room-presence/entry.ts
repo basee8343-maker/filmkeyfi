@@ -200,7 +200,20 @@ export default async function(req) {
     // leave
     if (ghost) return Response.json({ ok: true });
     await updatePresenceRoom(base44, user.id, '');
-    const participants = (room.participants || []).filter((p) => p.user_id !== user.id);
+    let participants = (room.participants || []).filter((p) => p.user_id !== user.id);
+    // Çevrim içi katılımcı yoksa odayı kapat
+    if (participants.length > 0) {
+      let hasOnline = false;
+      for (const p of participants) {
+        const presence = await base44.asServiceRole.entities.UserPresence.filter({ user_id: p.user_id }, '-created_date', 1).catch(() => []);
+        const rec = presence[0];
+        if (rec && rec.online && rec.last_seen && Date.now() - new Date(rec.last_seen).getTime() < 120000) {
+          hasOnline = true;
+          break;
+        }
+      }
+      if (!hasOnline) participants = [];
+    }
     if (participants.length === 0) {
       await base44.asServiceRole.entities.Room.update(room_id, { participants, status: 'closed', is_playing: false });
       const roleInfoLeave = getRoleInfo(me, labelOverrides);

@@ -6,7 +6,7 @@ import ChatOverlay from '@/components/player/ChatOverlay';
 import { useVoiceChat } from '@/hooks/useVoiceChat';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
-import { Mic, MicOff, Crown, X, Eye, ArrowLeft } from 'lucide-react';
+import { Mic, MicOff, Crown, X, Eye, ArrowLeft, UserMinus } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
@@ -337,6 +337,12 @@ export default function WatchParty() {
     setShowViewers(false);
   };
 
+  const kickUser = async (uid) => {
+    if (!canMod) return;
+    try { await base44.functions.invoke('room-presence', { action: 'kick', room_id: id, target_id: uid }); toast({ title: 'Kullanıcı odadan çıkarıldı' }); }
+    catch (e) { toast({ title: 'Çıkarılamadı', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+
   const unbanUser = async (uid) => {
     if (!canMod) return;
     try { await base44.functions.invoke('room-presence', { action: 'unban', room_id: id, target_id: uid }); toast({ title: 'Yasak kaldırıldı' }); }
@@ -401,6 +407,18 @@ export default function WatchParty() {
           {room?.room_number ? <span className="bg-black/60 backdrop-blur-md text-white text-xs font-bold px-2.5 py-1.5 rounded-full border border-white/10 whitespace-nowrap">Oda No: {room.room_number}</span> : null}
         </div>
         <button onClick={() => { setShowViewers(!showViewers); setShowSettings(false); }} className={`absolute top-[max(env(safe-area-inset-top),0.75rem)] right-3 z-[55] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white border border-white/10 backdrop-blur-md transition active:scale-95 ${showViewers ? 'bg-primary/80' : 'bg-black/60'}`}><Eye className="w-4 h-4" /><span>{visibleParticipants.length}</span></button>
+        {!showViewers && (() => {
+          const speakingP = (room?.participants || []).find((p) => p.user_id !== user?.id && voice.speakingIds.includes(p.user_id));
+          if (!speakingP) return null;
+          const prof = viewerProfiles[speakingP.user_id];
+          const avatar = speakingP.avatar || prof?.avatar;
+          return (
+            <div className="absolute top-[max(env(safe-area-inset-top),3.5rem)] right-3 z-[58] flex items-center gap-1.5 rounded-full bg-card/95 border-2 border-green-400 px-2 py-1 shadow-2xl backdrop-blur-xl speaking-glow max-w-[140px]">
+              {avatar ? <Image src={avatar} className="w-6 h-6 rounded-full object-cover" fittingType="fill" /> : <span className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[10px] font-bold">{(speakingP.name || '?')[0]}</span>}
+              <span className="text-xs font-semibold truncate">{speakingP.name}</span>
+            </div>
+          );
+        })()}
         <div className={`flex items-center justify-center bg-black ${chatOpen ? 'flex-1 min-w-0' : 'flex-1 min-w-0'}`}>
           {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={canMod} isTimeSource={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} onEnded={() => setMoviePickerOpen(true)} fullscreenRef={playerWrapRef} watermark={user} /> :
             <div className="text-muted-foreground text-sm p-6 text-center">Video kaynağı yok</div>}
@@ -447,6 +465,11 @@ export default function WatchParty() {
                       </button>
                     ) : (
                       micActive ? <Mic className="w-3.5 h-3.5 text-green-400 shrink-0" /> : <MicOff className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    )}
+                    {canMod && p.user_id !== user.id && (
+                      <button onClick={() => kickUser(p.user_id)} className="p-0.5 rounded shrink-0 text-destructive" title="Odadan çıkar">
+                        <UserMinus className="w-3.5 h-3.5" />
+                      </button>
                     )}
                   </div>
                 );
