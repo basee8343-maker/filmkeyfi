@@ -15,6 +15,8 @@ import { mergeMessages, upsertMessage } from '@/lib/realtimeMessages';
 import { parseRoleMetadata, getRoleInfo, isModerator } from '@/lib/roles';
 import RoleMessageEffect from '@/components/role/RoleMessageEffect';
 import RoleNameEffect from '@/components/role/RoleNameEffect';
+import UserProfileCard from '@/components/player/UserProfileCard';
+import EmojiPicker from '@/components/player/EmojiPicker';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
@@ -56,7 +58,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
 
   const load = () => {
     base44.entities.RoomMessage.filter({ room_id: roomId }, 'created_date', 200)
-      .then((r) => { setMessages((current) => mergeMessages(current, r)); setLoading(false); requestAnimationFrame(scrollToBottom); })
+      .then((r) => { setMessages((current) => mergeMessages(current, r)); setLoading(false); setTimeout(scrollToBottom, 100); })
       .catch(() => setLoading(false));
   };
 
@@ -158,7 +160,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
 
   return (
     <div className="h-full min-h-0 flex flex-col bg-card/95 backdrop-blur">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-2">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-border gap-1.5">
         <h3 className="font-bold flex items-center gap-2">💬 Sohbet {chatEnabled && <span className="text-xs text-muted-foreground font-normal">({messages.length})</span>}</h3>
         <div className="flex items-center gap-1.5">
           {isOwner && chatEnabled && (
@@ -198,7 +200,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
         {loading ? <p className="text-center text-sm text-muted-foreground py-8">Yükleniyor...</p> :
          messages.length === 0 ? <p className="text-center text-sm text-muted-foreground py-8">Henüz mesaj yok. İlk mesajı sen at! 🍿</p> :
-         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).map((m) => (
+         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { const lower = (m.text || '').toLowerCase(); if (lower.includes('katıldı') || lower.includes('ayrıldı')) return false; } return true; }).map((m) => (
             <div key={m.id} className={`flex gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
               {m.type === 'system' ? (
                 (() => {
@@ -236,7 +238,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                    </div>
                    <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')} msgEffect={getRoleInfo(profiles[m.user_id] || m)?.msg_effect} msgColor={getRoleInfo(profiles[m.user_id] || m)?.color}>
                       {m.file_url && <Image src={m.file_url} alt="foto" className="rounded-lg max-w-[180px] max-h-44 object-cover mb-1 cursor-pointer block" fittingType="fit" onClick={() => setLightbox(m.file_url)} />}
-                      {m.text && <p className="text-sm break-words bg-secondary/50 rounded-lg px-2.5 py-1.5 inline-block">{m.text}</p>}
+                      {m.text && (() => { const trimmed = m.text.trim(); const animEmojis = ['😂','❤️','🔥','👏','🎉','😍','😱','😢','👍','🍿','🎬','💀']; if (animEmojis.includes(trimmed) && trimmed.length <= 3) { const ac = ['😂','👏','😢','👍'].includes(trimmed) ? 'anim-emoji-bounce' : ['❤️','🎉','😍','🍿'].includes(trimmed) ? 'anim-emoji-pulse' : 'anim-emoji-shake'; return <span className={`text-3xl inline-block anim-emoji ${ac}`}>{trimmed}</span>; } return <p className="text-sm break-words bg-secondary/50 rounded-lg px-2.5 py-1.5 inline-block">{m.text}</p>; })()}
                     </RoleMessageEffect>
                   </div>
                   {(isOwner || user?.id === m.user_id) && (
@@ -254,11 +256,9 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
         </div>
       )}
       {chatEnabled && showEmoji && (
-        <div className="px-3 py-2 border-t border-border flex flex-wrap gap-1">
-          {EMOJIS.map((e) => <button key={e} onClick={() => setText((t) => t + e)} className="text-xl hover:bg-secondary rounded p-1">{e}</button>)}
-        </div>
+        <EmojiPicker onSelect={(e) => { setText((t) => t + e); setShowEmoji(false); }} />
       )}
-      {chatEnabled && <form onSubmit={send} className="p-3 border-t border-border flex items-center gap-2">
+      {chatEnabled && <form onSubmit={send} className="p-2.5 border-t border-border flex items-center gap-2">
         <label className="p-2 rounded-lg hover:bg-secondary cursor-pointer">
           <ImageIcon className="w-5 h-5" />
           <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhoto} disabled={uploading} />
@@ -279,23 +279,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
         />
       )}
       {userMenu && (
-        <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={() => setUserMenu(null)}>
-          <div className="bg-card border border-border rounded-xl p-3 w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 mb-2">
-              {userMenu.userAvatar ? <Image src={userMenu.userAvatar} className="w-9 h-9 rounded-full" fittingType="fill" /> : <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">{(userMenu.userName || '?')[0]}</div>}
-              <p className="font-semibold">{userMenu.userName}</p>
-            </div>
-            <Link to={`/kullanici/${userMenu.userId}`} onClick={() => setUserMenu(null)} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm">Profili Gör</Link>
-            <button onClick={() => { setReportTarget(userMenu); setUserMenu(null); }} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-destructive/10 text-destructive text-sm font-semibold">Şikayet Et</button>
-            {isOwner && userMenu.userId !== user?.id && <button onClick={kickFromRoom} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-amber-500/10 text-amber-500 text-sm font-semibold">Odadan At</button>}
-            {userMenu.userId !== user?.id && <button onClick={personalBlock} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-400 text-sm font-semibold">Engelle</button>}
-            {isAdmin && <>
-              {menuProfile?.member_id && <button onClick={copyMemberId} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm">Üye No Kopyala ({menuProfile.member_id})</button>}
-              <button onClick={blockUser} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-amber-500/10 text-amber-500 text-sm font-semibold">Engelle</button>
-              <button onClick={deleteUser} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-destructive/10 text-destructive text-sm font-semibold">Sil</button>
-            </>}
-          </div>
-        </div>
+        <UserProfileCard userId={userMenu.userId} roomId={roomId} canMod={isOwner} voiceEnabled={false} onClose={() => setUserMenu(null)} onKick={kickFromRoom} />
       )}
       {reportTarget && <ReportDialog targetId={reportTarget.userId} targetName={reportTarget.userName} context="room" contextId={roomId} onClose={() => setReportTarget(null)} />}
       {lightbox && <div onClick={() => setLightbox(null)} className="fixed inset-0 z-[110] bg-black/90 flex items-center justify-center p-4"><button className="absolute top-4 right-4 text-white p-2"><X className="w-6 h-6" /></button><Image src={lightbox} className="max-w-full max-h-full rounded-lg" fittingType="fit" /></div>}

@@ -120,6 +120,13 @@
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .cinema-shadow { box-shadow: 0 20px 60px -15px rgba(0,0,0,0.7); }
+  @keyframes emoji-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  @keyframes emoji-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.3); } }
+  @keyframes emoji-shake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-10deg); } 75% { transform: rotate(10deg); } }
+  .anim-emoji { display: inline-block; animation-duration: 1s; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
+  .anim-emoji-bounce { animation-name: emoji-bounce; }
+  .anim-emoji-pulse { animation-name: emoji-pulse; }
+  .anim-emoji-shake { animation-name: emoji-shake; }
   .neon-glow { box-shadow: 0 0 20px -5px hsl(var(--accent) / 0.5); }
   .neon-glow-primary { box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.5); }
   @keyframes speaking-ring {

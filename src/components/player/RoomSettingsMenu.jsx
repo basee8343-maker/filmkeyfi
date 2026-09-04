@@ -1,11 +1,14 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Eye, EyeOff, Instagram, Lock, MessageCircle, MessageSquare, MessageSquareOff, Mic, MicOff, Unlock, X, Ban, UserX, Film, Shield, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { base44 } from '@/api/base44Client';
 
 export default function RoomSettingsMenu({ open, onClose, room, canMod, participants, roomModerators, onAssignMod, onRemoveMod, roomName, setRoomName, onSaveName, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie, onDeleteRoom, roomLevels, onSetLevel }) {
   const { toast } = useToast();
   const [showBanned, setShowBanned] = useState(false);
   const [showMods, setShowMods] = useState(false);
+  const [savedMods, setSavedMods] = useState([]);
+  useEffect(() => { if (!room?.owner_id) return; base44.entities.RoomMod.filter({ owner_id: room.owner_id }, 'created_date', 100).then(setSavedMods).catch(() => {}); }, [room?.owner_id]);
   const touchStart = useRef({ x: 0, y: 0 });
   if (!open) return null;
   const button = 'w-full flex items-center gap-3 rounded-xl border border-border bg-secondary/60 px-3 py-3 text-sm font-semibold hover:bg-secondary transition-colors';
@@ -41,11 +44,17 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, particip
         <button onClick={() => room.password ? onRemovePassword() : setPasswordOpen(!passwordOpen)} className={button}>{room.password ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />} {room.password ? 'Şifreyi kaldır' : 'Şifre koy'}</button>
         {passwordOpen && !room.password && <div className="flex gap-2"><input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Oda şifresi" className="min-w-0 flex-1 rounded-lg bg-secondary px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" /><button onClick={onPassword} disabled={!password.trim()} className="rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50">KAYDET</button></div>}
         <button onClick={() => setShowBanned(!showBanned)} className={button}><UserX className="w-4 h-4 text-red-400" /> Atılan Kullanıcılar ({bannedUsers.length})</button>
-        {canMod && participants && participants.length > 1 && (
+        {canMod && ((participants && participants.length > 1) || savedMods.length > 0) && (
           <>
             <button onClick={() => setShowMods(!showMods)} className={button}><Shield className="w-4 h-4 text-blue-400" /> Moderatörler ({roomModerators.length})</button>
             {showMods && (
               <div className="rounded-xl border border-border bg-secondary/40 p-2 space-y-1.5 max-h-40 overflow-y-auto">
+                {savedMods.filter((m) => !participants.some((p) => p.user_id === m.user_id)).map((m) => (
+                  <div key={m.user_id} className="flex items-center justify-between gap-2">
+                    <span className="text-xs truncate flex-1">{m.user_name} <span className="text-muted-foreground">(çevrim dışı)</span></span>
+                    <button onClick={() => onRemoveMod(m.user_id)} className="text-[10px] px-2 py-1 rounded-lg font-bold shrink-0 bg-red-500/20 text-red-400 hover:bg-red-500/30">Mod Kaldır</button>
+                  </div>
+                ))}
                 {participants.filter((p) => p.user_id !== room.owner_id).map((p) => {
                   const isMod = roomModerators.includes(p.user_id);
                   return (

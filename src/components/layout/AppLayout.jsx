@@ -147,7 +147,7 @@ export default function AppLayout() {
     <div className="min-h-screen bg-background">
       <RoleCelebrationOverlay />
       <Navbar />
-      <main className="pt-[calc(4rem+max(env(safe-area-inset-top),1.5rem))] pb-20 lg:pt-16 lg:pb-8 max-w-[1600px] mx-auto">
+      <main className="pt-[calc(4rem+max(env(safe-area-inset-top),1.5rem))] pb-20 lg:pt-16 lg:pb-8 max-w-[1600px] mx-auto" style={{ touchAction: 'pan-y' }}>
         <Outlet />
       </main>
       <BottomNav />

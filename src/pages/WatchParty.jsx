@@ -11,6 +11,7 @@ import { Mic, MicOff, Crown, X, Eye, ArrowLeft, UserMinus, MessageSquare, Trash2
 import { Image } from '@/components/ui/image';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
+import UserProfileCard from '@/components/player/UserProfileCard';
 
 import LiveKitDebugPanel from '@/components/player/LiveKitDebugPanel';
 import RoomDirectMessages from '@/components/player/RoomDirectMessages';
@@ -78,6 +79,8 @@ export default function WatchParty() {
     return unsub;
   }, [room?.owner_id, room?.is_personal]);
   const [roomNameEdit, setRoomNameEdit] = useState('');
+  const [profileCard, setProfileCard] = useState(null);
+  const [presenceMap, setPresenceMap] = useState({});
 
   useEffect(() => {
     base44.functions.invoke('room-presence', { action: 'get', room_id: id })
@@ -213,6 +216,34 @@ export default function WatchParty() {
       });
   }, [participantIdsKey]);
 
+  useEffect(() => {
+    if (!participantIdsKey) return;
+    const ids = participantIdsKey.split(',');
+    Promise.all(ids.map((uid) => base44.entities.UserPresence.filter({ user_id: uid }, '-created_date', 1).then((r) => [uid, r[0]]).catch(() => [uid, null])))
+      .then((entries) => { const map = {}; entries.forEach(([uid, rec]) => { if (rec) map[uid] = rec; }); setPresenceMap(map); });
+    const unsub = base44.entities.UserPresence.subscribe((ev) => {
+      if (ev.type === 'create' || ev.type === 'update') setPresenceMap((prev) => ({ ...prev, [ev.data.user_id]: ev.data }));
+    });
+    return unsub;
+  }, [participantIdsKey]);
+
+  useEffect(() => {
+    if (!canMod || !room?.participants) return;
+    const check = async () => {
+      const offlineUsers = (room.participants || []).filter((p) => {
+        if (p.user_id === user.id || p.user_id === room.owner_id) return false;
+        const presence = presenceMap[p.user_id];
+        if (!presence) return false;
+        return !presence.online || (Date.now() - new Date(presence.last_seen).getTime() > 30000);
+      });
+      for (const u of offlineUsers) {
+        await base44.functions.invoke('room-presence', { action: 'kick', room_id: id, target_id: u.user_id }).catch(() => {});
+      }
+    };
+    const interval = setInterval(check, 30000);
+    return () => clearInterval(interval);
+  }, [canMod, presenceMap, room?.participants, id, user?.id, room?.owner_id]);
+
   const leaveRoom = async () => {
     if (!user || !joinedRef.current || kickedRef.current) return;
     joinedRef.current = false;
@@ -283,11 +314,9 @@ export default function WatchParty() {
       const target = new Date(room.chat_auto_delete_at).getTime();
       const remaining = Math.max(0, target - Date.now());
       if (remaining <= 0) {
-        if (canMod) {
-          base44.functions.invoke('clear-room-messages', { room_id: id }).catch(() => {});
-          const newTarget = new Date(Date.now() + minutes * 60000).toISOString();
-          base44.entities.Room.update(id, { chat_auto_delete_at: newTarget }).catch(() => {});
-        }
+        base44.functions.invoke('clear-room-messages', { room_id: id }).catch(() => {});
+        const newTarget = new Date(Date.now() + minutes * 60000).toISOString();
+        base44.entities.Room.update(id, { chat_auto_delete_at: newTarget }).catch(() => {});
         setCountdownText('0:00');
       } else {
         const m = Math.floor(remaining / 60000);
@@ -443,7 +472,7 @@ export default function WatchParty() {
       setMoviePickerOpen(true);
       return;
     }
-    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+    if (Math.abs(dx) > 100 && Math.abs(dx) > Math.abs(dy) * 1.5) {
       if (dx < 0) setChatOpen(true);
       else setChatOpen(false);
     }
@@ -510,7 +539,7 @@ export default function WatchParty() {
         </div>
 
         {chatOpen && (
-          <div className="absolute right-0 top-0 bottom-0 z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] pb-[max(env(safe-area-inset-bottom),0.5rem)] shadow-2xl backdrop-blur-xl"
+          <div className="absolute right-0 top-0 bottom-0 z-40 flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] pb-[max(env(safe-area-inset-bottom),0.5rem)] pl-[max(env(safe-area-inset-left),0px)] pr-[max(env(safe-area-inset-right),0px)] shadow-2xl backdrop-blur-xl"
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setChatOpen(false); }}
           >
@@ -537,26 +566,17 @@ export default function WatchParty() {
               {visibleParticipants.map((p) => {
                 const prof = viewerProfiles[p.user_id];
                 const avatar = p.avatar || prof?.avatar;
-                const micActive = voice.participantMicStates[p.user_id] ?? false;
+                const presence = presenceMap[p.user_id];
+                const isOnline = presence?.online && (Date.now() - new Date(presence.last_seen).getTime() < 60000);
                 return (
-                  <div key={p.user_id} className="flex items-center gap-1.5 text-xs py-0.5">
-                    <Link to={`/kullanici/${p.user_id}`} className="shrink-0">
+                  <button key={p.user_id} onClick={() => setProfileCard(p.user_id)} className="flex items-center gap-1.5 text-xs py-0.5 w-full text-left hover:bg-secondary/50 rounded px-1">
+                    <div className="shrink-0 relative">
                       {avatar ? <Image src={avatar} className="w-6 h-6 rounded-full object-cover" fittingType="fill" /> : <span className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[10px] font-bold">{(p.name || '?')[0]}</span>}
-                    </Link>
-                    <Link to={`/kullanici/${p.user_id}`} className="flex-1 truncate min-w-0">{p.name}{p.user_id === room.owner_id && <Crown className="w-3 h-3 text-amber-400 inline ml-0.5 shrink-0" />}</Link>
-                    {canMod && p.user_id !== user.id && room.voice_enabled ? (
-                      <button onClick={() => toggleMuteUser(p.user_id)} className={`p-0.5 rounded shrink-0 ${p.muted ? 'text-red-400' : 'text-green-400'}`} title={p.muted ? 'Mikrofonu aç' : 'Mikrofonu kapat'}>
-                        {p.muted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
-                      </button>
-                    ) : (
-                      micActive ? <Mic className="w-3.5 h-3.5 text-green-400 shrink-0" /> : <MicOff className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    )}
-                    {canMod && p.user_id !== user.id && (
-                      <button onClick={() => kickUser(p.user_id)} className="p-0.5 rounded shrink-0 text-destructive" title="Odadan çıkar">
-                        <UserMinus className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
+                      <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-card ${isOnline ? 'bg-green-400' : 'bg-red-400'}`} />
+                    </div>
+                    <span className="flex-1 truncate min-w-0">{p.name}{p.user_id === room.owner_id && <Crown className="w-3 h-3 text-amber-400 inline ml-0.5 shrink-0" />}</span>
+                    {!isOnline && <span className="text-[9px] text-red-400 shrink-0">çevrim dışı</span>}
+                  </button>
                 );
               })}
             </div>
@@ -575,6 +595,9 @@ export default function WatchParty() {
         confirmText="Kaldır"
         onConfirm={() => savePassword('')}
       />
+      {profileCard && (
+        <UserProfileCard userId={profileCard} roomId={id} canMod={canMod} voiceEnabled={room?.voice_enabled} onClose={() => setProfileCard(null)} onKick={(uid) => { kickUser(uid); setProfileCard(null); }} onToggleMute={toggleMuteUser} muted={room?.participants?.find((p) => p.user_id === profileCard)?.muted} />
+      )}
       <MoviePickerSheet open={moviePickerOpen} onClose={() => setMoviePickerOpen(false)} onSelect={changeMovie} currentMovieId={movie?.id} />
     </div>
   );
