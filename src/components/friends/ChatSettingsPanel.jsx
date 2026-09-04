@@ -13,8 +13,8 @@ export default function ChatSettingsPanel({
   return (
     <div
       className="absolute inset-0 z-40 bg-background flex flex-col animate-slide-down overflow-hidden"
-      onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
-      onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) onClose(); }}
+      onTouchStart={(e) => { e.stopPropagation(); touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+      onTouchEnd={(e) => { e.stopPropagation(); const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) onClose(); }}
     >
       <header className="shrink-0 px-3 pt-[max(env(safe-area-inset-top),0.75rem)] pb-3 border-b border-border bg-card">
         <div className="relative flex items-center h-10">
