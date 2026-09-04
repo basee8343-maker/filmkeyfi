@@ -63,12 +63,12 @@ export default async function(req) {
           return Response.json({ error: 'Bu odanın sahibiyle aranızda engel bulunduğu için odaya katılamazsınız.' }, { status: 403 });
         }
       }
-      // Kişisel oda: sadece oda sahibi varken girilebilir (onaylı istek veya admin/mod hariç)
+      // Kişisel oda: sadece onaylı istek sahipleri girebilir (admin/mod hariç)
       if (room.is_personal && !isOwner && !isMod) {
         const approvedReq = await base44.asServiceRole.entities.RoomJoinRequest.filter({ room_id, user_id: user.id, status: 'approved' }, '-created_date', 1).catch(() => []);
         const hasApproved = approvedReq && approvedReq.length > 0;
-        if (!hasApproved && !(room.participants || []).some((p) => p.user_id === room.owner_id)) {
-          return Response.json({ error: 'Oda sahibi şu anda odada değil' }, { status: 403 });
+        if (!hasApproved) {
+          return Response.json({ error: 'Oda sahibinin onayı gerekli', needsApproval: true }, { status: 403 });
         }
       }
       // Ban check: atılmış kullanıcılar tekrar giremez
