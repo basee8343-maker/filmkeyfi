@@ -74,7 +74,8 @@ export default function OpenRooms() {
     const mv = movies[r.movie_id];
     const ownerInRoom = (r.participants || []).some((p) => p.user_id === r.owner_id);
     const o = owners[r.owner_id];
-    const canJoin = isPersonal ? (ownerInRoom || user?.id === r.owner_id) : true;
+    const isAdmin = user?.role === 'admin';
+    const canJoin = isPersonal ? (ownerInRoom || user?.id === r.owner_id || isAdmin) : true;
     return (
       <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#1c1c1c] border border-white/5">
         <div className="flex flex-col items-center gap-1 shrink-0">
@@ -103,7 +104,7 @@ export default function OpenRooms() {
         </div>
         <div className="shrink-0">
           {canJoin ? (
-            <Link to={`/oda/${r.id}`} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #8e44ad, #7d3c98)' }}>Aç</Link>
+            <Link to={`/oda/${r.id}`} className="px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #8e44ad, #7d3c98)' }}>Katıl</Link>
           ) : (
             <span className="px-4 py-2 rounded-xl text-xs font-bold text-[#808080] bg-[#2a2a2a]">Kapalı</span>
           )}

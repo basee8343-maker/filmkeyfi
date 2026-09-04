@@ -47,6 +47,9 @@ export default function WatchParty() {
   const [viewerProfiles, setViewerProfiles] = useState({});
   const [joinCount, setJoinCount] = useState(0);
   const [joinError, setJoinError] = useState('');
+  const [waitingForApproval, setWaitingForApproval] = useState(false);
+  const [joinRejected, setJoinRejected] = useState(false);
+  const [joinRequests, setJoinRequests] = useState([]);
   const [voiceReady, setVoiceReady] = useState(false);
   const joinedRef = useRef(false);
   const ghostRef = useRef(false);
@@ -117,6 +120,27 @@ export default function WatchParty() {
       setNeedPassword(true);
       return;
     }
+    // Özel oda: sahip/admin değilse onay sisteminden geç
+    if (room.is_personal && room.owner_id !== user.id && !isModerator(user)) {
+      base44.functions.invoke('room-presence', { action: 'request-join', room_id: id })
+        .then((res) => {
+          if (res.data?.approved) {
+            // Onaylı istek var — normal katılıma geç
+            base44.functions.invoke('room-presence', { action: 'join', room_id: id })
+              .then((r) => {
+                joinedRef.current = true; setVoiceReady(true);
+                navigator.mediaDevices?.getUserMedia({ audio: true }).catch(() => {});
+                setJoinCount((c) => c + 1);
+                if (r.data?.ghost) ghostRef.current = true;
+              })
+              .catch((e) => { const m = e.response?.data?.error || e.message; setJoinError(m); toast({ title: 'Katılım başarısız', description: m, variant: 'destructive' }); });
+          } else if (res.data?.pending) {
+            setWaitingForApproval(true);
+          }
+        })
+        .catch((e) => { const m = e.response?.data?.error || e.message; setJoinError(m); toast({ title: 'İstek gönderilemedi', description: m, variant: 'destructive' }); });
+      return;
+    }
     base44.functions.invoke('room-presence', { action: 'join', room_id: id })
       .then((res) => {
         joinedRef.current = true;
@@ -130,6 +154,47 @@ export default function WatchParty() {
         setJoinError(message);
         toast({ title: 'Katılım başarısız', description: message, variant: 'destructive' });
       });
+  }, [user?.id, room?.id]);
+
+  // Bekleyen isteğin durumunu izle (onay/red)
+  useEffect(() => {
+    if (!user || !room || !waitingForApproval) return;
+    const unsub = base44.entities.RoomJoinRequest.subscribe((ev) => {
+      if (ev.data?.room_id !== id || ev.data?.user_id !== user.id) return;
+      if (ev.type === 'update') {
+        if (ev.data.status === 'approved') {
+          setWaitingForApproval(false);
+          base44.functions.invoke('room-presence', { action: 'join', room_id: id })
+            .then((r) => {
+              joinedRef.current = true; setVoiceReady(true);
+              navigator.mediaDevices?.getUserMedia({ audio: true }).catch(() => {});
+              setJoinCount((c) => c + 1);
+              if (r.data?.ghost) ghostRef.current = true;
+            })
+            .catch((e) => { const m = e.response?.data?.error || e.message; setJoinError(m); toast({ title: 'Katılım başarısız', description: m, variant: 'destructive' }); });
+        } else if (ev.data.status === 'rejected') {
+          setWaitingForApproval(false);
+          setJoinRejected(true);
+        }
+      }
+    });
+    return unsub;
+  }, [user?.id, room?.id, waitingForApproval]);
+
+  // Oda sahibi: bekleyen katılım isteklerini izle
+  useEffect(() => {
+    if (!user || !room || room.owner_id !== user.id) return;
+    const load = () => {
+      base44.entities.RoomJoinRequest.filter({ room_id: id, status: 'pending' }, '-created_date', 50)
+        .then((reqs) => setJoinRequests(reqs))
+        .catch(() => {});
+    };
+    load();
+    const unsub = base44.entities.RoomJoinRequest.subscribe((ev) => {
+      if (ev.data?.room_id !== id) return;
+      load();
+    });
+    return unsub;
   }, [user?.id, room?.id]);
 
   const submitPassword = async () => {
@@ -488,6 +553,27 @@ export default function WatchParty() {
   if (!membershipActive(user)) return <div className="p-10 text-center"><p className="mb-4">Watch Party için aktif üyelik gerekli.</p><Link to="/profil" className="text-primary">Üyeliğim</Link></div>;
   if (joinError) return <div className="fixed inset-0 bg-black flex items-center justify-center p-6"><div className="bg-card border border-border rounded-xl p-5 w-full max-w-xs text-center"><h2 className="font-bold mb-2">Odaya katılamadınız</h2><p className="text-sm text-muted-foreground mb-4">{joinError}</p><button onClick={() => navigate(-1)} className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold">Geri Dön</button></div></div>;
 
+  if (joinRejected) return (
+    <div className="fixed inset-0 bg-black flex items-center justify-center p-6">
+      <div className="bg-card border border-border rounded-xl p-5 w-full max-w-xs text-center">
+        <h2 className="font-bold mb-2 text-destructive">İsteğiniz reddedildi</h2>
+        <p className="text-sm text-muted-foreground mb-4">Oda sahibi katılım isteğinizi reddetti.</p>
+        <button onClick={() => navigate('/acik-odalar')} className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold">Odalar</button>
+      </div>
+    </div>
+  );
+
+  if (waitingForApproval) return (
+    <div className="fixed inset-0 bg-black flex items-center justify-center p-6">
+      <div className="bg-card border border-border rounded-xl p-5 w-full max-w-xs text-center">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <h2 className="font-bold mb-2">Onay bekleniyor</h2>
+        <p className="text-sm text-muted-foreground mb-4">Katılım isteğiniz oda sahibine iletildi. Onaylamasını bekleyin.</p>
+        <button onClick={() => navigate('/acik-odalar')} className="w-full bg-secondary text-secondary-foreground py-2.5 rounded-lg text-sm font-semibold">İptal</button>
+      </div>
+    </div>
+  );
+
   if (needPassword) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center p-6">
@@ -518,6 +604,21 @@ export default function WatchParty() {
           <div onClick={() => { setDirectOpen(true); setDmNotif(null); clearTimeout(dmNotifTimer.current); }} className={`absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] flex items-center gap-2 rounded-xl bg-card/95 border border-border px-3 py-2 shadow-2xl backdrop-blur-xl max-w-[70%] cursor-pointer ${dmNotifLeaving ? 'dm-notif-out' : 'dm-notif-in'}`}>
             {dmNotif.avatar ? <Image src={dmNotif.avatar} className="w-8 h-8 rounded-full" fittingType="fill" /> : <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">{dmNotif.name?.[0]}</div>}
             <div className="min-w-0"><p className="text-xs font-bold truncate">{dmNotif.name}</p><p className="text-[10px] text-muted-foreground">mesaj yazdı</p></div>
+          </div>
+        )}
+        {joinRequests.length > 0 && (
+          <div className="absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] space-y-1.5 max-w-[80%]">
+            {joinRequests.map((req) => (
+              <div key={req.id} className="flex items-center gap-2 rounded-xl bg-card/95 border border-amber-400/50 px-3 py-2 shadow-2xl backdrop-blur-xl room-notif-in">
+                {req.user_avatar ? <Image src={req.user_avatar} className="w-7 h-7 rounded-full" fittingType="fill" /> : <div className="w-7 h-7 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-xs">{(req.user_name || '?')[0]}</div>}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold truncate text-white">{req.user_name}</p>
+                  <p className="text-[10px] text-muted-foreground">odaya katılmak istiyor</p>
+                </div>
+                <button onClick={async () => { await base44.functions.invoke('room-presence', { action: 'approve-join', room_id: id, request_id: req.id }); toast({ title: 'İstek onaylandı' }); }} className="px-2.5 py-1 rounded-lg bg-green-500 text-white text-[10px] font-bold whitespace-nowrap">Onayla</button>
+                <button onClick={async () => { await base44.functions.invoke('room-presence', { action: 'reject-join', room_id: id, request_id: req.id }); toast({ title: 'İstek reddedildi' }); }} className="px-2 py-1 rounded-lg bg-red-500/80 text-white text-[10px] font-bold whitespace-nowrap">Reddet</button>
+              </div>
+            ))}
           </div>
         )}
         <div className="absolute top-[max(env(safe-area-inset-top),0.75rem)] left-3 z-[55] flex items-center gap-2">

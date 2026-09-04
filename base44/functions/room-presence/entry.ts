@@ -20,7 +20,7 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json();
     const { action, room_id, password, target_id } = body || {};
-    if (!room_id || !['get', 'join', 'leave', 'kick', 'ban', 'unban', 'set-password', 'set-name', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat', 'change-movie', 'assign-mod', 'remove-mod', 'delete-room', 'set-level'].includes(action)) {
+    if (!room_id || !['get', 'join', 'leave', 'kick', 'ban', 'unban', 'set-password', 'set-name', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat', 'change-movie', 'assign-mod', 'remove-mod', 'delete-room', 'set-level', 'request-join', 'approve-join', 'reject-join'].includes(action)) {
       return Response.json({ error: 'invalid request' }, { status: 400 });
     }
     const name = user.username || user.full_name || 'Kullanıcı';
@@ -63,9 +63,13 @@ export default async function(req) {
           return Response.json({ error: 'Bu odanın sahibiyle aranızda engel bulunduğu için odaya katılamazsınız.' }, { status: 403 });
         }
       }
-      // Kişisel oda: sadece oda sahibi varken girilebilir
-      if (room.is_personal && !isOwner && !isMod && !(room.participants || []).some((p) => p.user_id === room.owner_id)) {
-        return Response.json({ error: 'Oda sahibi şu anda odada değil' }, { status: 403 });
+      // Kişisel oda: sadece oda sahibi varken girilebilir (onaylı istek veya admin/mod hariç)
+      if (room.is_personal && !isOwner && !isMod) {
+        const approvedReq = await base44.asServiceRole.entities.RoomJoinRequest.filter({ room_id, user_id: user.id, status: 'approved' }, '-created_date', 1).catch(() => []);
+        const hasApproved = approvedReq && approvedReq.length > 0;
+        if (!hasApproved && !(room.participants || []).some((p) => p.user_id === room.owner_id)) {
+          return Response.json({ error: 'Oda sahibi şu anda odada değil' }, { status: 403 });
+        }
       }
       // Ban check: atılmış kullanıcılar tekrar giremez
       const isBanned = (room.banned_users || []).some((b) => b.user_id === user.id);
@@ -106,6 +110,63 @@ export default async function(req) {
         });
       }
       await updatePresenceRoom(base44, user.id, room_id);
+      return Response.json({ ok: true });
+    }
+
+    // Özel oda katılım isteği gönder
+    if (action === 'request-join') {
+      if (!room.is_personal) return Response.json({ error: 'bu oda kişisel değil' }, { status: 400 });
+      if (isOwner) return Response.json({ ok: true, approved: true });
+      if (isMod || isAdmin) return Response.json({ ok: true, approved: true });
+      if ((room.participants || []).some((p) => p.user_id === user.id)) return Response.json({ ok: true, approved: true });
+      // Zaten onaylı istek varsa direkt katıl
+      const existing = await base44.asServiceRole.entities.RoomJoinRequest.filter({ room_id, user_id: user.id }, '-created_date', 5).catch(() => []);
+      const approved = existing.find((r) => r.status === 'approved');
+      if (approved) return Response.json({ ok: true, approved: true });
+      const pending = existing.find((r) => r.status === 'pending');
+      if (pending) return Response.json({ ok: true, pending: true });
+      // Yeni istek oluştur
+      await base44.asServiceRole.entities.RoomJoinRequest.create({
+        room_id, room_name: room.name || '',
+        user_id: user.id, user_name: name, user_avatar: user.avatar || '',
+        owner_id: room.owner_id, status: 'pending'
+      });
+      // Oda sahibine bildirim
+      await base44.asServiceRole.entities.Notification.create({
+        user_id: room.owner_id, title: 'Oda katılım isteği',
+        body: `${name} odaya katılmak istiyor.`, type: 'room', link: `/oda/${room_id}`
+      }).catch(() => {});
+      return Response.json({ ok: true, pending: true });
+    }
+
+    // Oda sahibi isteği onayla
+    if (action === 'approve-join') {
+      if (!isOwner && !isMod) return Response.json({ error: 'yetkisiz' }, { status: 403 });
+      const { request_id } = body || {};
+      if (!request_id) return Response.json({ error: 'istek gerekli' }, { status: 400 });
+      const req = await base44.asServiceRole.entities.RoomJoinRequest.get(request_id).catch(() => null);
+      if (!req || req.room_id !== room_id) return Response.json({ error: 'istek bulunamadı' }, { status: 404 });
+      await base44.asServiceRole.entities.RoomJoinRequest.update(request_id, { status: 'approved' });
+      // Kullanıcıya bildirim
+      await base44.asServiceRole.entities.Notification.create({
+        user_id: req.user_id, title: 'Oda isteği onaylandı',
+        body: `${room.name || 'Oda'} sahibi katılım isteğinizi onayladı.`, type: 'room', link: `/oda/${room_id}`
+      }).catch(() => {});
+      return Response.json({ ok: true });
+    }
+
+    // Oda sahibi isteği reddet
+    if (action === 'reject-join') {
+      if (!isOwner && !isMod) return Response.json({ error: 'yetkisiz' }, { status: 403 });
+      const { request_id } = body || {};
+      if (!request_id) return Response.json({ error: 'istek gerekli' }, { status: 400 });
+      const req = await base44.asServiceRole.entities.RoomJoinRequest.get(request_id).catch(() => null);
+      if (!req || req.room_id !== room_id) return Response.json({ error: 'istek bulunamadı' }, { status: 404 });
+      await base44.asServiceRole.entities.RoomJoinRequest.update(request_id, { status: 'rejected' });
+      await base44.asServiceRole.entities.Notification.create({
+        user_id: req.user_id, title: 'Oda isteği reddedildi',
+        body: `${room.name || 'Oda'} sahibi katılım isteğinizi reddetti.`, type: 'room', link: `/oda/${room_id}`
+      }).catch(() => {});
       return Response.json({ ok: true });
     }
 
