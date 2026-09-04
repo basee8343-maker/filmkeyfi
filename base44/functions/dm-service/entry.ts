@@ -22,9 +22,14 @@ export default async function(req) {
       const targetName = target.username || target.full_name || 'Kullanıcı';
       const targetAvatar = target.avatar || '';
 
-      // İki kullanıcı arasındaki tüm sohbetleri getir
-      const allConvos = await base44.asServiceRole.entities.Conversation.filter({ members: user.id }, '-created_date', 200).catch(() => []);
-      const between = (allConvos || []).filter((c) => (c.members || []).includes(targetId));
+      // İki kullanıcı arasındaki sohbetleri user1_id/user2_id ile bul (members array filter güvenilir değil)
+      const allConvos = await base44.asServiceRole.entities.Conversation.filter({
+        $or: [
+          { user1_id: user.id, user2_id: targetId },
+          { user1_id: targetId, user2_id: user.id }
+        ]
+      }, '-created_date', 10).catch(() => []);
+      const between = allConvos || [];
       // Kullanıcının silmediği aktif bir sohbet varsa onu aç
       const active = between.find((c) => !(c.deleted_for || []).includes(user.id));
       if (active) return Response.json({ conversation: active });
@@ -51,6 +56,24 @@ export default async function(req) {
       if (!conversation) return Response.json({ error: 'Sohbet bulunamadı' }, { status: 404 });
       if (!(conversation.members || []).includes(user.id)) return Response.json({ error: 'Bu sohbette yetkiniz yok' }, { status: 403 });
       if ((conversation.deleted_for || []).includes(user.id)) return Response.json({ error: 'Bu sohbeti sildiniz' }, { status: 403 });
+
+      // Arkadaşlık durumu kontrolü — engelli veya silinmişse uyarı ver
+      const friendId = conversation.user1_id === user.id ? conversation.user2_id : conversation.user1_id;
+      const friendships = await base44.asServiceRole.entities.Friendship.filter({
+        $or: [
+          { requester_id: user.id, recipient_id: friendId },
+          { requester_id: friendId, recipient_id: user.id }
+        ]
+      }, '-created_date', 10).catch(() => []);
+      const friendship = friendships[0];
+      if (friendship) {
+        if (friendship.status === 'blocked') {
+          const blockedBy = friendship.blocked_by || [];
+          if (blockedBy.includes(friendId)) return Response.json({ error: 'Kullanıcı sizi engelledi' }, { status: 403 });
+          if (blockedBy.includes(user.id)) return Response.json({ error: 'Bu kullanıcıyı engellediniz' }, { status: 403 });
+        }
+        if (friendship.status !== 'accepted') return Response.json({ error: 'Arkadaş olmanız gerek' }, { status: 403 });
+      }
 
       // Küfür filtresi
       const badWords = findProfanity(content);

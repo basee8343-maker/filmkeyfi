@@ -14,15 +14,16 @@ export default function ProfileDropdown() {
 
   useEffect(() => {
     if (!user) return;
-    base44.entities.Notification.filter({ user_id: user.id, read: false }, '-created_date', 50)
-      .then((r) => setUnread(r.length)).catch(() => {});
+    // DM bildirimlerini profil bildirimlerinden çıkar — sadece Sohbet tab'ında göster
+    base44.entities.Notification.filter({ user_id: user.id, read: false, type: { $ne: 'dm' } }, '-created_date', 50)
+        .then((r) => setUnread(r.length)).catch(() => {});
     const unsub = base44.entities.Notification.subscribe(() => {
-      base44.entities.Notification.filter({ user_id: user.id, read: false }, '-created_date', 50)
+      base44.entities.Notification.filter({ user_id: user.id, read: false, type: { $ne: 'dm' } }, '-created_date', 50)
         .then((r) => setUnread(r.length)).catch(() => {});
     });
     // social-badges-refresh event'ini dinle — DM geldiğinde anlık güncelle
     const onBadgesRefresh = () => {
-      base44.entities.Notification.filter({ user_id: user.id, read: false }, '-created_date', 50)
+      base44.entities.Notification.filter({ user_id: user.id, read: false, type: { $ne: 'dm' } }, '-created_date', 50)
         .then((r) => setUnread(r.length)).catch(() => {});
     };
     window.addEventListener('social-badges-refresh', onBadgesRefresh);

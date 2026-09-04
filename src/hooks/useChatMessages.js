@@ -13,6 +13,7 @@ import { upsertMessage, sortMessages } from '@/lib/realtimeMessages';
  * 3. temp mesaj eşleştirme: optimistic mesaj realtime geldiğinde değiştirilir
  * 4. cleanup: conversationId değişince eski subscription kapatılır
  * 5. deleted_for: kullanıcı bazlı silme — sadece silen kullanıcıdan gizlenir
+ * 6. Conversation subscription: last_message_at değişince mesajları yeniden yükler
  */
 export default function useChatMessages(conversationId) {
   const { user } = useCurrentUser();
@@ -23,6 +24,7 @@ export default function useChatMessages(conversationId) {
   const [sending, setSending] = useState(false);
   const seenRef = useRef(new Set());
   const activeIdRef = useRef(conversationId);
+  const lastMessageAtRef = useRef(null);
 
   useEffect(() => {
     activeIdRef.current = conversationId;
@@ -33,10 +35,16 @@ export default function useChatMessages(conversationId) {
     const reqId = conversationId;
     try {
       const items = await base44.entities.ChatMessage.filter({ conversation_id: conversationId }, 'created_date', 500);
-      if (activeIdRef.current !== reqId) return; // stale request — başka sohbete geçildi
+      if (activeIdRef.current !== reqId) return;
       const visible = (items || []).filter((m) => !(m.deleted_for || []).includes(userId));
       seenRef.current = new Set(visible.map((m) => m.id));
-      setMessages(() => sortMessages(visible));
+      if (visible.length > 0) lastMessageAtRef.current = visible[visible.length - 1].created_date;
+      setMessages((prev) => {
+        // Optimistic mesajları koru, gerçek mesajlarla eşleşenleri kaldır
+        const optimistic = prev.filter((m) => m.id?.startsWith('temp-'));
+        const filteredOptimistic = optimistic.filter((om) => !visible.some((rm) => rm.sender_id === om.sender_id && rm.content === om.content));
+        return sortMessages([...visible, ...filteredOptimistic]);
+      });
       setLoading(false);
     } catch {
       if (activeIdRef.current !== reqId) return;
@@ -49,12 +57,12 @@ export default function useChatMessages(conversationId) {
 
   useEffect(() => {
     if (!conversationId) return;
-    // State'i senkron temizle — eski sohbetin mesajları bir frame bile görünmesin
     setMessages([]);
     setLoading(true);
     seenRef.current = new Set();
     loadRef.current();
 
+    // ChatMessage subscription — yeni mesajları anlık ekle/güncelle
     const unsub = base44.entities.ChatMessage.subscribe((event) => {
       if (event.data?.conversation_id !== conversationId) return;
       if (event.type === 'delete') {
@@ -63,26 +71,34 @@ export default function useChatMessages(conversationId) {
       }
       const msg = event.data;
       if (!msg || !userId) return;
-      // Kullanıcı bazlı silme: deleted_for içinde bu kullanıcı varsa gizle
       if ((msg.deleted_for || []).includes(userId)) {
         setMessages((prev) => prev.filter((m) => m.id !== msg.id));
         return;
       }
-      // Duplicate önlemi: aynı messageId varsa güncelle, yoksa ekle
       if (seenRef.current.has(msg.id)) {
         setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, ...msg } : m));
         return;
       }
       seenRef.current.add(msg.id);
       setMessages((prev) => {
-        // Optimistic mesajı eşleştir ve değiştir
         const tempMatch = prev.find((m) => m.id?.startsWith('temp-') && m.sender_id === msg.sender_id && m.content === msg.content);
         const clean = tempMatch ? prev.filter((m) => m.id !== tempMatch.id) : prev;
         return upsertMessage(clean, msg);
       });
     });
 
-    return () => unsub();
+    // Conversation subscription — last_message_at değişince mesajları yeniden yükle
+    // Bu, karşı taraf mesaj gönderdiğinde anlık güncelleme sağlar
+    const unsubConv = base44.entities.Conversation.subscribe((event) => {
+      if (event.data?.id !== conversationId) return;
+      const newLast = event.data?.last_message_at;
+      if (newLast && newLast !== lastMessageAtRef.current) {
+        lastMessageAtRef.current = newLast;
+        loadRef.current();
+      }
+    });
+
+    return () => { unsub(); unsubConv(); };
   }, [conversationId, userId]);
 
   const send = useCallback(async (content) => {
@@ -98,10 +114,21 @@ export default function useChatMessages(conversationId) {
     setMessages((prev) => sortMessages([...prev, optimistic]));
     try {
       setSending(true);
-      await base44.functions.invoke('dm-service', { action: 'send', conversation_id: conversationId, content: content.trim() });
+      const res = await base44.functions.invoke('dm-service', { action: 'send', conversation_id: conversationId, content: content.trim() });
+      // Optimistic mesajı gerçek mesajla hemen değiştir — subscription beklemeye gerek yok
+      if (res?.data?.message) {
+        const realMsg = res.data.message;
+        seenRef.current.add(realMsg.id);
+        lastMessageAtRef.current = realMsg.created_date;
+        setMessages((prev) => {
+          const withoutTemp = prev.filter((m) => m.id !== tempId);
+          return upsertMessage(withoutTemp, realMsg);
+        });
+      }
     } catch (err) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
-      toast({ title: 'Mesaj gönderilemedi', description: err.response?.data?.error || err.message, variant: 'destructive' });
+      const errorMsg = err.response?.data?.error || err.error || err.message || 'Mesaj gönderilemedi';
+      toast({ title: errorMsg, variant: 'destructive' });
       throw err;
     } finally {
       setSending(false);
@@ -116,7 +143,6 @@ export default function useChatMessages(conversationId) {
     } catch {}
   }, [conversationId, userId]);
 
-  // Mesaj sil: sadece bu kullanıcı için gizle, karşı taraf görmeye devam eder
   const deleteMessage = useCallback(async (messageId) => {
     if (!messageId) return;
     setMessages((prev) => prev.filter((m) => m.id !== messageId));
@@ -129,7 +155,6 @@ export default function useChatMessages(conversationId) {
     }
   }, [toast, conversationId]);
 
-  // Sohbeti sil: sadece bu kullanıcı için gizle, karşı taraf etkilenmez
   const deleteConversation = useCallback(async () => {
     if (!conversationId || !userId) return;
     try {
