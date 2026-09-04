@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/lib/useCurrentUser';
 /**
  * Sohbet listesi hook'u — kullanıcının silmediği tüm sohbetleri getirir.
  * Realtime: yeni sohbet oluşturulduğunda, mesaj geldiğinde, sohbet silindiğinde anında günceller.
+ * social-thread-open event'ini dinleyerek sohbet açıldığında okunmamış sayısını anlık sıfırlar.
  */
 export default function useConversations() {
   const { user } = useCurrentUser();
@@ -43,9 +44,20 @@ export default function useConversations() {
         return [convo, ...prev];
       });
     });
+    // Sohbet açıldığında okunmamış sayısını anlık sıfırla (real-time)
+    const onThreadOpen = (event) => {
+      const conversationId = event.detail?.conversationId;
+      if (!conversationId) return;
+      setConversations((prev) => prev.map((c) =>
+        c.id === conversationId
+          ? { ...c, ...(c.user1_id === user.id ? { unread_user1: 0 } : { unread_user2: 0 }) }
+          : c
+      ));
+    };
+    window.addEventListener('social-thread-open', onThreadOpen);
     const reconnect = () => load();
     window.addEventListener('online', reconnect);
-    return () => { unsub(); window.removeEventListener('online', reconnect); };
+    return () => { unsub(); window.removeEventListener('social-thread-open', onThreadOpen); window.removeEventListener('online', reconnect); };
   }, [user?.id, load]);
 
   const optimisticHide = useCallback((conversationId) => {
