@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Eye, EyeOff, Instagram, Lock, MessageCircle, MessageSquare, MessageSquareOff, Mic, MicOff, Unlock, X, Ban, UserX, Film, Shield } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-export default function RoomSettingsMenu({ open, onClose, room, canMod, participants, roomModerators, onAssignMod, onRemoveMod, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie }) {
+export default function RoomSettingsMenu({ open, onClose, room, canMod, participants, roomModerators, onAssignMod, onRemoveMod, roomName, setRoomName, onSaveName, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie }) {
   const { toast } = useToast();
   const [showBanned, setShowBanned] = useState(false);
   const [showMods, setShowMods] = useState(false);
@@ -30,6 +30,10 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, particip
       <div className="flex items-center justify-between px-4 py-3 border-b border-border"><p className="font-bold">Oda Ayarları</p><button onClick={onClose} className="rounded-lg p-1.5 hover:bg-secondary"><X className="w-4 h-4" /></button></div>
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
       {!canMod ? <p className="text-sm text-muted-foreground">Bu ayarları yalnızca oda sahibi değiştirebilir.</p> : <div className="space-y-2">
+        <div className="flex gap-2">
+          <input value={roomName || ''} onChange={(e) => setRoomName(e.target.value)} placeholder="Oda adı" className="min-w-0 flex-1 rounded-lg bg-secondary px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" maxLength={80} />
+          <button onClick={onSaveName} disabled={!roomName?.trim()} className="rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50 shrink-0">KAYDET</button>
+        </div>
         <button onClick={onPickMovie} className={button}><Film className="w-4 h-4 text-primary" /> Film Değiştir</button>
         <button onClick={onVoice} className={button}>{room.voice_enabled ? <MicOff className="w-4 h-4 text-destructive" /> : <Mic className="w-4 h-4 text-green-400" />} {room.voice_enabled ? 'Sesli sohbeti kapat' : 'Sesli sohbeti aç'}</button>
         <button onClick={onChat} className={button}>{room.chat_enabled ? <MessageSquareOff className="w-4 h-4 text-destructive" /> : <MessageSquare className="w-4 h-4 text-green-400" />} {room.chat_enabled ? 'Sohbeti kapat' : 'Sohbeti aç'}</button>

@@ -20,7 +20,7 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json();
     const { action, room_id, password, target_id } = body || {};
-    if (!room_id || !['get', 'join', 'leave', 'kick', 'ban', 'unban', 'set-password', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat', 'change-movie', 'assign-mod', 'remove-mod'].includes(action)) {
+    if (!room_id || !['get', 'join', 'leave', 'kick', 'ban', 'unban', 'set-password', 'set-name', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat', 'change-movie', 'assign-mod', 'remove-mod'].includes(action)) {
       return Response.json({ error: 'invalid request' }, { status: 400 });
     }
     const name = user.username || user.full_name || 'Kullanıcı';
@@ -127,7 +127,8 @@ export default async function(req) {
         update.banned_users = bannedUsers;
       }
       if (participants.length === 0) {
-        update.status = 'closed'; update.is_playing = false;
+        update.is_playing = false;
+        if (!room.is_personal) update.status = 'closed';
       }
       await base44.asServiceRole.entities.Room.update(room_id, update);
       await base44.asServiceRole.entities.RoomMessage.create({
@@ -203,6 +204,15 @@ export default async function(req) {
       return Response.json({ ok: true });
     }
 
+    if (action === 'set-name') {
+      if (!canModRoom) return Response.json({ error: 'yetkisiz' }, { status: 403 });
+      const { name: newName } = body || {};
+      if (!newName || !newName.trim()) return Response.json({ error: 'isim gerekli' }, { status: 400 });
+      const cleanName = newName.trim().slice(0, 80);
+      await base44.asServiceRole.entities.Room.update(room_id, { name: cleanName });
+      return Response.json({ ok: true });
+    }
+
     if (action === 'assign-mod' || action === 'remove-mod') {
       if (!isOwner && !isMod) return Response.json({ error: 'yetkisiz' }, { status: 403 });
       if (!target_id) return Response.json({ error: 'kullanıcı gerekli' }, { status: 400 });
@@ -246,7 +256,11 @@ export default async function(req) {
       if (!hasOnline) participants = [];
     }
     if (participants.length === 0) {
-      await base44.asServiceRole.entities.Room.update(room_id, { participants, status: 'closed', is_playing: false });
+      if (room.is_personal) {
+        await base44.asServiceRole.entities.Room.update(room_id, { participants, is_playing: false });
+      } else {
+        await base44.asServiceRole.entities.Room.update(room_id, { participants, status: 'closed', is_playing: false });
+      }
       const roleInfoLeave = getRoleInfo(me, labelOverrides);
       const roleMetaLeave = roleInfoLeave.label ? `{{ROLE|${roleInfoLeave.key || ''}|${roleInfoLeave.color || ''}|${roleInfoLeave.animation || 'pulse'}}}` : '';
       const frameInfoLeave = await getSpecialFrameInfo(base44, me, false);

@@ -65,6 +65,7 @@ export default function WatchParty() {
   useEffect(() => { directOpenRef.current = directOpen; }, [directOpen]);
   const [countdownText, setCountdownText] = useState('');
   const [autoDeleteMinutes, setAutoDeleteMinutes] = useState(0);
+  const [roomNameEdit, setRoomNameEdit] = useState('');
 
   useEffect(() => {
     base44.functions.invoke('room-presence', { action: 'get', room_id: id })
@@ -85,6 +86,16 @@ export default function WatchParty() {
   base44.entities.Movie.get(room.movie_id).then(setMovie).catch(() => {});
   }, [room?.movie_id]);
 
+  // Oda adını düzenleme alanını odadan başlat
+  useEffect(() => { setRoomNameEdit(room?.name || ''); }, [room?.name]);
+
+  // Kişisel oda: film yoksa otomatik film seçme panelini aç
+  useEffect(() => {
+    if (room?.is_personal && !room?.movie_id && joinCount > 0) {
+      setMoviePickerOpen(true);
+    }
+  }, [room?.is_personal, room?.movie_id, joinCount]);
+
   useEffect(() => {
     if (!user || !room || joinedRef.current) return;
     if (room.password && room.owner_id !== user.id && !isModerator(user) && !room.participants?.some((p) => p.user_id === user.id)) {
@@ -95,6 +106,7 @@ export default function WatchParty() {
       .then((res) => {
         joinedRef.current = true;
         setVoiceReady(true);
+        navigator.mediaDevices?.getUserMedia({ audio: true }).catch(() => {});
         setJoinCount((c) => c + 1);
         if (res.data?.ghost) ghostRef.current = true;
       })
@@ -286,6 +298,12 @@ export default function WatchParty() {
   const removeMod = async (uid) => {
     if (!isOwner && !isMod) return;
     try { await base44.functions.invoke('room-presence', { action: 'remove-mod', room_id: id, target_id: uid }); toast({ title: 'Moderatör kaldırıldı' }); }
+    catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+
+  const saveRoomName = async () => {
+    if (!canMod) return;
+    try { await base44.functions.invoke('room-presence', { action: 'set-name', room_id: id, name: roomNameEdit }); toast({ title: 'Oda adı güncellendi' }); }
     catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
@@ -497,7 +515,7 @@ export default function WatchParty() {
             </div>
           </div>
         )}
-        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} participants={room.participants || []} roomModerators={room.room_moderators || []} onAssignMod={assignMod} onRemoveMod={removeMod} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} />
+        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} participants={room.participants || []} roomModerators={room.room_moderators || []} onAssignMod={assignMod} onRemoveMod={removeMod} roomName={roomNameEdit} setRoomName={setRoomNameEdit} onSaveName={saveRoomName} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} />
       </div>
 
       <LiveKitDebugPanel voice={voice} />

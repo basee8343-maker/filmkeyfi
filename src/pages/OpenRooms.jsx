@@ -102,7 +102,7 @@ export default function OpenRooms() {
              const mv = movies[r.movie_id];
              return (
                <div key={r.id} className="flex flex-col items-center">
-                 <div className={`relative w-36 h-36 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 ${r.is_personal ? 'border-accent' : 'border-primary/40'} shadow-lg group`}>
+                 <div className={`relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 ${r.is_personal ? 'border-accent' : 'border-primary/40'} shadow-lg group`}>
                    {mv?.poster ? <Image src={mv.poster} className="w-full h-full" fittingType="fill" /> :
                      <div className="w-full h-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center text-3xl">🎬</div>}
                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
@@ -155,7 +155,7 @@ export default function OpenRooms() {
                const ownerInRoom = (r.participants || []).some((p) => p.user_id === r.owner_id);
                return (
                  <div key={r.id} className="flex flex-col items-center">
-                   <div className={`relative w-36 h-36 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 ${ownerInRoom ? 'border-accent' : 'border-accent/30'} shadow-lg group`}>
+                   <div className={`relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 ${ownerInRoom ? 'border-accent' : 'border-accent/30'} shadow-lg group`}>
                      {mv?.poster ? <Image src={mv.poster} className="w-full h-full" fittingType="fill" /> :
                        <div className="w-full h-full bg-gradient-to-br from-accent/30 to-primary/30 flex items-center justify-center text-3xl">🎬</div>}
                      <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
