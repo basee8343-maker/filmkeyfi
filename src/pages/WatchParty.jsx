@@ -453,16 +453,6 @@ export default function WatchParty() {
           </div>
         )}
 
-        {!chatOpen && !directOpen && (
-          <div className="absolute bottom-[max(env(safe-area-inset-bottom),1rem)] left-1/2 -translate-x-1/2 z-[50] flex items-center gap-1.5 rounded-full bg-black/70 backdrop-blur-md border border-white/10 px-2 py-1.5 shadow-2xl max-w-[92vw] overflow-x-auto no-scrollbar">
-            <button onClick={() => setChatOpen(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-white whitespace-nowrap shrink-0"><MessageSquare className="w-4 h-4" /> {unread > 0 ? `${unread} Yeni` : 'Sohbet'}</button>
-            {canMod && chatEnabled && <button onClick={clearAllMessages} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold text-red-400 whitespace-nowrap shrink-0"><Trash2 className="w-3.5 h-3.5" /> Tümünü Sil</button>}
-            {room.voice_enabled && <VoiceControls voice={voice} />}
-            <button onClick={() => setShowSettings(true)} className="p-1.5 rounded-full text-white shrink-0"><Settings className="w-4 h-4" /></button>
-            <button onClick={() => setDirectOpen(true)} className="relative p-1.5 rounded-full text-white shrink-0"><MessagesSquare className="w-4 h-4" />{directUnread > 0 && <span className="absolute -right-1 -top-1 min-w-4 h-4 rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground flex items-center justify-center">{directUnread > 99 ? '99+' : directUnread}</span>}</button>
-          </div>
-        )}
-
         {directOpen && (
           <div className="absolute right-0 top-0 bottom-0 z-[70] w-full max-w-sm"
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
