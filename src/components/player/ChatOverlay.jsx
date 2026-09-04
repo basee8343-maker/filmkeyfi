@@ -220,7 +220,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
         </div>
       )}
       {(chatEnabled || isOwner) && (
-        <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-[#0d0d0d] overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-[#0d0d0d] overflow-x-auto no-scrollbar" onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
           {['all', 'yetkililer', 'izleyici', 'yonetici', ...(isOwner ? ['istekler'] : [])].map((f) => (
             <button key={f} onClick={() => setMsgFilter(f)} className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${msgFilter === f ? 'text-[#ffcc00]' : 'text-[#888] hover:text-white'}`} style={msgFilter === f ? { borderBottom: '2px solid #ffcc00', background: 'rgba(255, 204, 0, 0.08)' } : {}}>
               {f === 'all' ? 'Tümü' : f === 'yetkililer' ? 'Yetkililer' : f === 'izleyici' ? 'İzleyici' : f === 'istekler' ? `İstekler${joinRequests.length > 0 ? ` (${joinRequests.length})` : ''}` : 'Yönetici'}
