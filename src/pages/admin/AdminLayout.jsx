@@ -19,13 +19,13 @@ const navGroups = [
     title: null,
     items: [
       { to: '/', label: 'Ana Sayfa', icon: Home, end: true, external: true },
+      { to: '/filmler', label: 'Site Filmler', icon: Film, external: true },
       { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
     ],
   },
   {
     title: 'İçerik Yönetimi',
     items: [
-      { to: '/admin/filmler', label: 'Filmler', icon: Film },
       { to: '/admin/film-ekle', label: 'Film Yükle', icon: Film },
       { to: '/admin/kategoriler', label: 'Kategoriler', icon: FolderTree },
       { to: '/admin/destek', label: 'Destek Mesajları', icon: Target },
