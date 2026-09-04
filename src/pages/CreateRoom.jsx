@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
-import { Users, Lock, MessageSquare, Mic, DoorOpen, Check } from 'lucide-react';
+import { Users, Lock, MessageSquare, Mic, DoorOpen, Check, Home } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 
 export default function CreateRoom() {
@@ -33,6 +33,15 @@ export default function CreateRoom() {
     } catch (err) { toast({ title: 'Hata', description: err.response?.data?.error || err.message, variant: 'destructive' }); }
   };
 
+  const openMyRoom = async () => {
+    try {
+      const res = await base44.functions.invoke('personal-room', {});
+      navigate(`/oda/${res.data.id}`);
+    } catch (e) {
+      toast({ title: 'Oda açılamadı', description: e.response?.data?.error || e.message, variant: 'destructive' });
+    }
+  };
+
   const field = "w-full bg-secondary/60 rounded-lg px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring border border-border";
 
   return (
@@ -42,6 +51,7 @@ export default function CreateRoom() {
         <Link to="/acik-odalar" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"><DoorOpen className="w-4 h-4" /> Açık Odalar</Link>
       </div>
       <p className="text-sm text-muted-foreground mb-6">Arkadaşlarınla birlikte izlemek için bir Watch Party odası oluştur.</p>
+      <button onClick={openMyRoom} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-semibold py-3 rounded-lg flex items-center justify-center gap-2 mb-4"><Home className="w-5 h-5" /> Kendi Odamı Aç</button>
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="text-sm font-medium block mb-1.5">Oda Adı</label>

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { DoorOpen, Users, Lock, Loader2, Instagram, EyeOff } from 'lucide-react';
+import { DoorOpen, Users, Lock, Loader2, Instagram, EyeOff, Star } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
@@ -84,7 +84,7 @@ export default function OpenRooms() {
              const mv = movies[r.movie_id];
              return (
                <div key={r.id} className="flex flex-col items-center">
-                 <div className="relative w-36 h-36 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-primary/40 shadow-lg group">
+                 <div className={`relative w-36 h-36 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 ${r.is_personal ? 'border-accent' : 'border-primary/40'} shadow-lg group`}>
                    {mv?.poster ? <Image src={mv.poster} className="w-full h-full" fittingType="fill" /> :
                      <div className="w-full h-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center text-3xl">🎬</div>}
                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
@@ -93,6 +93,9 @@ export default function OpenRooms() {
                        <Lock className="w-3.5 h-3.5 text-amber-400" />
                        <span className="text-[9px] text-amber-400 font-bold">KİLİTLİ</span>
                      </span>
+                   )}
+                   {r.is_personal && (
+                     <span className="absolute top-1 left-1 bg-accent text-accent-foreground text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5 z-10"><Star className="w-2.5 h-2.5" /> Kişisel</span>
                    )}
                    {r.hidden && (
                      <span className="absolute top-1 left-1 bg-black/80 rounded-full p-1.5 border border-blue-400/60 flex items-center gap-1">

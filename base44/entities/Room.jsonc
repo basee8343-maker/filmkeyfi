@@ -68,6 +68,17 @@
       ],
       "default": "active"
     },
+    "is_personal": {
+      "type": "boolean",
+      "default": false
+    },
+    "room_moderators": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "banned_users": {
       "type": "array",
       "items": {

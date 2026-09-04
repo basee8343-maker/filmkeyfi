@@ -20,6 +20,7 @@ export default async function(req) {
     let transferredCount = 0;
 
     for (const room of rooms) {
+      if (room.is_personal) continue; // Kişisel odaları kapatma
       const participants = room.participants || [];
       if (participants.length === 0) {
         await base44.asServiceRole.entities.Room.update(room.id, { status: 'closed', is_playing: false });
