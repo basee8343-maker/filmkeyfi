@@ -126,6 +126,13 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
         setConnectionState('connected');
         setError('');
         room.startAudio().catch(() => setAudioBlocked(true));
+        // Mikrofonu otomatik aç ve izin iste — odaya girer girmez sesli iletişim başlasın
+        room.localParticipant.setMicrophoneEnabled(true, { echoCancellation: true, noiseSuppression: true, autoGainControl: true })
+          .then(() => { if (!cancelled) refreshState(); })
+          .catch((micError) => {
+            console.error('[LiveKit] Auto mic enable failed', micError);
+            if (!cancelled) setError(friendlyMicError(micError));
+          });
         refreshState();
       } catch (connectError) {
         console.error('[LiveKit] Connection failed', connectError);

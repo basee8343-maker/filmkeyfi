@@ -10,7 +10,7 @@ import { Mic, MicOff, Crown, X, Eye, ArrowLeft } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
-import PartyControlBar from '@/components/player/PartyControlBar';
+import RoomControlPanel from '@/components/player/RoomControlPanel';
 import LiveKitDebugPanel from '@/components/player/LiveKitDebugPanel';
 import RoomDirectMessages from '@/components/player/RoomDirectMessages';
 import RoomNotifications from '@/components/player/RoomNotifications';
@@ -57,14 +57,7 @@ export default function WatchParty() {
   const seenRoomMessagesRef = useRef(new Set());
   const voice = useVoiceChat({ roomId: id, user, participants: room?.participants, voiceEnabled: !!room?.voice_enabled && voiceReady });
   const { messages: directUnread } = useSocialBadges(user?.id);
-  const [partyBarVisible, setPartyBarVisible] = useState(true);
-  const partyBarTimer = useRef(null);
-  const showPartyBar = () => {
-    setPartyBarVisible(true);
-    clearTimeout(partyBarTimer.current);
-    partyBarTimer.current = setTimeout(() => setPartyBarVisible(false), 4000);
-  };
-  useEffect(() => { showPartyBar(); return () => clearTimeout(partyBarTimer.current); }, []);
+  const [controlPanelOpen, setControlPanelOpen] = useState(false);
   const [dmNotif, setDmNotif] = useState(null);
   const [dmNotifLeaving, setDmNotifLeaving] = useState(false);
   const dmNotifTimer = useRef(null);
@@ -361,8 +354,8 @@ export default function WatchParty() {
       return;
     }
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      if (dx < 0) setChatOpen(true);
-      else setChatOpen(false);
+      if (dx < 0) setControlPanelOpen(true);
+      else { setControlPanelOpen(false); setChatOpen(false); }
     }
   };
 
@@ -410,7 +403,7 @@ export default function WatchParty() {
         </div>
         <button onClick={() => { setShowViewers(!showViewers); setShowSettings(false); }} className={`absolute top-[max(env(safe-area-inset-top),0.75rem)] right-3 z-[55] flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white border border-white/10 backdrop-blur-md transition active:scale-95 ${showViewers ? 'bg-primary/80' : 'bg-black/60'}`}><Eye className="w-4 h-4" /><span>{visibleParticipants.length}</span></button>
         <div className={`flex items-center justify-center bg-black ${chatOpen ? 'flex-1 min-w-0' : 'flex-1 min-w-0'}`}>
-          {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={canMod} isTimeSource={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} onEnded={() => setMoviePickerOpen(true)} onControlsChange={(v) => { if (v) showPartyBar(); }} fullscreenRef={playerWrapRef} watermark={user} controlsRaised /> :
+          {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={canMod} isTimeSource={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} onEnded={() => setMoviePickerOpen(true)} fullscreenRef={playerWrapRef} watermark={user} controlsRaised /> :
             <div className="text-muted-foreground text-sm p-6 text-center">Video kaynağı yok</div>}
         </div>
 
@@ -464,7 +457,7 @@ export default function WatchParty() {
       </div>
 
       <LiveKitDebugPanel voice={voice} />
-      <PartyControlBar voice={voice} voiceEnabled={room.voice_enabled} visible={partyBarVisible} unread={unread} directUnread={directUnread} settingsOpen={showSettings} chatOpen={chatOpen} directOpen={directOpen} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); showPartyBar(); }} onChat={() => { const next = !chatOpen; setChatOpen(next); if (next) setUnread(0); setDirectOpen(false); setShowViewers(false); setShowSettings(false); showPartyBar(); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); showPartyBar(); }} />
+      <RoomControlPanel open={controlPanelOpen} onClose={() => setControlPanelOpen(false)} voice={voice} voiceEnabled={room.voice_enabled} unread={unread} directUnread={directUnread} settingsOpen={showSettings} chatOpen={chatOpen} directOpen={directOpen} viewersCount={visibleParticipants.length} onViewers={() => { setShowViewers(!showViewers); setShowSettings(false); }} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onChat={() => { const next = !chatOpen; setChatOpen(next); if (next) setUnread(0); setDirectOpen(false); setShowViewers(false); setShowSettings(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} />
 
       <ConfirmDialog
         open={showPwRemoveConfirm}
