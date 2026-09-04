@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Eye, EyeOff, Instagram, Lock, MessageCircle, MessageSquare, MessageSquareOff, Mic, MicOff, Unlock, X, Ban, UserX, Film } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export default function RoomSettingsMenu({ open, onClose, room, canMod, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie }) {
   const { toast } = useToast();
   const [showBanned, setShowBanned] = useState(false);
+  const touchStart = useRef({ x: 0, y: 0 });
   if (!open) return null;
   const button = 'w-full flex items-center gap-3 rounded-xl border border-border bg-secondary/60 px-3 py-3 text-sm font-semibold hover:bg-secondary transition-colors';
   const shareText = `FILMKEYFİ odasına katıl: ${window.location.href}`;
@@ -21,9 +22,12 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, password
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-2xl border border-border bg-card p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-      <div className="mb-3 flex items-center justify-between"><p className="font-bold">Oda Ayarları</p><button onClick={onClose} className="rounded-lg p-1.5 hover:bg-secondary"><X className="w-4 h-4" /></button></div>
+    <div className="absolute right-0 top-0 bottom-0 z-[65] flex w-full max-w-sm flex-col border-l border-border bg-card/95 pt-[max(env(safe-area-inset-top),0.75rem)] pb-[max(env(safe-area-inset-bottom),0.5rem)] shadow-2xl backdrop-blur-xl slide-in-left"
+      onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
+      onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) onClose(); }}
+    >
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border"><p className="font-bold">Oda Ayarları</p><button onClick={onClose} className="rounded-lg p-1.5 hover:bg-secondary"><X className="w-4 h-4" /></button></div>
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
       {!canMod ? <p className="text-sm text-muted-foreground">Bu ayarları yalnızca oda sahibi değiştirebilir.</p> : <div className="space-y-2">
         <button onClick={onPickMovie} className={button}><Film className="w-4 h-4 text-primary" /> Film Değiştir</button>
         <button onClick={onVoice} className={button}>{room.voice_enabled ? <MicOff className="w-4 h-4 text-destructive" /> : <Mic className="w-4 h-4 text-green-400" />} {room.voice_enabled ? 'Sesli sohbeti kapat' : 'Sesli sohbeti aç'}</button>
@@ -45,8 +49,8 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, password
           </div>
         )}
       </div>}
-      <div className="mt-2 grid grid-cols-2 gap-2 border-t border-border pt-2"><button onClick={shareWhatsApp} className={button}><MessageCircle className="w-4 h-4 text-green-500" /> WhatsApp</button><button onClick={shareInstagram} className={button}><Instagram className="w-4 h-4 text-pink-500" /> Instagram</button></div>
       </div>
+      <div className="grid grid-cols-2 gap-2 border-t border-border p-3"><button onClick={shareWhatsApp} className={button}><MessageCircle className="w-4 h-4 text-green-500" /> WhatsApp</button><button onClick={shareInstagram} className={button}><Instagram className="w-4 h-4 text-pink-500" /> Instagram</button></div>
     </div>
   );
 }
