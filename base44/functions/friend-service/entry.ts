@@ -175,10 +175,10 @@ export default async function(req) {
 
     if (action === 'start_admin_chat') {
       // Kullanıcı adminle arkadaş olmadan da özel mesaj başlatabilir — arkadaşlık kaydı OLUŞMAZ.
-      const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' }, 'created_date', 1);
-      const target = admins[0];
+      // Kendi dışındaki bir yöneticiyi bul.
+      const admins = await base44.asServiceRole.entities.User.filter({ role: 'admin' }, 'created_date', 50);
+      const target = admins.find((a) => a.id !== user.id);
       if (!target) return Response.json({ error: 'Yönetici bulunamadı' }, { status: 404 });
-      if (target.id === user.id) return Response.json({ error: 'Kendinize mesaj yazamazsınız' }, { status: 400 });
       return Response.json({ admin_id: target.id, admin_name: target.username || target.full_name || 'Yönetici' });
     }
 
