@@ -16,7 +16,8 @@ export default function useFriends() {
       base44.entities.Friendship.filter({ members: user.id }, '-updated_date', 200),
       base44.entities.DirectMessage.filter({ participants: user.id }, 'created_date', 500)
     ]);
-    setRelations(friendships); setMessages((current) => mergeMessages(current, directMessages)); setLoading(false);
+    const visible = directMessages.filter((m) => !(m.hidden_for || []).includes(user.id));
+    setRelations(friendships); setMessages((current) => mergeMessages(current, visible)); setLoading(false);
   }, [user?.id]);
   useEffect(() => {
     reload();
@@ -31,6 +32,7 @@ export default function useFriends() {
     const offMessages = base44.entities.DirectMessage.subscribe((event) => {
       const message = event.data;
       if (event.type === 'delete') { setMessages((current) => current.filter((item) => item.id !== event.id)); return; }
+      if ((message?.hidden_for || []).includes(user.id)) { setMessages((current) => current.filter((item) => item.id !== message.id)); return; }
       if (event.type === 'create' && message?.sender_id !== user.id && message?.recipient_id !== user.id) return;
       setMessages((current) => upsertMessage(current, message));
     });

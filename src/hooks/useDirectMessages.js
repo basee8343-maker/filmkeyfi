@@ -100,7 +100,7 @@ export default function useDirectMessages(friendshipId) {
     if (!messageId) return;
     setMessages((prev) => prev.filter((m) => m.id !== messageId));
     try {
-      await base44.entities.DirectMessage.delete(messageId);
+      await base44.entities.DirectMessage.updateMany({ id: messageId }, { $addToSet: { hidden_for: userId } });
     } catch (err) {
       load();
       toast({ title: 'Silinemedi', description: err.response?.data?.error || err.message, variant: 'destructive' });

@@ -21,7 +21,7 @@ import RoomSettingsContent from '@/components/player/RoomSettingsContent';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
-export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, directUnread = 0, ownerId, roomModerators = [], participants = [], viewerProfiles = {}, presenceMap = {}, onProfileCard, settingsProps }) {
+export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, directUnread = 0, ownerId, roomModerators = [], participants = [], viewerProfiles = {}, presenceMap = {}, onProfileCard, settingsProps, onToggleChat }) {
   const { user } = useCurrentUser();
   const { toast } = useToast();
   const [messages, setMessages] = useState([]);
@@ -219,7 +219,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
           {onDirect && <button onClick={onDirect} className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#1a1a1a] text-xs font-semibold hover:bg-[#2a2a2a] whitespace-nowrap text-white"><MessagesSquare className="w-4 h-4" /> Mesaj{directUnread > 0 && <span className="absolute -right-1 -top-1 min-w-4 h-4 rounded-full px-1 text-[9px] font-bold text-white flex items-center justify-center" style={{ background: '#ffcc00', color: '#000' }}>{directUnread > 99 ? '99+' : directUnread}</span>}</button>}
         </div>
       )}
-      {chatEnabled && (
+      {(chatEnabled || isOwner) && (
         <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-[#0d0d0d] overflow-x-auto no-scrollbar">
           {['all', 'yetkililer', 'izleyici', 'yonetici', ...(isOwner ? ['istekler'] : [])].map((f) => (
             <button key={f} onClick={() => setMsgFilter(f)} className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${msgFilter === f ? 'text-[#ffcc00]' : 'text-[#888] hover:text-white'}`} style={msgFilter === f ? { borderBottom: '2px solid #ffcc00', background: 'rgba(255, 204, 0, 0.08)' } : {}}>
@@ -229,12 +229,20 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
           {isOwner && <button onClick={clearAll} className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-[#ffcc00] hover:bg-white/5 shrink-0"><Sparkles className="w-3 h-3" /> Temizle</button>}
         </div>
       )}
-      {!chatEnabled ? (
-        <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-6 text-[#888] bg-black">
-          <MessageSquareOff className="w-10 h-10 mb-3" />
-          <p className="font-semibold text-white">Sohbet kapalı</p>
-          <p className="text-sm">Oda sahibi sohbeti kapatmış.</p>
-        </div>
+      {!chatEnabled && msgFilter === 'all' ? (
+        isOwner ? (
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-6 bg-black">
+            <MessageSquareOff className="w-10 h-10 mb-3 text-[#888]" />
+            <p className="font-semibold text-white mb-3">Sohbet kapalı</p>
+            <button onClick={onToggleChat} className="px-5 py-2.5 rounded-xl text-sm font-bold text-black" style={{ background: '#ffcc00' }}>Sohbeti Aç</button>
+          </div>
+        ) : (
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center text-center p-6 text-[#888] bg-black">
+            <MessageSquareOff className="w-10 h-10 mb-3" />
+            <p className="font-semibold text-white">Sohbet kapalı</p>
+            <p className="text-sm">Oda sahibi sohbeti kapatmış.</p>
+          </div>
+        )
       ) : msgFilter === 'all' ? (
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2 bg-black" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
         {loading ? <p className="text-center text-sm text-[#888] py-8">Yükleniyor...</p> :
