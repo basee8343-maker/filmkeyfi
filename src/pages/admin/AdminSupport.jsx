@@ -5,6 +5,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Send, Trash2, XCircle } from 'lucide-react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import UserBadge from '@/components/admin/UserBadge';
+import { statusLabel, STATUS_COLORS } from '@/lib/supportStatus';
 
 export default function AdminSupport() {
   const { user: admin } = useCurrentUser();
@@ -85,7 +86,7 @@ export default function AdminSupport() {
           {tickets.map((t) => (
             <button key={t.id} onClick={() => setActive(t)} className={`w-full text-left p-3 rounded-lg border ${active?.id === t.id ? 'border-primary bg-primary/10' : 'border-border bg-card'}`}>
               <p className="font-medium text-sm truncate">{t.subject}</p>
-              <p className="text-xs text-muted-foreground">{t.user_name} · {profiles[t.user_id]?.member_id ? `#${profiles[t.user_id].member_id} · ` : ''}<span className={t.status === 'new' ? 'text-amber-400' : t.status === 'answered' ? 'text-green-400' : ''}>{t.status}</span></p>
+              <p className="text-xs text-muted-foreground">{t.user_name} · {profiles[t.user_id]?.member_id ? `#${profiles[t.user_id].member_id} · ` : ''}<span className={STATUS_COLORS[t.status] || ''}>{statusLabel(t.status)}</span></p>
             </button>
           ))}
         </div>

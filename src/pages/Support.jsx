@@ -4,6 +4,7 @@ import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
 import { MessageCircle, Send, Image as ImageIcon, Headset, X } from 'lucide-react';
 import { Image } from '@/components/ui/image';
+import { statusLabel } from '@/lib/supportStatus';
 
 const CATS = ['Genel', 'Teknik Sorun', 'Üyelik', 'Ödeme', 'İçerik Talebi', 'Diğer'];
 
@@ -89,6 +90,10 @@ export default function Support() {
     base44.entities.SupportMessage.create({ ticket_id: active.id, owner_id: user.id, user_id: user.id, sender: 'user', text: msgText })
       .then((msg) => {
         if (msg?.id) {
+          // Kullanıcı mesaj attığında durum "İnceleniyor" olur (admin henüz cevaplamadı)
+          if (active.status !== 'answered' && active.status !== 'closed') {
+            base44.entities.SupportTicket.update(active.id, { status: 'reviewing' }).catch(() => {});
+          }
           base44.functions.invoke('admin-notify', {
             event: 'support_message',
             ref_id: `support_msg:${msg.id}`,
@@ -138,7 +143,7 @@ export default function Support() {
             tickets.map((t) => (
               <button key={t.id} onClick={() => setActive(t)} className={`w-full text-left p-3 rounded-lg border ${active?.id === t.id ? 'border-primary bg-primary/10' : 'border-border bg-card'}`}>
                 <p className="font-medium text-sm truncate">{t.subject}</p>
-                <p className="text-xs text-muted-foreground">{t.category} · {t.status}</p>
+                <p className="text-xs text-muted-foreground">{t.category} · {statusLabel(t.status)}</p>
               </button>
             ))}
         </div>
