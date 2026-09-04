@@ -32,16 +32,27 @@ export async function notifyAdmins(base44: any, opts: {
   const cleanBody = sanitize(body || '', 500);
   const cleanLink = sanitize(link || '', 200);
 
-  // Create Notification record for each admin
+  // Her olay türü için tek bildirim: varsa güncelle, yoksa oluştur
   for (const admin of adminUsers) {
-    await base44.asServiceRole.entities.Notification.create({
-      user_id: admin.id,
-      title: cleanTitle,
-      body: cleanBody,
-      type: event,
-      link: cleanLink,
-      ref_id: dedupRefId,
-    }).catch(() => {});
+    const existing = await base44.asServiceRole.entities.Notification.filter({ user_id: admin.id, type: event }, '-created_date', 1).catch(() => []);
+    if (existing && existing.length > 0) {
+      await base44.asServiceRole.entities.Notification.update(existing[0].id, {
+        title: cleanTitle,
+        body: cleanBody,
+        link: cleanLink,
+        ref_id: dedupRefId,
+        read: false,
+      }).catch(() => {});
+    } else {
+      await base44.asServiceRole.entities.Notification.create({
+        user_id: admin.id,
+        title: cleanTitle,
+        body: cleanBody,
+        type: event,
+        link: cleanLink,
+        ref_id: dedupRefId,
+      }).catch(() => {});
+    }
   }
 
   // Send Web Push and Telegram in background — don't block the response
