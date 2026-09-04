@@ -1,0 +1,37 @@
+{
+  "name": "RoomLevel",
+  "type": "object",
+  "properties": {
+    "room_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "level": {
+      "type": "integer",
+      "default": 1
+    },
+    "message_count": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "room_id",
+    "user_id"
+  ],
+  "rls": {
+    "read": {},
+    "create": {},
+    "update": {},
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

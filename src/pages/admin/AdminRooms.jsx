@@ -42,8 +42,9 @@ export default function AdminRooms() {
   const close = async (r) => { await base44.entities.Room.update(r.id, { status: 'closed' }); await log('Oda kapatıldı', r.name); toast({ title: 'Kapatıldı' }); load(); };
   const toggleChat = async (r) => { await base44.entities.Room.update(r.id, { chat_enabled: !r.chat_enabled }); await log('Sohbet durumu değişti', r.name); load(); };
   const toggleVoice = async (r) => { await base44.entities.Room.update(r.id, { voice_enabled: !r.voice_enabled }); await log('Sesli sohbet durumu değişti', r.name); load(); };
-  const del = async () => { await base44.entities.RoomMessage.deleteMany({ room_id: confirm.id }).catch(() => {}); await base44.entities.Room.delete(confirm.id); await log('Oda silindi', confirm.name); toast({ title: 'Silindi' }); setConfirm(null); load(); };
-  const delAll = async () => { await Promise.all(rooms.map((r) => base44.entities.RoomMessage.deleteMany({ room_id: r.id }).catch(() => {}))); await base44.entities.Room.deleteMany({}); await log('Tüm odalar silindi', `${rooms.length} oda`); setConfirmAll(false); toast({ title: 'Tüm odalar silindi' }); load(); };
+  const reopen = async (r) => { await base44.entities.Room.update(r.id, { status: 'active' }); toast({ title: 'Oda açıldı' }); load(); };
+  const del = async () => { await base44.entities.RoomMessage.deleteMany({ room_id: confirm.id }).catch(() => {}); await base44.entities.Room.delete(confirm.id); toast({ title: 'Silindi' }); setConfirm(null); load(); };
+  const delAll = async () => { await Promise.all(rooms.map((r) => base44.entities.RoomMessage.deleteMany({ room_id: r.id }).catch(() => {}))); await base44.entities.Room.deleteMany({}); setConfirmAll(false); toast({ title: 'Tüm odalar silindi' }); load(); };
 
   const filtered = rooms.filter((r) => r.name?.toLowerCase().includes(search.toLowerCase()) || r.owner_name?.toLowerCase().includes(search.toLowerCase()) || r.movie_title?.toLowerCase().includes(search.toLowerCase()));
   const sorted = [...filtered].sort((a, b) => {
@@ -119,7 +120,7 @@ export default function AdminRooms() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-0.5 rounded-full shrink-0">Oda #{(idx + 1 + (page - 1) * PAGE_SIZE).toString().padStart(4, '0')}</span>
+                      <span className="text-xs font-bold bg-primary/20 text-primary px-2 py-0.5 rounded-full shrink-0">Oda #{(idx + 1 + (page - 1) * PAGE_SIZE).toString().padStart(4, '0')}</span>{r.is_personal && <span className="text-xs font-bold bg-accent/20 text-accent px-2 py-0.5 rounded-full shrink-0">Kişisel</span>}
                       <p className="font-semibold truncate">{r.name}</p>
                     </div>
                     <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${r.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>{r.status === 'active' ? 'Aktif' : 'Kapalı'}</span>
@@ -134,7 +135,7 @@ export default function AdminRooms() {
                   </div>
                   {/* Actions */}
                   <div className="flex flex-wrap gap-1.5">
-                    {r.status === 'active' && <button onClick={() => navigate(`/oda/${r.id}`)} className="px-3 py-1.5 rounded-lg border border-border text-xs font-semibold inline-flex items-center gap-1"><DoorClosed className="w-3.5 h-3.5" /> Katıl</button>}
+                    {r.status === 'active' ? <button onClick={() => navigate(`/oda/${r.id}`)} className="px-3 py-1.5 rounded-lg border border-border text-xs font-semibold inline-flex items-center gap-1"><DoorClosed className="w-3.5 h-3.5" /> Katıl</button> : <button onClick={() => reopen(r)} className="px-3 py-1.5 rounded-lg border border-green-500/30 text-green-400 text-xs font-semibold inline-flex items-center gap-1"><DoorClosed className="w-3.5 h-3.5" /> Aç</button>}
                     <button onClick={() => toggleChat(r)} className="px-3 py-1.5 rounded-lg border border-border text-xs font-semibold inline-flex items-center gap-1"><MessageSquareOff className="w-3.5 h-3.5" /> {r.chat_enabled ? 'Sohbet' : 'Sohbet Kapalı'}</button>
                     <button onClick={() => toggleVoice(r)} className="px-3 py-1.5 rounded-lg border border-border text-xs font-semibold inline-flex items-center gap-1"><MicOff className="w-3.5 h-3.5" /> {r.voice_enabled ? 'Sesli' : 'Kapalı'}</button>
                     {r.status === 'active' && <button onClick={() => close(r)} className="px-3 py-1.5 rounded-lg border border-amber-500/30 text-amber-400 text-xs font-semibold inline-flex items-center gap-1"><DoorClosed className="w-3.5 h-3.5" /> Kapat</button>}

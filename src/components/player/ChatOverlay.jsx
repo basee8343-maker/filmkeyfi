@@ -34,6 +34,18 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   const [showAutoDeleteMenu, setShowAutoDeleteMenu] = useState(false);
   const [blockedUsers, setBlockedUsers] = useState(user?.blocked_users || []);
   useEffect(() => { setBlockedUsers(user?.blocked_users || []); }, [user?.blocked_users]);
+  const [roomLevels, setRoomLevels] = useState({});
+  useEffect(() => {
+    if (!roomId) return;
+    base44.entities.RoomLevel.filter({ room_id: roomId }, 'created_date', 100)
+      .then((levels) => { const map = {}; levels.forEach((l) => { map[l.user_id] = l.level; }); setRoomLevels(map); })
+      .catch(() => {});
+    const unsub = base44.entities.RoomLevel.subscribe((ev) => {
+      if (ev.data?.room_id !== roomId) return;
+      setRoomLevels((prev) => ({ ...prev, [ev.data.user_id]: ev.data.level }));
+    });
+    return unsub;
+  }, [roomId]);
   const scrollRef = useRef(null);
   const profiles = useMessageProfiles(messages.map((message) => message.user_id));
 
@@ -171,7 +183,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       </div>
       {(voiceEnabled || onSettings || onDirect) && (
         <div className="flex items-center gap-1.5 px-3 py-2 border-b border-border">
-          {voiceEnabled && <VoiceControls voice={voice} />}
+          <VoiceControls voice={voice} />
           {isOwner && onSettings && <button onClick={onSettings} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/60 text-xs font-semibold hover:bg-secondary whitespace-nowrap"><Settings className="w-4 h-4" /> Ayarlar</button>}
           {onDirect && <button onClick={onDirect} className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-secondary/60 text-xs font-semibold hover:bg-secondary whitespace-nowrap"><MessagesSquare className="w-4 h-4" /> Mesaj{directUnread > 0 && <span className="absolute -right-1 -top-1 min-w-4 h-4 rounded-full bg-primary px-1 text-[9px] font-bold text-primary-foreground flex items-center justify-center">{directUnread > 99 ? '99+' : directUnread}</span>}</button>}
         </div>
@@ -219,6 +231,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                        <RoleNameEffect nameEffect={getRoleInfo(profiles[m.user_id] || m)?.name_effect} color={getRoleInfo(profiles[m.user_id] || m)?.color}>{m.user_name}{user?.id === m.user_id && ' (Sen)'}</RoleNameEffect>
                      </Link>
                      {m.user_id === ownerId && <span className="text-[10px] text-amber-400 font-bold shrink-0">Oda Sahibi</span>}
+                     {roomLevels[m.user_id] && <span className="text-[10px] font-bold text-blue-400 shrink-0">Lv{roomLevels[m.user_id]}</span>}
                      {profiles[m.user_id] && (profiles[m.user_id].display_role || profiles[m.user_id].custom_role?.name) && <RoleBadge user={profiles[m.user_id]} size="sm" showLabel={false} />}
                    </div>
                    <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')} msgEffect={getRoleInfo(profiles[m.user_id] || m)?.msg_effect} msgColor={getRoleInfo(profiles[m.user_id] || m)?.color}>

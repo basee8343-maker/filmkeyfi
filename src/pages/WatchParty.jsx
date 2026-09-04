@@ -65,6 +65,18 @@ export default function WatchParty() {
   useEffect(() => { directOpenRef.current = directOpen; }, [directOpen]);
   const [countdownText, setCountdownText] = useState('');
   const [autoDeleteMinutes, setAutoDeleteMinutes] = useState(0);
+  const [roomLevels, setRoomLevels] = useState({});
+  useEffect(() => {
+    if (!id || !room?.is_personal) return;
+    base44.entities.RoomLevel.filter({ room_id: id }, 'created_date', 100)
+      .then((levels) => { const map = {}; levels.forEach((l) => { map[l.user_id] = l.level; }); setRoomLevels(map); })
+      .catch(() => {});
+    const unsub = base44.entities.RoomLevel.subscribe((ev) => {
+      if (ev.data?.room_id !== id) return;
+      setRoomLevels((prev) => ({ ...prev, [ev.data.user_id]: ev.data.level }));
+    });
+    return unsub;
+  }, [id, room?.is_personal]);
   const [roomNameEdit, setRoomNameEdit] = useState('');
 
   useEffect(() => {
@@ -301,6 +313,23 @@ export default function WatchParty() {
     catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
+  const deleteRoom = async () => {
+    if (!confirm('Bu odayı kalıcı olarak silmek istediğinize emin misiniz?')) return;
+    try {
+      await base44.functions.invoke('room-presence', { action: 'delete-room', room_id: id });
+      toast({ title: 'Oda silindi' });
+      navigate('/');
+    } catch (e) {
+      toast({ title: 'Silinemedi', description: e.response?.data?.error || e.message, variant: 'destructive' });
+    }
+  };
+
+  const setLevel = async (uid, level) => {
+    if (!canMod) return;
+    try { await base44.functions.invoke('room-presence', { action: 'set-level', room_id: id, target_id: uid, level }); toast({ title: 'Seviye güncellendi' }); }
+    catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+
   const saveRoomName = async () => {
     if (!canMod) return;
     try { await base44.functions.invoke('room-presence', { action: 'set-name', room_id: id, name: roomNameEdit }); toast({ title: 'Oda adı güncellendi' }); }
@@ -515,7 +544,7 @@ export default function WatchParty() {
             </div>
           </div>
         )}
-        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} participants={room.participants || []} roomModerators={room.room_moderators || []} onAssignMod={assignMod} onRemoveMod={removeMod} roomName={roomNameEdit} setRoomName={setRoomNameEdit} onSaveName={saveRoomName} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} />
+        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} participants={room.participants || []} roomModerators={room.room_moderators || []} onAssignMod={assignMod} onRemoveMod={removeMod} roomName={roomNameEdit} setRoomName={setRoomNameEdit} onSaveName={saveRoomName} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} onDeleteRoom={deleteRoom} roomLevels={roomLevels} onSetLevel={setLevel} />
       </div>
 
       <LiveKitDebugPanel voice={voice} />

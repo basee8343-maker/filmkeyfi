@@ -228,6 +228,7 @@ export default function Register() {
           {/* Sol: Form */}
           <div className="bg-[#141414]/95 backdrop-blur-sm rounded-2xl border border-[#2a2a2a] p-6 shadow-2xl">
             <h2 className="text-xl font-bold text-white mb-1">Hesap Oluştur</h2>
+            <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">⚠️ Hesabınız admin onayından sonra aktif olacaktır.</div>
             <p className="text-sm text-[#a0a0a0] mb-6">Lütfen bilgilerinizi eksiksiz doldurun.</p>
 
             {error && <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">{error}</div>}

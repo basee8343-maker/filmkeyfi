@@ -58,6 +58,35 @@ export default async function(req) {
       room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
       text: clean, type: 'user'
     });
+    // Kişisel oda level sistemi
+    if (room.is_personal) {
+      try {
+        const levels = await base44.asServiceRole.entities.RoomLevel.filter({ room_id, user_id: user.id }, '-created_date', 1);
+        const levelRec = levels[0];
+        if (!levelRec) {
+          await base44.asServiceRole.entities.RoomLevel.create({
+            room_id, user_id: user.id, user_name: name, level: 1, message_count: 1
+          });
+        } else {
+          const newCount = (levelRec.message_count || 0) + 1;
+          let newLevel = levelRec.level || 1;
+          let leveledUp = false;
+          if (newCount % 100 === 0 && newLevel < 100) {
+            newLevel += 1;
+            leveledUp = true;
+          }
+          await base44.asServiceRole.entities.RoomLevel.update(levelRec.id, {
+            message_count: newCount, level: newLevel
+          });
+          if (leveledUp) {
+            await base44.asServiceRole.entities.RoomMessage.create({
+              room_id, user_id: user.id, user_name: name,
+              text: `🎉 ${name} ${newLevel} lvl oldu! Tebrikler!`, type: 'system'
+            });
+          }
+        }
+      } catch {}
+    }
     return Response.json({ ok: true });
   } catch (e) {
     return safeErrorResponse(e);

@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react';
-import { Eye, EyeOff, Instagram, Lock, MessageCircle, MessageSquare, MessageSquareOff, Mic, MicOff, Unlock, X, Ban, UserX, Film, Shield } from 'lucide-react';
+import { Eye, EyeOff, Instagram, Lock, MessageCircle, MessageSquare, MessageSquareOff, Mic, MicOff, Unlock, X, Ban, UserX, Film, Shield, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
-export default function RoomSettingsMenu({ open, onClose, room, canMod, participants, roomModerators, onAssignMod, onRemoveMod, roomName, setRoomName, onSaveName, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie }) {
+export default function RoomSettingsMenu({ open, onClose, room, canMod, participants, roomModerators, onAssignMod, onRemoveMod, roomName, setRoomName, onSaveName, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie, onDeleteRoom, roomLevels, onSetLevel }) {
   const { toast } = useToast();
   const [showBanned, setShowBanned] = useState(false);
   const [showMods, setShowMods] = useState(false);
@@ -59,6 +59,19 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, particip
             )}
           </>
         )}
+        {room.is_personal && canMod && onSetLevel && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-bold text-muted-foreground px-1">Seviye Yönetimi (1-100)</p>
+            <div className="rounded-xl border border-border bg-secondary/40 p-2 space-y-1.5 max-h-40 overflow-y-auto">
+              {participants.filter((p) => p.user_id !== room.owner_id).map((p) => (
+                <div key={p.user_id} className="flex items-center gap-2">
+                  <span className="text-xs truncate flex-1">{p.name}</span>
+                  <input type="number" min={1} max={100} defaultValue={roomLevels?.[p.user_id] || 1} onBlur={(e) => onSetLevel(p.user_id, parseInt(e.target.value) || 1)} className="w-16 rounded-lg bg-secondary px-2 py-1 text-xs outline-none" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {showBanned && (
           <div className="rounded-xl border border-border bg-secondary/40 p-2 space-y-1.5 max-h-40 overflow-y-auto">
             {bannedUsers.length === 0 ? <p className="text-xs text-muted-foreground text-center py-2">Atılmış kullanıcı yok.</p> :
@@ -73,6 +86,11 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, particip
         )}
       </div>}
       </div>
+      {room.is_personal && canMod && onDeleteRoom && (
+        <button onClick={onDeleteRoom} className="mx-3 mb-2 flex items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2.5 text-sm font-semibold text-red-400 hover:bg-red-500/20 transition-colors">
+          <Trash2 className="w-4 h-4" /> Odayı Sil
+        </button>
+      )}
       <div className="grid grid-cols-2 gap-2 border-t border-border p-3"><button onClick={shareWhatsApp} className={button}><MessageCircle className="w-4 h-4 text-green-500" /> WhatsApp</button><button onClick={shareInstagram} className={button}><Instagram className="w-4 h-4 text-pink-500" /> Instagram</button></div>
     </div>
   );
