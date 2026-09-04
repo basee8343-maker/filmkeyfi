@@ -24,10 +24,11 @@ export default function ProfileDropdown() {
   }, [user?.id]);
 
   useEffect(() => {
+    if (!open) return;
     const onClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
-  }, []);
+  }, [open]);
 
   const logout = () => { base44.auth.logout('/login'); };
 
@@ -59,8 +60,6 @@ export default function ProfileDropdown() {
       </button>
 
       {open && (
-        <>
-          <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-64 rounded-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150"
             style={{ background: 'rgba(20,22,28,0.97)', border: '1px solid rgba(174,184,196,0.2)', backdropFilter: 'blur(16px)', boxShadow: '0 20px 60px -15px rgba(0,0,0,0.8)' }}>
             {/* Header */}
@@ -133,7 +132,6 @@ export default function ProfileDropdown() {
               </button>
             </div>
           </div>
-        </>
       )}
     </div>
   );
