@@ -56,6 +56,7 @@ import Friends from '@/pages/Friends';
 
 import AdminPromoVideo from '@/pages/admin/AdminPromoVideo';
 import AdminSessions from '@/pages/admin/AdminSessions';
+import AdminUpdates from '@/pages/admin/AdminUpdates';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -134,6 +135,7 @@ const AuthenticatedApp = () => {
           <Route path="ayalar" element={<AdminSettings />} />
           <Route path="tanitim-videosu" element={<AdminPromoVideo />} />
           <Route path="oturumlar" element={<AdminSessions />} />
+          <Route path="guncellemeler" element={<AdminUpdates />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

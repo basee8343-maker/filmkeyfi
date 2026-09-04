@@ -10,6 +10,7 @@ import useFriendPresence from '@/hooks/useFriendPresence';
 import useRoleCelebration from '@/hooks/useRoleCelebration';
 import useRoleLabels from '@/hooks/useRoleLabels';
 import RoleCelebrationOverlay from '@/components/role/RoleCelebrationOverlay';
+import WhatsNewModal from '@/components/WhatsNewModal';
 import { detectConnectionType } from '@/lib/connectionType';
 import { triggerBanNotice } from '@/lib/banNotice';
 
@@ -146,6 +147,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       <RoleCelebrationOverlay />
+      <WhatsNewModal />
       <Navbar />
       <main className="pt-[calc(4rem+max(env(safe-area-inset-top),1.5rem))] pb-20 lg:pt-16 lg:pb-8 max-w-[1600px] mx-auto" style={{ touchAction: 'pan-y' }}>
         <Outlet />
