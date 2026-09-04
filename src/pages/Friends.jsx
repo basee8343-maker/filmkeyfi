@@ -64,7 +64,7 @@ export default function Friends() {
   if (view === 'chat') {
     const current = relations.find((relation) => relation.id === selected?.id) || selected;
     const friendId = current?.requester_id === user.id ? current?.recipient_id : current?.requester_id;
-    return <div className="max-w-3xl mx-auto sm:p-4"><ChatPanel friendship={current} userId={user.id} invoke={invoke} onBack={() => switchView('chats')} online={isOnline(friendId)} /></div>;
+    return <div className="max-w-3xl mx-auto sm:p-4"><ChatPanel key={current?.id} friendship={current} userId={user.id} invoke={invoke} onBack={() => switchView('chats')} online={isOnline(friendId)} /></div>;
   }
   
   const acceptedRelations = relations.filter((r) => r.status === 'accepted' && !(r.hidden_for || []).includes(user.id) && !r.is_admin_chat);
