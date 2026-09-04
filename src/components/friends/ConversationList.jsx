@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, Trash2 } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 
 export default function ConversationList({ conversations, userId, onOpen, onHide, isOnline }) {
   const [swiped, setSwiped] = useState(null);
+  useEffect(() => { setSwiped(null); }, [conversations]);
   const startX = useRef(0);
   const swipingRef = useRef(false);
   const chats = conversations.map((c) => {

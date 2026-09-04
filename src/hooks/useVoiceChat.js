@@ -25,6 +25,9 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   const [error, setError] = useState('');
   const [audioBlocked, setAudioBlocked] = useState(false);
   const [debug, setDebug] = useState(initialDebug);
+  const [everVoiceEnabled, setEverVoiceEnabled] = useState(voiceEnabled);
+  const voiceEnabledRef = useRef(voiceEnabled);
+  useEffect(() => { voiceEnabledRef.current = voiceEnabled; if (voiceEnabled) setEverVoiceEnabled(true); }, [voiceEnabled]);
 
   const refreshState = useCallback(() => {
     const room = roomRef.current;
@@ -126,13 +129,6 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
         setConnectionState('connected');
         setError('');
         room.startAudio().catch(() => setAudioBlocked(true));
-        // Mikrofonu otomatik aç ve izin iste — odaya girer girmez sesli iletişim başlasın
-        room.localParticipant.setMicrophoneEnabled(true, { echoCancellation: true, noiseSuppression: true, autoGainControl: true })
-          .then(() => { if (!cancelled) refreshState(); })
-          .catch((micError) => {
-            console.error('[LiveKit] Auto mic enable failed', micError);
-            if (!cancelled) setError(friendlyMicError(micError));
-          });
         refreshState();
       } catch (connectError) {
         console.error('[LiveKit] Connection failed', connectError);
@@ -168,7 +164,18 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       setConnectionState('disconnected');
       setDebug(initialDebug);
     };
-  }, [attachRemoteAudio, refreshState, roomId, user?.id, voiceEnabled]);
+  }, [attachRemoteAudio, refreshState, roomId, user?.id, everVoiceEnabled]);
+
+  // Mikrofonu voiceEnabled değiştiğinde aç/kapat — Room'u yeniden bağlamadan, izin istemeden
+  useEffect(() => {
+    if (!roomRef.current || connectionState !== 'connected' || !everVoiceEnabled) return;
+    roomRef.current.localParticipant.setMicrophoneEnabled(voiceEnabled, { echoCancellation: true, noiseSuppression: true, autoGainControl: true })
+      .then(refreshState)
+      .catch((micError) => {
+        console.error('[LiveKit] Mic toggle failed', micError);
+        if (micError?.name !== 'NotAllowedError') setError(friendlyMicError(micError));
+      });
+  }, [voiceEnabled, connectionState, everVoiceEnabled, refreshState]);
 
   useEffect(() => {
     const moderatorMuted = !!participants?.find((participant) => participant.user_id === user?.id)?.muted;
@@ -182,6 +189,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   const toggleMute = useCallback(async () => {
     const room = roomRef.current;
     if (!room || requesting || mutedByModeratorRef.current || connectionState !== 'connected') return;
+    if (!voiceEnabledRef.current && !active) return;
     setRequesting(true);
     setError('');
     try {
@@ -202,5 +210,5 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     if (!next) retryAudio();
   }, [deafened, retryAudio]);
 
-  return { muted: !active, remoteMuted, deafened, localSpeaking, speakingIds, participantMicStates, active, error, requesting, connectionState, audioBlocked, retryAudio, toggleMute, toggleDeafen, debug };
+  return { muted: !active, remoteMuted, deafened, localSpeaking, speakingIds, participantMicStates, active, error, requesting, connectionState, audioBlocked, retryAudio, toggleMute, toggleDeafen, debug, voiceEnabled };
 }

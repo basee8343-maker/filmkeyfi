@@ -13,7 +13,7 @@ export default function VoiceControls({ voice }) {
   const control = 'flex min-w-[44px] flex-col items-center gap-1 rounded-xl px-2 py-1.5 transition-colors disabled:opacity-50';
   return <div className="flex flex-col gap-1 w-full">
     <div className="flex items-center gap-2">
-      <button onClick={voice.toggleMute} disabled={voice.remoteMuted || voice.requesting || voice.connectionState !== 'connected'} className={`${control} ${voice.active ? 'text-green-400' : 'text-white/80'}`}>
+      <button onClick={voice.toggleMute} disabled={voice.remoteMuted || voice.requesting || voice.connectionState !== 'connected' || voice.voiceEnabled === false} className={`${control} ${voice.active ? 'text-green-400' : 'text-white/80'}`}>
         <span className={`flex h-7 w-7 items-center justify-center rounded-full border ${voice.active ? 'border-green-400' : 'border-white/20'} ${speaking ? 'speaking-glow' : ''}`}>{voice.active ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}</span>
         <span className="max-w-24 text-center text-[8px] font-bold leading-tight">{micLabel}</span>
         <span className="text-[7px] leading-tight text-white/60">{connectionLabels[voice.connectionState]}</span>

@@ -32,8 +32,16 @@ export default function RoomSettingsContent({ room, canMod, participants, roomMo
           <button onClick={onSaveName} disabled={!roomName?.trim()} className="rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50 shrink-0">KAYDET</button>
         </div>
         <button onClick={onPickMovie} className={button}><Film className="w-4 h-4 text-primary" /> Film Değiştir</button>
-        <button onClick={onVoice} className={button}>{room.voice_enabled ? <MicOff className="w-4 h-4 text-destructive" /> : <Mic className="w-4 h-4 text-green-400" />} {room.voice_enabled ? 'Sesli sohbeti kapat' : 'Sesli sohbeti aç'}</button>
-        <button onClick={onChat} className={button}>{room.chat_enabled ? <MessageSquareOff className="w-4 h-4 text-destructive" /> : <MessageSquare className="w-4 h-4 text-green-400" />} {room.chat_enabled ? 'Sohbeti kapat' : 'Sohbeti aç'}</button>
+        <button onClick={onVoice} className={`w-full flex items-center gap-3 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${room.voice_enabled ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-red-500/40 bg-red-500/10 text-red-400'}`}>
+          {room.voice_enabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+          <span className="flex-1 text-left">{room.voice_enabled ? 'Sesli Sohbet: Açık' : 'Sesli Sohbet: Kapalı'}</span>
+          <span className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ${room.voice_enabled ? 'bg-green-500' : 'bg-red-500'}`}><span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${room.voice_enabled ? 'translate-x-5' : 'translate-x-0.5'}`} /></span>
+        </button>
+        <button onClick={onChat} className={`w-full flex items-center gap-3 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${room.chat_enabled ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-red-500/40 bg-red-500/10 text-red-400'}`}>
+          {room.chat_enabled ? <MessageSquare className="w-4 h-4" /> : <MessageSquareOff className="w-4 h-4" />}
+          <span className="flex-1 text-left">{room.chat_enabled ? 'Sohbet: Açık' : 'Sohbet: Kapalı'}</span>
+          <span className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ${room.chat_enabled ? 'bg-green-500' : 'bg-red-500'}`}><span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${room.chat_enabled ? 'translate-x-5' : 'translate-x-0.5'}`} /></span>
+        </button>
         {room.is_personal && (
           <>
             <button onClick={onHidden} className={button}>{room.hidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />} {room.hidden ? 'Odayı görünür yap' : 'Odayı gizle'}</button>

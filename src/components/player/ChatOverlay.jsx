@@ -82,6 +82,56 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
     return unsub;
   }, [roomId, isOwner]);
 
+  const [typingUsers, setTypingUsers] = useState([]);
+  const myTypingIdRef = useRef(null);
+  const typingTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (!roomId) return;
+    const refresh = () => {
+      base44.entities.RoomTyping.filter({ room_id: roomId }, '-updated_date', 50)
+        .then((records) => {
+          const now = Date.now();
+          const active = records
+            .filter((r) => r.user_id !== user?.id && now - new Date(r.updated_at || r.created_date).getTime() < 3000)
+            .map((r) => r.user_name);
+          setTypingUsers([...new Set(active)]);
+        })
+        .catch(() => {});
+    };
+    refresh();
+    const unsub = base44.entities.RoomTyping.subscribe((ev) => { if (ev.data?.room_id === roomId) refresh(); });
+    const poll = setInterval(refresh, 1000);
+    return () => { unsub(); clearInterval(poll); if (myTypingIdRef.current) { base44.entities.RoomTyping.delete(myTypingIdRef.current).catch(() => {}); myTypingIdRef.current = null; } };
+  }, [roomId, user?.id]);
+
+  const sendTyping = () => {
+    if (!user || !roomId) return;
+    const updateOrCreate = async () => {
+      try {
+        if (myTypingIdRef.current) {
+          await base44.entities.RoomTyping.update(myTypingIdRef.current, { updated_at: new Date().toISOString() });
+        } else {
+          const rec = await base44.entities.RoomTyping.create({ room_id: roomId, user_id: user.id, user_name: user.username || user.full_name || 'Kullanıcı', updated_at: new Date().toISOString() });
+          myTypingIdRef.current = rec.id;
+        }
+      } catch {
+        try {
+          const rec = await base44.entities.RoomTyping.create({ room_id: roomId, user_id: user.id, user_name: user.username || user.full_name || 'Kullanıcı', updated_at: new Date().toISOString() });
+          myTypingIdRef.current = rec.id;
+        } catch {}
+      }
+    };
+    updateOrCreate();
+    clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => {
+      if (myTypingIdRef.current) {
+        base44.entities.RoomTyping.delete(myTypingIdRef.current).catch(() => {});
+        myTypingIdRef.current = null;
+      }
+    }, 3000);
+  };
+
   const scrollToBottom = () => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -357,13 +407,25 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       {chatEnabled && msgFilter === 'all' && showEmoji && (
         <EmojiPicker onSelect={(e) => { setText((t) => t + e); setShowEmoji(false); }} />
       )}
+      {chatEnabled && msgFilter === 'all' && typingUsers.length > 0 && (
+        <div className="px-3 py-1.5 border-t border-white/10 bg-black">
+          <p className="text-xs text-purple-400 flex items-center gap-1.5">
+            <span className="flex gap-0.5 items-end">
+              <span className="w-1 h-1 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1 h-1 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1 h-1 rounded-full bg-purple-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+            </span>
+            <span className="truncate">{typingUsers.length === 1 ? `${typingUsers[0]} yazıyor...` : typingUsers.length === 2 ? `${typingUsers[0]} ve ${typingUsers[1]} yazıyor...` : `${typingUsers[0]} ve ${typingUsers.length - 1} kişi yazıyor...`}</span>
+          </p>
+        </div>
+      )}
       {chatEnabled && msgFilter === 'all' && <form onSubmit={send} className="p-2.5 border-t border-white/10 flex items-center gap-2 bg-black">
         <label className="p-2 rounded-lg hover:bg-white/10 cursor-pointer text-white">
           <ImageIcon className="w-5 h-5" />
           <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhoto} disabled={uploading} />
         </label>
         <button type="button" onClick={() => setShowEmoji(!showEmoji)} className="p-2 rounded-lg hover:bg-white/10 text-white"><Smile className="w-5 h-5" /></button>
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Mesaj yazın..." className="flex-1 bg-[#1a1a1a] rounded-full px-4 py-2 text-sm outline-none text-white placeholder:text-[#666]" />
+        <input value={text} onChange={(e) => { setText(e.target.value); sendTyping(); }} placeholder="Mesaj yazın..." className="flex-1 bg-[#1a1a1a] rounded-full px-4 py-2 text-sm outline-none text-white placeholder:text-[#666]" />
         <button type="submit" disabled={!text.trim() || uploading} className="p-2.5 rounded-full disabled:opacity-50" style={{ background: '#ffcc00' }}><Send className="w-4 h-4 text-black" /></button>
         {uploading && <span className="text-xs text-[#888] animate-pulse shrink-0">...</span>}
       </form>}
