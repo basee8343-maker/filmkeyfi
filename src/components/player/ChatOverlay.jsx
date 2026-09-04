@@ -20,7 +20,7 @@ import EmojiPicker from '@/components/player/EmojiPicker';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
-export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, directUnread = 0, ownerId, roomModerators = [] }) {
+export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, directUnread = 0, ownerId, roomModerators = [], participants = [], viewerProfiles = {}, presenceMap = {}, onProfileCard }) {
   const { user } = useCurrentUser();
   const { toast } = useToast();
   const [messages, setMessages] = useState([]);
@@ -51,6 +51,20 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   }, [ownerId]);
   const scrollRef = useRef(null);
   const profiles = useMessageProfiles(messages.map((message) => message.user_id));
+  const [roomMods, setRoomMods] = useState([]);
+  useEffect(() => {
+    if (!ownerId) return;
+    base44.entities.RoomMod.filter({ owner_id: ownerId }, 'created_date', 100)
+      .then((mods) => setRoomMods(mods))
+      .catch(() => {});
+    const unsub = base44.entities.RoomMod.subscribe((ev) => {
+      if (ev.data?.owner_id !== ownerId) return;
+      base44.entities.RoomMod.filter({ owner_id: ownerId }, 'created_date', 100)
+        .then((mods) => setRoomMods(mods))
+        .catch(() => {});
+    });
+    return unsub;
+  }, [ownerId]);
 
   const scrollToBottom = () => {
     const el = scrollRef.current;
@@ -180,7 +194,6 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
               )}
             </div>
           )}
-          {isOwner && chatEnabled && <button onClick={clearAll} className="px-2 py-1 rounded-lg text-xs font-semibold text-white" style={{ background: '#a32e2e' }}>TÜMÜNÜ SİL</button>}
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10"><X className="w-5 h-5 text-white" /></button>
         </div>
       </div>
@@ -193,9 +206,9 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       )}
       {chatEnabled && (
         <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-[#0d0d0d]">
-          {['all', 'system', 'user', 'admin'].map((f) => (
+          {['all', 'yetkililer', 'izleyici', 'yonetici'].map((f) => (
             <button key={f} onClick={() => setMsgFilter(f)} className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${msgFilter === f ? 'text-[#ffcc00]' : 'text-[#888] hover:text-white'}`} style={msgFilter === f ? { borderBottom: '2px solid #ffcc00', background: 'rgba(255, 204, 0, 0.08)' } : {}}>
-              {f === 'all' ? 'Tümü' : f === 'system' ? 'Sistem' : f === 'user' ? 'Kullanıcı' : 'Yönetici'}
+              {f === 'all' ? 'Tümü' : f === 'yetkililer' ? 'Yetkililer' : f === 'izleyici' ? 'İzleyici' : 'Yönetici'}
             </button>
           ))}
           {isOwner && <button onClick={clearAll} className="ml-auto flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-[#ffcc00] hover:bg-white/5"><Sparkles className="w-3 h-3" /> Temizle</button>}
@@ -207,11 +220,11 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
           <p className="font-semibold text-white">Sohbet kapalı</p>
           <p className="text-sm">Oda sahibi sohbeti kapatmış.</p>
         </div>
-      ) : (
+      ) : msgFilter === 'all' ? (
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2 bg-black" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
         {loading ? <p className="text-center text-sm text-[#888] py-8">Yükleniyor...</p> :
          messages.length === 0 ? <p className="text-center text-sm text-[#888] py-8">Henüz mesaj yok. İlk mesajı sen at! 🍿</p> :
-         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { const lower = (m.text || '').toLowerCase(); if (lower.includes('katıldı') || lower.includes('ayrıldı')) return false; } return true; }).filter((m) => { if (msgFilter === 'all') return true; if (msgFilter === 'system') return m.type === 'system'; if (msgFilter === 'user') return m.type === 'user'; if (msgFilter === 'admin') return profiles[m.user_id]?.role === 'admin'; return true; }).map((m) => (
+         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { const lower = (m.text || '').toLowerCase(); if (lower.includes('katıldı') || lower.includes('ayrıldı') || lower.includes('moderatör')) return false; } return true; }).map((m) => (
             <div key={m.id} className={`flex gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
               {m.type === 'system' ? (
                 (() => {
@@ -260,16 +273,56 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
             </div>
           ))}
           </div>
-      )}
-      {chatEnabled && autoDeleteMinutes > 0 && countdownText && (
+          ) : msgFilter === 'izleyici' ? (
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-1 bg-black">
+          {participants.length === 0 ? <p className="text-center text-sm text-[#888] py-8">İzleyici yok</p> :
+          participants.map((p) => {
+            const prof = viewerProfiles[p.user_id];
+            const avatar = p.avatar || prof?.avatar;
+            const presence = presenceMap[p.user_id];
+            const isOnline = presence?.online && (Date.now() - new Date(presence.last_seen).getTime() < 60000);
+            return (
+              <button key={p.user_id} onClick={() => onProfileCard?.(p.user_id)} className="flex items-center gap-2 w-full text-left py-1.5 hover:bg-white/5 rounded-lg px-1">
+                <div className="shrink-0 relative">
+                  {avatar ? <Image src={avatar} className="w-8 h-8 rounded-full object-cover" fittingType="fill" /> : <span className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B31FF] to-[#5F24A1] flex items-center justify-center text-xs font-bold text-white">{(p.name || '?')[0]}</span>}
+                  <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-black ${isOnline ? 'bg-green-400' : 'bg-red-400'}`} />
+                </div>
+                <span className="flex-1 truncate text-sm text-white">{p.name}{p.user_id === ownerId && <Crown className="w-3 h-3 text-amber-400 inline ml-0.5" />}</span>
+                {!isOnline && <span className="text-[10px] text-red-400 shrink-0">çevrim dışı</span>}
+              </button>
+            );
+          })}
+          </div>
+          ) : msgFilter === 'yetkililer' ? (
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-1 bg-black">
+          {roomMods.length === 0 ? <p className="text-center text-sm text-[#888] py-8">Henüz yetkili yok.</p> :
+          roomMods.map((mod) => (
+            <div key={mod.id || mod.user_id} className="flex items-center gap-2 py-1.5 px-1">
+              <span className="w-8 h-8 rounded-full bg-[#8e44ad]/30 flex items-center justify-center shrink-0">
+                <Shield className="w-4 h-4 text-[#c39bd3]" />
+              </span>
+              <span className="flex-1 truncate text-sm text-white">{mod.user_name || mod.name || 'Kullanıcı'}</span>
+              <span className="text-[10px] text-[#c39bd3] font-semibold">Mod</span>
+            </div>
+          ))}
+          </div>
+          ) : (
+          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2 bg-black">
+          <p className="text-xs text-[#888] mb-2">Oda ayarlarını açmak için aşağıdaki butona tıklayın.</p>
+          <button onClick={onSettings} className="w-full flex items-center gap-2 p-3 rounded-xl bg-[#1a1a1a] text-white text-sm font-semibold active:scale-95 transition-transform">
+            <Settings className="w-5 h-5" /> Ayarları Aç
+          </button>
+          </div>
+          )}
+          {chatEnabled && msgFilter === 'all' && autoDeleteMinutes > 0 && countdownText && (
         <div className="px-3 py-1.5 border-t border-white/10 text-center" style={{ background: 'rgba(255, 204, 0, 0.08)' }}>
           <p className="text-xs font-semibold animate-pulse" style={{ color: '#ffcc00' }}>⏱ Otomatik silme: {autoDeleteMinutes} dk (kalan: {countdownText})</p>
         </div>
       )}
-      {chatEnabled && showEmoji && (
+      {chatEnabled && msgFilter === 'all' && showEmoji && (
         <EmojiPicker onSelect={(e) => { setText((t) => t + e); setShowEmoji(false); }} />
       )}
-      {chatEnabled && <form onSubmit={send} className="p-2.5 border-t border-white/10 flex items-center gap-2 bg-black">
+      {chatEnabled && msgFilter === 'all' && <form onSubmit={send} className="p-2.5 border-t border-white/10 flex items-center gap-2 bg-black">
         <label className="p-2 rounded-lg hover:bg-white/10 cursor-pointer text-white">
           <ImageIcon className="w-5 h-5" />
           <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhoto} disabled={uploading} />
