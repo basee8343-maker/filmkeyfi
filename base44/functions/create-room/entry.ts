@@ -32,9 +32,11 @@ export default async function(req) {
     const salt = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
     const hashed = password ? (salt + ':' + await sha256Hex(salt, String(password).slice(0, 100))) : '';
 
-    // Assign sequential room number
-    const existingRooms = await base44.asServiceRole.entities.Room.list(500).catch(() => []);
-    const room_number = existingRooms.reduce((max, r) => Math.max(max, r.room_number || 0), 0) + 1;
+    // Assign lowest available room number among active rooms only
+    const activeRooms = await base44.asServiceRole.entities.Room.filter({ status: 'active' }, '-created_date', 500).catch(() => []);
+    const usedNumbers = new Set(activeRooms.map((r) => r.room_number || 0));
+    let room_number = 1;
+    while (usedNumbers.has(room_number)) room_number++;
 
     const room = await base44.asServiceRole.entities.Room.create({
       name, movie_id, movie_title: movie_title || '',

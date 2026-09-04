@@ -91,7 +91,7 @@ export default async function(req) {
     if (action === 'clear_chat') {
       const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
       if (!friendship || !friendship.members.includes(user.id)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
-      await base44.asServiceRole.entities.DirectMessage.updateMany({ friendship_id: friendship.id }, { $addToSet: { hidden_for: user.id } });
+      await base44.asServiceRole.entities.DirectMessage.deleteMany({ friendship_id: friendship.id });
       return Response.json({ ok: true });
     }
 

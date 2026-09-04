@@ -12,6 +12,7 @@ export default function CreateRoom() {
   const { toast } = useToast();
   const [movies, setMovies] = useState([]);
   const [form, setForm] = useState({ name: '', movie_id: '', password: '', max_users: 10, chat_enabled: true, voice_enabled: false, hidden: false });
+  const [nameEdited, setNameEdited] = useState(false);
 
   useEffect(() => {
     base44.entities.Movie.filter({ published: true }, '-views', 100).then(setMovies).catch(() => {});
@@ -44,7 +45,7 @@ export default function CreateRoom() {
       <form onSubmit={submit} className="space-y-4">
         <div>
           <label className="text-sm font-medium block mb-1.5">Oda Adı</label>
-          <input className={field} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Örn: Cuma Gecesi Sineması" required />
+          <input className={field} value={form.name} onChange={(e) => { setForm({ ...form, name: e.target.value }); setNameEdited(true); }} placeholder="Örn: Cuma Gecesi Sineması" required />
         </div>
         <div>
           <label className="text-sm font-medium block mb-1.5">Film / Dizi Seç</label>
@@ -53,7 +54,7 @@ export default function CreateRoom() {
           ) : (
             <div className="flex gap-2 overflow-x-auto no-scrollbar p-1 -m-1">
               {movies.map((m) => (
-                <button key={m.id} type="button" onClick={() => setForm({ ...form, movie_id: m.id })}
+                <button key={m.id} type="button" onClick={() => setForm({ ...form, movie_id: m.id, name: nameEdited ? form.name : m.title })}
                   className={`relative shrink-0 w-28 rounded-lg overflow-hidden border-2 transition-all ${form.movie_id === m.id ? 'border-primary ring-2 ring-primary' : 'border-transparent hover:border-border'}`}>
                   <Image src={m.poster || m.backdrop} alt={m.title} className="aspect-[2/3] w-full" fittingType="fill" />
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-1.5">

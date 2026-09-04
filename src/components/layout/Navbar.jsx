@@ -44,6 +44,8 @@ export default function Navbar() {
   const logout = () => { base44.auth.logout('/login'); };
 
   return (
+    <>
+    {open && <div className="fixed inset-0 z-40 lg:hidden" onClick={() => setOpen(false)} />}
     <header className="fixed top-0 inset-x-0 z-50 border-b border-border pt-[max(env(safe-area-inset-top),1.5rem)] glass lg:pt-0">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">
         <Link to="/" className="flex items-center gap-1 shrink-0">
@@ -129,5 +131,6 @@ export default function Navbar() {
         </div>
       )}
     </header>
+    </>
   );
 }

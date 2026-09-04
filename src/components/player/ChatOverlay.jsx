@@ -161,7 +161,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary"><X className="w-5 h-5" /></button>
         </div>
       </div>
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto p-3 space-y-2">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
         {loading ? <p className="text-center text-sm text-muted-foreground py-8">Yükleniyor...</p> :
          messages.length === 0 ? <p className="text-center text-sm text-muted-foreground py-8">Henüz mesaj yok. İlk mesajı sen at! 🍿</p> :
          messages.map((m) => (

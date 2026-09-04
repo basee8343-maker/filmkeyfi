@@ -1,19 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import VideoPlayer from '@/components/player/VideoPlayer';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
-import { Users, MessageSquare, Lock, ArrowLeft } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { Lock, ArrowLeft } from 'lucide-react';
 import SubscriptionPrompt from '@/components/SubscriptionPrompt';
 
 export default function Watch() {
   const { id } = useParams();
   const [sp] = useSearchParams();
   const epId = sp.get('ep');
-  const navigate = useNavigate();
   const { user, loading: ul } = useCurrentUser();
-  const { toast } = useToast();
   const [movie, setMovie] = useState(null);
   const [episode, setEpisode] = useState(null);
   const [src, setSrc] = useState('');
@@ -56,26 +53,10 @@ export default function Watch() {
 
   if (!movie) return <p className="p-6">İçerik bulunamadı.</p>;
 
-  const createRoom = async () => {
-    try {
-      const room = await base44.entities.Room.create({
-        name: `${movie.title} Odası`, movie_id: id, movie_title: movie.title,
-        owner_id: user.id, owner_name: user.username || user.full_name,
-        max_users: 10, chat_enabled: true, voice_enabled: false, is_playing: false, current_time: 0,
-        status: 'active', participants: [{ user_id: user.id, name: user.username || user.full_name, avatar: user.avatar || '', muted: false, speaking: false }]
-      });
-      await base44.entities.RoomMessage.create({ room_id: room.id, user_id: user.id, user_name: user.username || user.full_name, text: `${user.username || user.full_name} odaya katıldı.`, type: 'system' });
-      navigate(`/oda/${room.id}`);
-    } catch (err) { toast({ title: 'Oda oluşturulamadı', description: err.message, variant: 'destructive' }); }
-  };
-
   return (
     <div className="px-4 sm:px-6 py-4">
       <div className="flex items-center justify-between mb-3">
         <Link to={`/izle/${id}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" /> Geri</Link>
-        <button onClick={createRoom} className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2 rounded-lg text-sm font-semibold">
-          <Users className="w-4 h-4" /> Watch Party Başlat
-        </button>
       </div>
       <h1 className="text-xl sm:text-2xl font-bold mb-1">{movie.title}{episode ? ` · ${episode.title}` : ''}</h1>
       <p className="text-sm text-muted-foreground mb-4">{movie.year} · {movie.quality} · {movie.language || 'TR'}</p>

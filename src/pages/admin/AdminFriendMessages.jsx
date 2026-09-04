@@ -34,11 +34,12 @@ export default function AdminFriendMessages() {
   return (
     <div>
       <div className="mb-5 flex items-start justify-between gap-3">
-        <div><h1 className="text-2xl font-extrabold">Arkadaş Mesajları</h1><p className="text-sm text-muted-foreground">Konuşmalar kişilere göre ayrı panellerde gösterilir.</p></div>
-        {messages.length > 0 && <button onClick={() => setConfirmAll(true)} className="shrink-0 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive">BÜTÜNÜ SİL</button>}
+        <div><h1 className="text-2xl font-extrabold">Arkadaş Mesajları</h1><p className="text-sm text-muted-foreground">Özel mesajlar gizlidir ve kayıt altına alınmaz.</p></div>
       </div>
-      {!threads.length ? <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">Henüz arkadaş mesajı yok.</div> : <div className="grid gap-3 sm:grid-cols-2">{threads.map((thread) => { const first = thread.messages[0]; const last = thread.messages.at(-1); return <article key={thread.id} className="rounded-xl border border-border bg-card p-4"><div className="flex flex-wrap items-center gap-2"><UserBadge userId={first.sender_id} name={first.sender_name || first.sender_id} avatar={profiles[first.sender_id]?.avatar} memberId={profiles[first.sender_id]?.member_id} size="sm" showCopy={false} /><span className="text-muted-foreground">—</span><UserBadge userId={first.recipient_id} name={first.recipient_name || first.recipient_id} avatar={profiles[first.recipient_id]?.avatar} memberId={profiles[first.recipient_id]?.member_id} size="sm" showCopy={false} /></div><p className="mt-2 truncate text-sm text-muted-foreground">{last.text}</p><div className="mt-3 flex items-center justify-between gap-2"><p className="text-xs text-muted-foreground">{thread.messages.length} mesaj</p><button onClick={() => setActive(thread.id)} className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground">MESAJLARI AÇ</button></div></article>; })}</div>}
-      <ConfirmDialog open={confirmAll} onOpenChange={setConfirmAll} title="Tüm arkadaş mesajları silinsin mi?" description="Bütün özel mesaj kayıtları kalıcı olarak silinecek." confirmText="Bütününü Sil" onConfirm={clearAll} />
+      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+        <p className="font-semibold mb-1">Özel mesajlar gizlidir</p>
+        <p className="text-sm">Kullanıcıların özel sohbetleri hiçbir log veya kayıt sistemine alınmaz. Mesajlar yalnızca konuşmayı yapan taraflara görünür ve silindiğinde tamamen kaldırılır.</p>
+      </div>
     </div>
   );
 }

@@ -49,14 +49,14 @@ export default function Hero({ movie }) {
             {movie.genres?.slice(0, 3).map((g) => <span key={g} className="text-foreground/80">{g}</span>)}
           </div>
           <p className="text-sm sm:text-base text-muted-foreground line-clamp-3 max-w-xl">{movie.description}</p>
-          <div className="flex flex-wrap items-center gap-3 pt-2">
-            <Link to={`/izle/${movie.id}`} className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-6 py-3 rounded-lg transition-colors">
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-3">
+            <Link to={`/izle/${movie.id}`} className="inline-flex items-center gap-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-7 py-3.5 rounded-lg transition-colors text-base">
               <Play className="w-5 h-5 fill-white" /> İzlemeye Başla
             </Link>
-            <button onClick={add} className="inline-flex items-center gap-2 glass border border-border hover:bg-secondary px-5 py-3 rounded-lg font-semibold transition-colors">
+            <button onClick={add} className="inline-flex items-center gap-2.5 glass border border-border hover:bg-secondary px-6 py-3.5 rounded-lg font-semibold transition-colors text-base">
               <Plus className="w-5 h-5" /> {inList ? 'Listemde' : 'Listeme Ekle'}
             </button>
-            <Link to={`/izle/${movie.id}`} className="inline-flex items-center gap-2 glass border border-border hover:bg-secondary px-5 py-3 rounded-lg font-semibold transition-colors">
+            <Link to={`/izle/${movie.id}`} className="inline-flex items-center gap-2.5 glass border border-border hover:bg-secondary px-6 py-3.5 rounded-lg font-semibold transition-colors text-base">
               <Info className="w-5 h-5" /> Detay
             </Link>
           </div>
