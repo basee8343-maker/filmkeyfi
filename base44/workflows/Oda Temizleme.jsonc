@@ -1,0 +1,44 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/Istanbul",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "\u00c7evrim d\u0131\u015f\u0131 kat\u0131l\u0131mc\u0131lardan olu\u015fan odalar\u0131 kapat\u0131r, sahibi \u00e7evrim d\u0131\u015f\u0131 olan odalar\u0131 \u00e7evrim i\u00e7i kat\u0131l\u0131mc\u0131ya devreder",
+  "name": "Oda Temizleme",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "oda_temizleme",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "temizle": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "cleanup-rooms"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Odalar\u0131 temizle",
+            "description": "\u00c7evrim d\u0131\u015f\u0131 odalar\u0131 kapat ve sahipli\u011fi devret"
+          }
+        }
+      }
+    ]
+  }
+}
