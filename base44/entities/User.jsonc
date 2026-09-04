@@ -95,6 +95,13 @@
     "banned_by": {
       "type": "string"
     },
+    "blocked_users": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "membership_status": {
       "type": "string",
       "enum": [

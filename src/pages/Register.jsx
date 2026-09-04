@@ -62,7 +62,35 @@ export default function Register() {
     setLoading(true);
     try {
       await base44.auth.register({ email, password });
-      setShowOtp(true);
+      // OTP olmadan direkt giriş yapmayı dene
+      try {
+        await base44.auth.loginViaEmailPassword(email, password);
+        try {
+          await base44.auth.updateMe({
+            full_name: fullName, username, avatar,
+            membership_status: paymentRequired ? "pending" : "active",
+          });
+          await base44.functions.invoke('ensure-member-id').catch(() => {});
+        } catch {}
+        base44.functions.invoke('admin-notify', {
+          event: 'new_user',
+          ref_id: `new_user:${email}`,
+          title: 'Yeni kullanıcı kaydoldu',
+          body: fullName || username || email,
+          link: '/admin/kullanicilar',
+          telegram_data: { username: fullName || username || email, email, date: new Date().toLocaleString('tr-TR') }
+        }).catch(() => {});
+        if (paymentRequired) {
+          toast({ title: "Kayıt tamamlandı", description: "Aboneliğinizi aktif etmek için ödeme yapın." });
+          window.location.href = "/abonelik";
+        } else {
+          toast({ title: "Kayıt tamamlandı", description: "Film Keyfi'ne hoş geldiniz!" });
+          window.location.href = "/";
+        }
+      } catch (loginErr) {
+        // Giriş başarısız - OTP'ye düş
+        setShowOtp(true);
+      }
     } catch (err) {
       setError(err.message || "Kayıt başarısız");
     } finally {
@@ -287,9 +315,7 @@ export default function Register() {
                   </li>
                 ))}
               </ul>
-              <Button className="w-full h-11 font-semibold bg-[#e50914] hover:bg-[#f6121d] text-white">
-                Ödeme Yap
-              </Button>
+              <p className="text-center text-xs text-[#a0a0a0] py-2">Kayıt olduktan sonra abonelik seçebilirsiniz.</p>
             </div>
 
             {/* Alt bildirim */}

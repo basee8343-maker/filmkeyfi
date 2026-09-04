@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Send, X, Smile, Trash2, MessageSquareOff, Image as ImageIcon, Settings, MessagesSquare } from 'lucide-react';
+import { Send, X, Smile, Trash2, MessageSquareOff, Image as ImageIcon, Settings, MessagesSquare, Shield, Crown } from 'lucide-react';
 import VoiceControls from '@/components/player/VoiceControls';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
@@ -12,13 +12,13 @@ import RoleBadge from '@/components/RoleBadge';
 import ProfileFrame from '@/components/ProfileFrame';
 import useMessageProfiles from '@/hooks/useMessageProfiles';
 import { mergeMessages, upsertMessage } from '@/lib/realtimeMessages';
-import { parseRoleMetadata, getRoleInfo } from '@/lib/roles';
+import { parseRoleMetadata, getRoleInfo, isModerator } from '@/lib/roles';
 import RoleMessageEffect from '@/components/role/RoleMessageEffect';
 import RoleNameEffect from '@/components/role/RoleNameEffect';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
-export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, directUnread = 0 }) {
+export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, directUnread = 0, ownerId, roomModerators = [] }) {
   const { user } = useCurrentUser();
   const { toast } = useToast();
   const [messages, setMessages] = useState([]);
@@ -32,6 +32,8 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   const [menuProfile, setMenuProfile] = useState(null);
   const [lightbox, setLightbox] = useState(null);
   const [showAutoDeleteMenu, setShowAutoDeleteMenu] = useState(false);
+  const [blockedUsers, setBlockedUsers] = useState(user?.blocked_users || []);
+  useEffect(() => { setBlockedUsers(user?.blocked_users || []); }, [user?.blocked_users]);
   const scrollRef = useRef(null);
   const profiles = useMessageProfiles(messages.map((message) => message.user_id));
 
@@ -127,6 +129,21 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
     catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
+  const kickFromRoom = async () => {
+    try { await base44.functions.invoke('room-presence', { action: 'kick', room_id: roomId, target_id: userMenu.userId }); toast({ title: 'Kullanıcı odadan atıldı' }); setUserMenu(null); }
+    catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+
+  const personalBlock = async () => {
+    try {
+      const newBlocked = [...new Set([...blockedUsers, userMenu.userId])];
+      await base44.auth.updateMe({ blocked_users: newBlocked });
+      setBlockedUsers(newBlocked);
+      toast({ title: 'Kullanıcı engellendi', description: 'Artık mesajlarını görmeyeceksiniz.' });
+      setUserMenu(null);
+    } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+
   return (
     <div className="h-full min-h-0 flex flex-col bg-card/95 backdrop-blur">
       <div className="flex items-center justify-between px-4 py-3 border-b border-border gap-2">
@@ -169,7 +186,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
         {loading ? <p className="text-center text-sm text-muted-foreground py-8">Yükleniyor...</p> :
          messages.length === 0 ? <p className="text-center text-sm text-muted-foreground py-8">Henüz mesaj yok. İlk mesajı sen at! 🍿</p> :
-         messages.map((m) => (
+         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).map((m) => (
             <div key={m.id} className={`flex gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
               {m.type === 'system' ? (
                 (() => {
@@ -195,10 +212,13 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                     {profiles[m.user_id]?.profile_frame ? <ProfileFrame frame={profiles[m.user_id].profile_frame} size="sm" avatar={profiles[m.user_id]?.avatar || m.user_avatar} name={m.user_name} /> : (profiles[m.user_id]?.avatar || m.user_avatar) ? <Image src={profiles[m.user_id]?.avatar || m.user_avatar} className="w-7 h-7 rounded-full object-cover" fittingType="fill" /> : <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold">{(m.user_name || '?')[0]}</span>}
                   </Link>
                   <div className="min-w-0 flex-1">
-                   <div className="flex items-center gap-1.5">
+                   <div className="flex items-center gap-1.5 flex-wrap">
+                     {m.user_id === ownerId && <Crown className="w-3 h-3 text-amber-400 shrink-0" />}
+                     {(roomModerators.includes(m.user_id) || isModerator(profiles[m.user_id])) && m.user_id !== ownerId && <Shield className="w-3 h-3 text-blue-400 shrink-0" />}
                      <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="text-xs font-semibold truncate hover:underline">
                        <RoleNameEffect nameEffect={getRoleInfo(profiles[m.user_id] || m)?.name_effect} color={getRoleInfo(profiles[m.user_id] || m)?.color}>{m.user_name}{user?.id === m.user_id && ' (Sen)'}</RoleNameEffect>
                      </Link>
+                     {m.user_id === ownerId && <span className="text-[10px] text-amber-400 font-bold shrink-0">Oda Sahibi</span>}
                      {profiles[m.user_id] && (profiles[m.user_id].display_role || profiles[m.user_id].custom_role?.name) && <RoleBadge user={profiles[m.user_id]} size="sm" showLabel={false} />}
                    </div>
                    <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')} msgEffect={getRoleInfo(profiles[m.user_id] || m)?.msg_effect} msgColor={getRoleInfo(profiles[m.user_id] || m)?.color}>
@@ -254,6 +274,8 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
             </div>
             <Link to={`/kullanici/${userMenu.userId}`} onClick={() => setUserMenu(null)} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm">Profili Gör</Link>
             <button onClick={() => { setReportTarget(userMenu); setUserMenu(null); }} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-destructive/10 text-destructive text-sm font-semibold">Şikayet Et</button>
+            {isOwner && userMenu.userId !== user?.id && <button onClick={kickFromRoom} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-amber-500/10 text-amber-500 text-sm font-semibold">Odadan At</button>}
+            {userMenu.userId !== user?.id && <button onClick={personalBlock} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-red-500/10 text-red-400 text-sm font-semibold">Engelle</button>}
             {isAdmin && <>
               {menuProfile?.member_id && <button onClick={copyMemberId} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-secondary text-sm">Üye No Kopyala ({menuProfile.member_id})</button>}
               <button onClick={blockUser} className="block w-full text-left px-3 py-2 rounded-lg hover:bg-amber-500/10 text-amber-500 text-sm font-semibold">Engelle</button>

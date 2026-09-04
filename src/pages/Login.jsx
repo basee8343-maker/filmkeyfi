@@ -37,7 +37,19 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      await base44.auth.loginViaEmailPassword(email, password);
+      let loginEmail = email;
+      if (!email.includes('@')) {
+        try {
+          const res = await base44.functions.invoke('lookup-username', { username: email });
+          loginEmail = res.data?.email || res.email;
+          if (!loginEmail) throw new Error('Kullanıcı bulunamadı');
+        } catch {
+          setError('Kullanıcı bulunamadı');
+          setLoading(false);
+          return;
+        }
+      }
+      await base44.auth.loginViaEmailPassword(loginEmail, password);
       const me = await base44.auth.me();
       if (me.role === 'banned' || me.membership_status === 'suspended') {
         await base44.auth.logout();

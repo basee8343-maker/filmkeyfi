@@ -467,7 +467,7 @@ export default function WatchParty() {
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setChatOpen(false); }}
           >
-            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} directUnread={directUnread} />
+            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onSettings={() => { setShowSettings(!showSettings); setShowViewers(false); }} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} directUnread={directUnread} ownerId={room?.owner_id} roomModerators={room?.room_moderators || []} />
           </div>
         )}
 
