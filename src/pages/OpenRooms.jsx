@@ -86,7 +86,7 @@ export default function OpenRooms() {
   }, [user?.role]);
 
   return (
-    <div className="px-4 sm:px-6 py-6 max-w-5xl mx-auto">
+    <div className="px-3 sm:px-6 py-6 max-w-5xl mx-auto overflow-x-hidden">
       <h1 className="text-2xl font-extrabold mb-1 flex items-center gap-2"><DoorOpen className="w-6 h-6 text-primary" /> Açık Odalar</h1>
       <p className="text-sm text-muted-foreground mb-6">Aktif Watch Party odalarına katıl.</p>
       {loading ? <div className="flex justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div> :
@@ -97,12 +97,12 @@ export default function OpenRooms() {
            <Link to="/oda-kur" className="text-primary text-sm hover:underline">İlk odayı sen kur</Link>
          </div>
        ) : (
-         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
            {rooms.map((r, i) => {
              const mv = movies[r.movie_id];
              return (
-               <div key={r.id} className="flex flex-col items-center">
-                 <div className={`relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 ${r.is_personal ? 'border-accent' : 'border-primary/40'} shadow-lg group`}>
+               <div key={r.id} className="flex flex-col items-center min-w-0">
+                   <div className={`relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 ${r.is_personal ? 'border-accent' : 'border-primary/40'} shadow-lg group`}>
                    {mv?.poster ? <Image src={mv.poster} className="w-full h-full" fittingType="fill" /> :
                      <div className="w-full h-full bg-gradient-to-br from-primary/30 to-accent/30 flex items-center justify-center text-3xl">🎬</div>}
                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
@@ -124,7 +124,7 @@ export default function OpenRooms() {
                    <span className="absolute bottom-1 left-1 bg-primary text-primary-foreground text-xs font-bold px-2 py-0.5 rounded-full">Oda {r.room_number || i + 1}</span>
                    <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1"><Users className="w-3 h-3" /> {r.participants?.length || 0}/{r.max_users}</div>
                  </div>
-                 <p className="mt-2 text-sm font-semibold text-center truncate max-w-full">{r.name}</p>
+                 <p className="mt-2 text-xs sm:text-sm font-semibold text-center truncate max-w-full">{r.name}</p>
                  <p className="text-xs text-muted-foreground truncate max-w-full mb-1">{r.movie_title || mv?.title || 'İçerik'}</p>
                  {(() => {
                    const o = owners[r.owner_id];
@@ -136,7 +136,7 @@ export default function OpenRooms() {
                    );
                  })()}
                  <div className="flex gap-2 items-center">
-                   <Link to={`/oda/${r.id}`} className="bg-primary text-primary-foreground text-sm font-semibold px-5 py-1.5 rounded-full hover:bg-primary/90">Katıl</Link>
+                   <Link to={`/oda/${r.id}`} className="bg-primary text-primary-foreground text-xs sm:text-sm font-semibold px-4 sm:px-5 py-1.5 rounded-full hover:bg-primary/90">Katıl</Link>
                  </div>
                </div>
              );
@@ -148,15 +148,16 @@ export default function OpenRooms() {
          <div className="mt-10">
            <h2 className="text-xl font-bold mb-1 flex items-center gap-2"><Star className="w-5 h-5 text-accent" /> Özel Odalar</h2>
            <p className="text-sm text-muted-foreground mb-4">Kişisel odalar. Oda sahibi odadayken katılabilirsiniz.</p>
-           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
              {personalRooms.map((r) => {
                const mv = movies[r.movie_id];
                const ownerInRoom = (r.participants || []).some((p) => p.user_id === r.owner_id);
+               const o = owners[r.owner_id];
                return (
-                 <div key={r.id} className="flex flex-col items-center">
+                 <div key={r.id} className="flex flex-col items-center min-w-0">
                    <div className={`relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 ${ownerInRoom ? 'border-accent' : 'border-accent/30'} shadow-lg group`}>
-                     {mv?.poster ? <Image src={mv.poster} className="w-full h-full" fittingType="fill" /> :
-                       <div className="w-full h-full bg-gradient-to-br from-accent/30 to-primary/30 flex items-center justify-center text-3xl">🎬</div>}
+                     {o?.avatar ? <Image src={o.avatar} className="w-full h-full" fittingType="fill" /> :
+                       <div className="w-full h-full bg-gradient-to-br from-accent/30 to-primary/30 flex items-center justify-center text-2xl font-bold">{(r.owner_name || '?')[0]}</div>}
                      <div className="absolute inset-0 bg-black/30 group-hover:bg-black/10 transition-colors" />
                      {r.password && (
                        <span className="absolute top-1 right-1 bg-black/80 rounded-full p-1.5 border border-amber-400/60 flex items-center gap-1">
@@ -166,14 +167,9 @@ export default function OpenRooms() {
                      )}
                      <span className="absolute top-1 left-1 bg-accent text-accent-foreground text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-0.5 z-10"><Star className="w-2.5 h-2.5" /> Kişisel</span>
                      <div className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1"><Users className="w-3 h-3" /> {r.participants?.length || 0}/{r.max_users}</div>
-                     {!ownerInRoom && (
-                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                         <span className="text-white text-xs font-semibold text-center px-2">Oda sahibi<br/>odada değil</span>
-                       </div>
-                     )}
                    </div>
-                   <p className="mt-2 text-sm font-semibold text-center truncate max-w-full">{r.name}</p>
-                   <p className="text-xs text-muted-foreground truncate max-w-full mb-1">{r.movie_title || mv?.title || 'İçerik seçilmedi'}</p>
+                   <p className="mt-2 text-xs sm:text-sm font-semibold text-center truncate max-w-full">{r.name}</p>
+                   {(r.movie_title || mv?.title) && <p className="text-xs text-muted-foreground truncate max-w-full mb-1">{r.movie_title || mv?.title}</p>}
                    {(() => {
                      const o = owners[r.owner_id];
                      return (
@@ -185,11 +181,11 @@ export default function OpenRooms() {
                    })()}
                    <div className="flex gap-2 items-center">
                      {ownerInRoom ? (
-                       <Link to={`/oda/${r.id}`} className="bg-accent text-accent-foreground text-sm font-semibold px-5 py-1.5 rounded-full hover:bg-accent/90">Katıl</Link>
+                       <Link to={`/oda/${r.id}`} className="bg-accent text-accent-foreground text-xs sm:text-sm font-semibold px-4 sm:px-5 py-1.5 rounded-full hover:bg-accent/90">Katıl</Link>
                      ) : user?.id === r.owner_id ? (
-                       <Link to={`/oda/${r.id}`} className="bg-accent text-accent-foreground text-sm font-semibold px-5 py-1.5 rounded-full hover:bg-accent/90">Aç</Link>
+                       <Link to={`/oda/${r.id}`} className="bg-accent text-accent-foreground text-xs sm:text-sm font-semibold px-4 sm:px-5 py-1.5 rounded-full hover:bg-accent/90">Aç</Link>
                      ) : (
-                       <span className="bg-secondary text-muted-foreground text-sm font-semibold px-5 py-1.5 rounded-full cursor-not-allowed">Kapalı</span>
+                       <span className="bg-secondary text-muted-foreground text-xs sm:text-sm font-semibold px-4 sm:px-5 py-1.5 rounded-full cursor-not-allowed">Kapalı</span>
                      )}
                    </div>
                  </div>

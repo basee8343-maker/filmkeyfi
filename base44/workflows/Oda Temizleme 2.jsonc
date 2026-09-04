@@ -1,0 +1,44 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "2,7,12,17,22,27,32,37,42,47,52,57 * * * *",
+      "one_time_date": null,
+      "timezone": "Europe/Istanbul",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Oda temizleme workflow'unun ikinci kopyas\u0131 - 2.5 dakika arayla kontrol eder",
+  "name": "Oda Temizleme 2",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "oda_temizleme_2",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "temizle": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "cleanup-rooms"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Odalar\u0131 temizle",
+            "description": "\u00c7evrim d\u0131\u015f\u0131 odalar\u0131 kapat ve sahipli\u011fi devret"
+          }
+        }
+      }
+    ]
+  }
+}
