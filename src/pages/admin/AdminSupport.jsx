@@ -6,6 +6,7 @@ import { Send, Trash2, XCircle } from 'lucide-react';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import UserBadge from '@/components/admin/UserBadge';
 import { statusLabel, STATUS_COLORS } from '@/lib/supportStatus';
+import { upsertNotification } from '@/lib/upsertNotification';
 
 export default function AdminSupport() {
   const { user: admin } = useCurrentUser();
@@ -59,7 +60,7 @@ export default function AdminSupport() {
     if (!text.trim() || !active) return;
     base44.entities.SupportMessage.create({ ticket_id: active.id, owner_id: active.user_id, user_id: admin.id, sender: 'admin', text: text.trim() }).catch(() => {});
     base44.entities.SupportTicket.update(active.id, { status: 'answered' }).catch(() => {});
-    base44.entities.Notification.create({ user_id: active.user_id, title: 'Destek mesajınıza cevap verildi', body: active.subject, type: 'support', link: '/destek' }).catch(() => {});
+    upsertNotification({ user_id: active.user_id, title: 'Destek mesajınıza cevap verildi', body: active.subject, type: 'support', link: '/destek' });
     setText(''); load();
   };
 
@@ -68,7 +69,7 @@ export default function AdminSupport() {
   const closeAndClear = async () => {
     await base44.entities.SupportMessage.deleteMany({ ticket_id: active.id }).catch(() => {});
     await base44.entities.SupportTicket.update(active.id, { status: 'closed' }).catch(() => {});
-    await base44.entities.Notification.create({ user_id: active.user_id, title: 'Destek talebiniz kapatıldı', body: active.subject, type: 'support' }).catch(() => {});
+    await upsertNotification({ user_id: active.user_id, title: 'Destek talebiniz kapatıldı', body: active.subject, type: 'support' });
     setMessages([]); setConfirm(null); load(); toast({ title: 'Sohbet kapatıldı, mesajlar silindi' });
   };
 

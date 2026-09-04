@@ -5,6 +5,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { MessageCircle, Send, Image as ImageIcon, Headset, X } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import { statusLabel } from '@/lib/supportStatus';
+import { upsertNotification } from '@/lib/upsertNotification';
 
 const CATS = ['Genel', 'Teknik Sorun', 'Üyelik', 'Ödeme', 'İçerik Talebi', 'Diğer'];
 
@@ -67,7 +68,7 @@ export default function Support() {
     try {
       const t = await base44.entities.SupportTicket.create({ user_id: user.id, user_name: user.username || user.full_name, subject: form.subject, category: form.category, status: 'new' });
       const msg = await base44.entities.SupportMessage.create({ ticket_id: t.id, owner_id: user.id, user_id: user.id, sender: 'user', text: form.message });
-      await base44.entities.Notification.create({ user_id: 'admin', title: 'Yeni destek talebi', body: `${user.username}: ${form.subject}`, type: 'support' }).catch(() => {});
+      await upsertNotification({ user_id: 'admin', title: 'Yeni destek talebi', body: `${user.username}: ${form.subject}`, type: 'support' });
       // Admin'e realtime + web push bildirimi
       base44.functions.invoke('admin-notify', {
         event: 'support',
