@@ -1,6 +1,7 @@
 import { Image } from '@/components/ui/image';
 import { frameStyle } from '@/lib/xp';
 import useXp from '@/hooks/useXp';
+import XpFrameArtwork from '@/components/xp/XpFrameArtwork';
 
 // Katman 1: profil fotoğrafı — Katman 2: şeffaf dekoratif çerçeve asset'i (avatarın dışına taşar).
 const SIZES = {
@@ -16,6 +17,7 @@ export default function XpAvatar({ avatar, name, frame, userId, size = 'sm', cla
   const style = frameStyle(resolved);
   const dims = SIZES[size] || SIZES.sm;
   const animated = resolved?.animated !== false;
+  const hasTrustedAsset = resolved?.image_url && !resolved.image_url.includes('generated_image');
 
   return (
     <div className={`relative shrink-0 ${dims.box} ${className}`} title={resolved?.name || ''}>
@@ -25,18 +27,14 @@ export default function XpAvatar({ avatar, name, frame, userId, size = 'sm', cla
           ? <Image src={avatar} className="w-full h-full object-cover" fittingType="fill" />
           : <span className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-white ${dims.text}`}>{(name || '?')[0]}</span>}
       </div>
-      {/* Katman 2 — gerçek dekoratif çerçeve asset'i, kırpılmadan avatarın dışına taşar */}
-      {resolved?.image_url ? (
-        <img
-          src={resolved.image_url}
-          alt=""
-          aria-hidden="true"
-          className={`pointer-events-none absolute -inset-[26%] w-[152%] h-[152%] max-w-none object-contain z-[2] ${animated ? 'xp-frame-asset' : ''}`}
-          style={animated ? { filter: `drop-shadow(0 0 4px ${style.glow})` } : undefined}
-        />
-      ) : (
-        <div className="pointer-events-none absolute inset-0 rounded-full z-[2]" style={{ boxShadow: `inset 0 0 0 2px ${style.colors[0]}` }} />
-      )}
+      {/* Katman 2 — merkezi ve dışı gerçek alpha şeffaf SVG frame */}
+      <div className="pointer-events-none absolute -inset-[26%] w-[152%] h-[152%] z-[2] overflow-visible">
+        {hasTrustedAsset ? (
+          <Image src={resolved.image_url} alt="" aria-hidden="true" fittingType="fit" className={`w-full h-full overflow-visible ${animated ? 'xp-frame-asset' : ''}`} />
+        ) : (
+          <XpFrameArtwork type={resolved?.style} colors={style.colors} glow={style.glow} animated={animated} />
+        )}
+      </div>
     </div>
   );
 }
