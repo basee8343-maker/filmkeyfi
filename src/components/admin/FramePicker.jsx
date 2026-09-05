@@ -15,7 +15,7 @@ export default function FramePicker({ user, onSelect }) {
   return <>
     <button type="button" onClick={() => setOpen(true)} className="rounded-lg border border-border bg-secondary/60 px-2.5 py-1.5 text-xs font-semibold">Çerçeve: {selected?.label || 'Yok'}</button>
     <Dialog open={open} onOpenChange={(value) => !saving && setOpen(value)}>
-      <DialogContent className="max-h-[85dvh] w-[calc(100%-2rem)] max-w-3xl overflow-y-auto rounded-xl">
+      <DialogContent className="max-h-[85dvh] w-[calc(100%_-_2rem)] max-w-3xl overflow-y-auto rounded-xl">
         <DialogHeader><DialogTitle>Profil Çerçeveleri</DialogTitle><DialogDescription>{user.username || user.full_name || 'Kullanıcı'} için çerçeve seçin.</DialogDescription></DialogHeader>
         <button disabled={saving} onClick={() => choose('')} className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold disabled:opacity-50">Çerçeveyi Kaldır</button>
         <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-3">

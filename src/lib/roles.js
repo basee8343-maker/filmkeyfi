@@ -133,6 +133,8 @@ export const MSG_EFFECT_OPTIONS = [
   { key: 'solid', label: 'Düz Çerçeve' },
 ];
 
+import frameCatalog from '@/components/profile/frameCatalog';
+
 export const FRAME_DEFINITIONS = {
   '': { label: 'Yok', color: '', gradient: '' },
   'galatasaray': {
@@ -155,16 +157,7 @@ export const FRAME_DEFINITIONS = {
     image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/c1ab8665f_68781285-2AB1-44F1-8F15-41D3B81AB66F.png',
     colors: ['#6B0C72', '#4A90D9'],
   },
-  'turgay': { label: 'Turgay', color: '#1565c0', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/7bccf834c_D8E9D4DD-EFDC-41DF-BBDA-F36EBEF9ED97.png' },
-  'admin_mavi_kirmizi': { label: 'Admin Mavi Kırmızı', color: '#e11d48', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/a45a4a4a2_5D6C1099-3457-48A5-A795-3F9A53C992D6.png' },
-  'ahu': { label: 'Ahu', color: '#d4a74d', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/a49f55fb3_0BD1EA4F-F3C2-48A1-ACF4-D2B870EA441C.png' },
-  'admin_yardimcisi': { label: 'Admin Yardımcısı', color: '#1d4ed8', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/a4f040370_D43B9CAA-4A6E-455E-AA4B-FF574445FD21.png' },
-  'kral': { label: 'Kral', color: '#dc2626', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/0b03c05b9_BE7E28C0-73AA-4FCA-87E7-87934A0F35A5.png' },
-  'admin_kralicesi': { label: 'Admin Kraliçesi', color: '#db2777', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/a501ee976_4BB64906-E431-4749-8E21-CD0038BBDF4E.png' },
-  'ask': { label: 'Aşk', color: '#dc2626', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ef9872d68_0716C645-AAFF-4779-9413-D8DD616B8AFE.png' },
-  'admin_aslan': { label: 'Admin Aslan', color: '#b91c1c', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/098fab192_612615DE-EC74-41C6-858D-37D4D813B97F.png' },
-  'kalp': { label: 'Kalp', color: '#ef4444', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/324f469ec_A633DD9E-23A7-404F-99F5-1EBFF8B13A1D.png' },
-  'ates': { label: 'Ateş', color: '#f97316', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/6a5ff3d11_38B6C9BA-1333-44C7-BE9C-423CE0402AE0.png' },
+  ...frameCatalog,
 };
 
 export const ANIMATION_DEFINITIONS = [

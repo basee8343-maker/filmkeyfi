@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FRAME_DEFINITIONS } from '@/lib/roles';
 import { Image } from '@/components/ui/image';
 import TransparentFrameImage from '@/components/xp/TransparentFrameImage';
+import FramedPortrait from '@/components/profile/FramedPortrait';
 
 const SIZES = {
   sm: { avatar: 'h-10 w-10 text-xs', sprite: 'h-20 w-[4.25rem]' },
@@ -13,6 +14,7 @@ export default function ProfileFrame({ frame, children, size = 'md', className =
   const [frameMetrics, setFrameMetrics] = useState(null);
   const frameInfo = FRAME_DEFINITIONS[frame];
   const dims = SIZES[size] || SIZES.md;
+  if (frameInfo?.prepared) return <FramedPortrait info={frameInfo} avatar={avatar} name={name} size={size} className={className} />;
   if (!frame || !frameInfo?.image_url) return children || (
     <div className={`relative shrink-0 overflow-hidden rounded-full bg-background ${dims.avatar} ${className}`}>
       {avatar

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import FramePicker from '@/components/admin/FramePicker';
 import confetti from 'canvas-confetti';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
@@ -30,9 +31,10 @@ export default function RoleFrameManager({ user, onUpdated }) {
   const assignFrame = async (frame) => {
     try {
       await base44.functions.invoke('role-management', { action: 'assign_frame', user_id: user.id, frame });
-      if (frame) confetti({ particleCount: 60, spread: 50, origin: { y: 0.6 }, colors: ['#fbbf24', '#ffffff', '#ec4899'], zIndex: 9999 });
+      toast({ title: frame ? 'Çerçeve atandı' : 'Çerçeve kaldırıldı', description: FRAME_DEFINITIONS[frame]?.label || '' });
       onUpdated();
-    } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+      return true;
+    } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); return false; }
   };
 
   const setNameEffect = async (effect) => {
@@ -84,12 +86,7 @@ export default function RoleFrameManager({ user, onUpdated }) {
           <option key={key} value={key}>{info.icon} {info.label}</option>
         ))}
       </select>
-      <select value={user.profile_frame || ''} onChange={(e) => assignFrame(e.target.value)} className={selectClass}>
-        <option value="">Çerçeve: Yok</option>
-        {Object.entries(FRAME_DEFINITIONS).filter(([k]) => k).map(([key, info]) => (
-          <option key={key} value={key}>{info.label}</option>
-        ))}
-      </select>
+      <FramePicker user={user} onSelect={assignFrame} />
       <select value={user.name_effect || ''} onChange={(e) => setNameEffect(e.target.value)} className={selectClass} title="İsim animasyonu">
         <option value="">İsim Anim: Varsayılan</option>
         {NAME_EFFECT_OPTIONS.filter((o) => o.key).map((o) => (
