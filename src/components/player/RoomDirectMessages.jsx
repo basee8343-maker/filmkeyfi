@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MessageCircle, UsersRound, X, Shield, UserPlus } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
@@ -10,7 +10,7 @@ import ConversationList from '@/components/friends/ConversationList';
 import ChatPanel from '@/components/friends/ChatPanel';
 import FriendsPanel from '@/components/friends/FriendsPanel';
 
-export default function RoomDirectMessages({ onClose }) {
+export default function RoomDirectMessages({ onClose, initialUserId }) {
   const { user, relations, loading: friendsLoading, invoke } = useFriends();
   const { conversations, loading: convosLoading, optimisticHide } = useConversations();
   const { toast } = useToast();
@@ -19,6 +19,13 @@ export default function RoomDirectMessages({ onClose }) {
   const [selected, setSelected] = useState(null);
   const [tab, setTab] = useState('messages');
   const touchStart = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (!initialUserId || !user?.id || initialUserId === user.id) return;
+    base44.functions.invoke('dm-service', { action: 'start', target_id: initialUserId })
+      .then((res) => { if (res?.data?.conversation) setSelected(res.data.conversation); })
+      .catch((e) => toast({ title: 'Sohbet açılamadı', description: e.response?.data?.error || e.message, variant: 'destructive' }));
+  }, [initialUserId, user?.id]);
 
   const startAdminChat = async () => {
     setAdminLoading(true);

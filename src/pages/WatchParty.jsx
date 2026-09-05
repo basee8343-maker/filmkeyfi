@@ -34,6 +34,7 @@ export default function WatchParty() {
   const [loading, setLoading] = useState(true);
   const [chatOpen, setChatOpen] = useState(false);
   const [directOpen, setDirectOpen] = useState(false);
+  const [directTarget, setDirectTarget] = useState(null);
   const [showViewers, setShowViewers] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [moviePickerOpen, setMoviePickerOpen] = useState(false);
@@ -297,7 +298,7 @@ export default function WatchParty() {
   }, [user?.id, room?.id, joinCount, isMod, ghostRef.current]);
 
   // İzleyici profillerini çek (gerçek avatarlar için)
-  const participantIdsKey = (room?.participants || []).map((p) => p.user_id).filter(Boolean).sort().join(',');
+  const participantIdsKey = [...(room?.participants || []), ...(room?.recent_participants || [])].map((p) => p.user_id).filter(Boolean).filter((value, index, all) => all.indexOf(value) === index).sort().join(',');
   useEffect(() => {
     if (!participantIdsKey) return;
     const ids = participantIdsKey.split(',');
@@ -624,6 +625,8 @@ export default function WatchParty() {
   const src = movie?.video_url || movie?.hls_url || movie?.external_url || '';
   const chatEnabled = room.chat_enabled;
   const visibleParticipants = (room.participants || []).filter((participant) => participant.user_id === room.owner_id || viewerProfiles[participant.user_id]?.role !== 'admin');
+  const recentParticipants = (room.recent_participants || []).filter((participant) => !visibleParticipants.some((current) => current.user_id === participant.user_id));
+  const openDirectMessage = (userId) => { setProfileCard(null); setDirectTarget(userId); setDirectOpen(true); setChatOpen(false); setShowViewers(false); };
 
   return (
     <div className="fixed inset-x-0 top-0 h-screen h-[100dvh] bg-black flex flex-col overflow-hidden" style={{ touchAction: 'pan-y', overscrollBehavior: 'none' }}>
@@ -680,7 +683,7 @@ export default function WatchParty() {
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setChatOpen(false); }}
           >
-            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onDirect={() => { setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} directUnread={directUnread} ownerId={room?.owner_id} roomModerators={room?.room_moderators || []} participants={room?.participants || []} viewerProfiles={viewerProfiles} presenceMap={presenceMap} onProfileCard={setProfileCard} onToggleChat={toggleChat} settingsProps={{ room, canMod, participants: room?.participants || [], roomModerators: room?.room_moderators || [], onAssignMod: assignMod, onRemoveMod: removeMod, roomName: roomNameEdit, setRoomName: setRoomNameEdit, onSaveName: saveRoomName, password: pwSetInput, setPassword: setPwSetInput, passwordOpen: showPwSet, setPasswordOpen: setShowPwSet, onVoice: toggleVoice, onChat: toggleChat, onHidden: toggleHidden, onPassword: () => savePassword(), onRemovePassword: () => setShowPwRemoveConfirm(true), onUnban: unbanUser, onPickMovie: () => setMoviePickerOpen(true), onDeleteRoom: deleteRoom, roomLevels, onSetLevel: setLevel }} />
+            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onDirect={() => { setDirectTarget(null); setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} onDirectUser={openDirectMessage} directUnread={directUnread} ownerId={room?.owner_id} roomModerators={room?.room_moderators || []} participants={room?.participants || []} viewerProfiles={viewerProfiles} presenceMap={presenceMap} onProfileCard={setProfileCard} onToggleChat={toggleChat} settingsProps={{ room, canMod, participants: room?.participants || [], roomModerators: room?.room_moderators || [], onAssignMod: assignMod, onRemoveMod: removeMod, roomName: roomNameEdit, setRoomName: setRoomNameEdit, onSaveName: saveRoomName, password: pwSetInput, setPassword: setPwSetInput, passwordOpen: showPwSet, setPasswordOpen: setShowPwSet, onVoice: toggleVoice, onChat: toggleChat, onHidden: toggleHidden, onPassword: () => savePassword(), onRemovePassword: () => setShowPwRemoveConfirm(true), onUnban: unbanUser, onPickMovie: () => setMoviePickerOpen(true), onDeleteRoom: deleteRoom, roomLevels, onSetLevel: setLevel }} />
           </div>
         )}
 
@@ -689,7 +692,7 @@ export default function WatchParty() {
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setDirectOpen(false); }}
           >
-            <RoomDirectMessages onClose={() => setDirectOpen(false)} />
+            <RoomDirectMessages onClose={() => { setDirectOpen(false); setDirectTarget(null); }} initialUserId={directTarget} />
           </div>
         )}
 
@@ -717,6 +720,7 @@ export default function WatchParty() {
                 );
               })}
             </div>
+            {recentParticipants.length > 0 && <div className="mt-2 pt-2 border-t border-border"><p className="px-1 mb-1 text-[10px] font-bold text-muted-foreground uppercase">Son katılanlar</p><div className="space-y-1">{recentParticipants.map((p) => <button key={p.user_id} onClick={() => setProfileCard(p.user_id)} className="flex items-center gap-1.5 text-xs py-1 w-full text-left hover:bg-secondary/50 rounded px-1">{(p.avatar || viewerProfiles[p.user_id]?.avatar) ? <Image src={p.avatar || viewerProfiles[p.user_id]?.avatar} className="w-6 h-6 rounded-full" fittingType="fill" /> : <span className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center font-bold">{(p.name || '?')[0]}</span>}<span className="flex-1 truncate">{p.name}</span><span className="text-[9px] text-muted-foreground">ayrıldı</span></button>)}</div></div>}
           </div>
         )}
         <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} participants={room.participants || []} roomModerators={room.room_moderators || []} onAssignMod={assignMod} onRemoveMod={removeMod} roomName={roomNameEdit} setRoomName={setRoomNameEdit} onSaveName={saveRoomName} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} onDeleteRoom={deleteRoom} roomLevels={roomLevels} onSetLevel={setLevel} />
@@ -733,7 +737,7 @@ export default function WatchParty() {
         onConfirm={() => savePassword('')}
       />
       {profileCard && (
-        <UserProfileCard userId={profileCard} roomId={id} canMod={canMod} voiceEnabled={room?.voice_enabled} onClose={() => setProfileCard(null)} onKick={(uid) => { kickUser(uid); setProfileCard(null); }} onToggleMute={toggleMuteUser} muted={room?.participants?.find((p) => p.user_id === profileCard)?.muted} />
+        <UserProfileCard userId={profileCard} roomId={id} canMod={canMod} voiceEnabled={room?.voice_enabled} onClose={() => setProfileCard(null)} onKick={(uid) => { kickUser(uid); setProfileCard(null); }} onToggleMute={toggleMuteUser} onMessage={openDirectMessage} muted={room?.participants?.find((p) => p.user_id === profileCard)?.muted} />
       )}
       <MoviePickerSheet open={moviePickerOpen} onClose={() => setMoviePickerOpen(false)} onSelect={changeMovie} currentMovieId={movie?.id} />
     </div>

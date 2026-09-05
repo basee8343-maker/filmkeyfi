@@ -14,6 +14,12 @@ async function updatePresenceRoom(base44, userId, roomId) {
   if (records[0]) await base44.asServiceRole.entities.UserPresence.update(records[0].id, { current_room_id: roomId || '' }).catch(() => {});
 }
 
+function rememberParticipant(room, participant) {
+  if (!participant) return room.recent_participants || [];
+  const recent = (room.recent_participants || []).filter((item) => item.user_id !== participant.user_id);
+  return [{ user_id: participant.user_id, name: participant.name, avatar: participant.avatar || '', left_at: new Date().toISOString() }, ...recent].slice(0, 100);
+}
+
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -182,10 +188,11 @@ export default async function(req) {
       const targetRoleKey = targetUser?.display_role || '';
       if (targetRoleKey === 'queen_admin' || targetRoleKey === 'admin_helper') return Response.json({ error: 'Admin kraliçesi ve admin yardımcısı atılamaz' }, { status: 403 });
       if (immuneToModeration(targetUser) && !isSiteOwner(me)) return Response.json({ error: 'Bu kullanıcıyı atamazsınız' }, { status: 403 });
+      const targetParticipant = (room.participants || []).find((p) => p.user_id === target_id);
       const participants = (room.participants || []).filter((p) => p.user_id !== target_id);
-      const targetName = (room.participants || []).find((p) => p.user_id === target_id)?.name || 'Kullanıcı';
+      const targetName = targetParticipant?.name || 'Kullanıcı';
       // ban aksiyonunda kullanıcıyı banned_users listesine ekle
-      let update: any = { participants };
+      let update: any = { participants, recent_participants: rememberParticipant(room, targetParticipant) };
       if (action === 'ban') {
         const bannedUsers = (room.banned_users || []).filter((b) => b.user_id !== target_id);
         bannedUsers.push({ user_id: target_id, name: targetName, banned_at: new Date().toISOString() });
@@ -193,7 +200,7 @@ export default async function(req) {
       }
       if (participants.length === 0) {
         update.is_playing = false;
-        if (!room.is_personal) update.status = 'closed';
+        if (!room.is_personal) { update.status = 'closed'; update.recent_participants = []; }
       }
       await base44.asServiceRole.entities.Room.update(room_id, update);
       await base44.asServiceRole.entities.RoomMessage.create({
@@ -349,6 +356,8 @@ export default async function(req) {
     if (room.is_personal && !isOwner && !isMod) {
       await base44.asServiceRole.entities.RoomJoinRequest.deleteMany({ room_id, user_id: user.id }).catch(() => {});
     }
+    const leavingParticipant = (room.participants || []).find((p) => p.user_id === user.id);
+    const recentParticipants = rememberParticipant(room, leavingParticipant);
     let participants = (room.participants || []).filter((p) => p.user_id !== user.id);
     // Oda sahibi çıkıyor ve katılımcı varsa: online kontrolü atla, sahipliği devret
     const isOwnerLeavingWithParticipants = isOwner && participants.length > 0 && !room.is_personal;
@@ -367,9 +376,9 @@ export default async function(req) {
     }
     if (participants.length === 0) {
       if (room.is_personal) {
-        await base44.asServiceRole.entities.Room.update(room_id, { participants, is_playing: false });
+        await base44.asServiceRole.entities.Room.update(room_id, { participants, recent_participants: recentParticipants, is_playing: false });
       } else {
-        await base44.asServiceRole.entities.Room.update(room_id, { participants, status: 'closed', is_playing: false });
+        await base44.asServiceRole.entities.Room.update(room_id, { participants, recent_participants: [], status: 'closed', is_playing: false });
       }
       const roleInfoLeave = getRoleInfo(me, labelOverrides);
       const roleMetaLeave = roleInfoLeave.label ? `{{ROLE|${roleInfoLeave.key || ''}|${roleInfoLeave.color || ''}|${roleInfoLeave.animation || 'pulse'}}}` : '';
@@ -393,7 +402,7 @@ export default async function(req) {
       owner_name = participants[0].name;
     }
     await base44.asServiceRole.entities.Room.update(room_id, {
-      participants, owner_id, owner_name,
+      participants, recent_participants: recentParticipants, owner_id, owner_name,
       // Oynatma durumunu koru — yeni sahip kesintisiz devam etsin
       is_playing: ownershipTransferred ? room.is_playing : (participants.length === 0 ? false : room.is_playing),
       last_sync: new Date().toISOString()

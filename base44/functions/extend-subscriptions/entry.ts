@@ -28,7 +28,7 @@ export default async function(req) {
       const subscriptions = await base44.asServiceRole.entities.Subscription.filter({ user_id: userId, status: 'active' }, '-end_date', 1).catch(() => []);
       if (subscriptions[0]) subscriptionUpdates.push({ id: subscriptions[0].id, end_date: newEnd });
     }
-    if (updates.length) await base44.asServiceRole.entities.User.bulkUpdate(updates);
+    if (updates.length) await Promise.all(updates.map(({ id, ...data }) => base44.asServiceRole.entities.User.update(id, data)));
     if (subscriptionUpdates.length) await base44.asServiceRole.entities.Subscription.bulkUpdate(subscriptionUpdates);
     return Response.json({ updated: updates.length });
   } catch (error) {

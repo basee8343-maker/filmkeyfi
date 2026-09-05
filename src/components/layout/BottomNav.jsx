@@ -19,7 +19,7 @@ const limitedItems = [
 export default function BottomNav() {
   const location = useLocation();
   const { user } = useCurrentUser();
-  const { messages } = useSocialBadges(user?.id);
+  const { messages, requests } = useSocialBadges(user?.id);
   const items = membershipActive(user) ? fullItems : limitedItems;
   return (
     <nav className="lg:hidden fixed bottom-0 inset-x-0 z-50 overflow-hidden" style={{ background: 'linear-gradient(180deg, #14141a 0%, #0a0a0f 100%)', borderTop: '1px solid rgba(168,85,247,0.12)' }}>
@@ -52,7 +52,8 @@ export default function BottomNav() {
             <Link key={path} to={path} className="flex-1 flex flex-col items-center justify-center gap-0.5 relative active:scale-95 transition-transform">
               {active && <span className="absolute top-0 h-0.5 w-8 rounded-full" style={{ background: '#a855f7', boxShadow: '0 0 8px #a855f7' }} />}
               <Icon className={`w-5 h-5 ${active ? 'text-purple-400' : 'text-white/50'}`} />
-              {activePath === '/arkadaslar' && messages > 0 && <span className="absolute right-[22%] top-1 min-w-5 h-5 px-1 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center">{messages > 99 ? '99+' : messages}</span>}
+              {activePath === '/arkadaslar' && messages > 0 && <span className="absolute right-[18%] top-1 min-w-5 h-5 px-1 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center">{messages > 99 ? '99+' : messages}</span>}
+              {activePath === '/arkadaslar' && requests > 0 && <span className="absolute right-[30%] top-0 w-3 h-3 rounded-full bg-red-500 border-2 border-[#14141a]" aria-label="Yeni arkadaşlık isteği" />}
               <span className={`text-[10px] ${active ? 'text-white font-semibold' : 'text-white/50'}`}>{label}</span>
             </Link>
           );

@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { X, Copy, UserPlus, MessageSquare, Mic, MicOff, UserMinus, Flag } from 'lucide-react';
+import { X, Copy, UserPlus, MessageSquare, Mic, MicOff, UserMinus, Flag, Ban } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import { useToast } from '@/components/ui/use-toast';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 
-export default function UserProfileCard({ userId, roomId, canMod, voiceEnabled, onClose, onKick, onToggleMute, muted }) {
+export default function UserProfileCard({ userId, roomId, canMod, voiceEnabled, onClose, onKick, onToggleMute, onMessage, muted }) {
   const { user } = useCurrentUser();
   const { toast } = useToast();
   const [profile, setProfile] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
   const [friendshipId, setFriendshipId] = useState(null);
+  const [requestSent, setRequestSent] = useState(false);
   const [showReport, setShowReport] = useState(false);
 
   useEffect(() => {
@@ -33,11 +34,16 @@ export default function UserProfileCard({ userId, roomId, canMod, voiceEnabled, 
   };
 
   const addFriend = async () => {
-    try { await base44.functions.invoke('friend-service', { action: 'request', target_id: userId }); toast({ title: 'Arkadaşlık isteği gönderildi' }); }
+    try { await base44.functions.invoke('friend-service', { action: 'request', user_id: userId }); setRequestSent(true); toast({ title: 'Arkadaşlık isteği gönderildi' }); }
     catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
-  const openChat = () => { if (friendshipId) window.location.href = `/arkadaslar?chat=${friendshipId}`; };
+  const openChat = () => { onMessage?.(userId); onClose?.(); };
+  const blockUser = async () => {
+    const blocked = [...new Set([...(user?.blocked_users || []), userId])];
+    await base44.auth.updateMe({ blocked_users: blocked });
+    toast({ title: 'Kullanıcı engellendi' }); onClose?.();
+  };
 
   const submitReport = (reason) => {
     base44.entities.Report.create({
@@ -65,8 +71,9 @@ export default function UserProfileCard({ userId, roomId, canMod, voiceEnabled, 
           <button onClick={copyMemberId} className="p-0.5 rounded hover:bg-secondary"><Copy className="w-3 h-3 text-muted-foreground" /></button>
         </div>
         <div className="space-y-1">
-          {userId !== user?.id && !isFriend && <button onClick={addFriend} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 text-xs font-semibold"><UserPlus className="w-3.5 h-3.5" /> Arkadaş Ekle</button>}
-          {userId !== user?.id && isFriend && <button onClick={openChat} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary text-xs font-semibold"><MessageSquare className="w-3.5 h-3.5" /> Mesaj Yaz</button>}
+          {userId !== user?.id && !isFriend && <button onClick={addFriend} disabled={requestSent} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 text-xs font-semibold disabled:opacity-50"><UserPlus className="w-3.5 h-3.5" /> {requestSent ? 'İstek Gönderildi' : 'Arkadaş Ekle'}</button>}
+          {userId !== user?.id && <button onClick={openChat} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary text-xs font-semibold"><MessageSquare className="w-3.5 h-3.5" /> Mesaj Yaz</button>}
+          {userId !== user?.id && <button onClick={blockUser} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary text-xs font-semibold"><Ban className="w-3.5 h-3.5 text-red-400" /> Engelle</button>}
           {canMod && userId !== user?.id && voiceEnabled && <button onClick={() => onToggleMute?.(userId)} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary text-xs font-semibold">{muted ? <><MicOff className="w-3.5 h-3.5 text-red-400" /> Mikrofonu Aç</> : <><Mic className="w-3.5 h-3.5 text-green-400" /> Mikrofonu Kapat</>}</button>}
           {canMod && userId !== user?.id && <button onClick={() => { onKick?.(userId); onClose(); }} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-xs font-semibold"><UserMinus className="w-3.5 h-3.5" /> Odadan At</button>}
           {userId !== user?.id && <button onClick={() => setShowReport(!showReport)} className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-secondary text-xs font-semibold"><Flag className="w-3.5 h-3.5" /> Şikayet Et</button>}

@@ -21,7 +21,7 @@ import RoomSettingsContent from '@/components/player/RoomSettingsContent';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
-export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, directUnread = 0, ownerId, roomModerators = [], participants = [], viewerProfiles = {}, presenceMap = {}, onProfileCard, settingsProps, onToggleChat }) {
+export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, onDirectUser, directUnread = 0, ownerId, roomModerators = [], participants = [], viewerProfiles = {}, presenceMap = {}, onProfileCard, settingsProps, onToggleChat }) {
   const { user } = useCurrentUser();
   const { toast } = useToast();
   const [messages, setMessages] = useState([]);
@@ -440,7 +440,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
         />
       )}
       {userMenu && (
-        <UserProfileCard userId={userMenu.userId} roomId={roomId} canMod={isOwner} voiceEnabled={false} onClose={() => setUserMenu(null)} onKick={kickFromRoom} />
+        <UserProfileCard userId={userMenu.userId} roomId={roomId} canMod={isOwner} voiceEnabled={false} onClose={() => setUserMenu(null)} onKick={kickFromRoom} onMessage={onDirectUser} />
       )}
       {reportTarget && <ReportDialog targetId={reportTarget.userId} targetName={reportTarget.userName} context="room" contextId={roomId} onClose={() => setReportTarget(null)} />}
       {lightbox && <div onClick={() => setLightbox(null)} className="fixed inset-0 z-[110] bg-black/90 flex items-center justify-center p-4"><button className="absolute top-4 right-4 text-white p-2"><X className="w-6 h-6" /></button><Image src={lightbox} className="max-w-full max-h-full rounded-lg" fittingType="fit" /></div>}
