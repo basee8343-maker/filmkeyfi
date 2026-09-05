@@ -64,35 +64,9 @@ export default function Register() {
     setLoading(true);
     try {
       await base44.auth.register({ email, password });
-      // OTP olmadan direkt giriş yapmayı dene
-      try {
-        await base44.auth.loginViaEmailPassword(email, password);
-        try {
-          await base44.auth.updateMe({
-            full_name: fullName, username, avatar,
-            membership_status: paymentAvailable ? "pending" : "pending",
-          });
-          await base44.functions.invoke('ensure-member-id').catch(() => {});
-        } catch {}
-        base44.functions.invoke('admin-notify', {
-          event: 'new_user',
-          ref_id: `new_user:${email}`,
-          title: 'Yeni kullanıcı kaydoldu',
-          body: fullName || username || email,
-          link: '/admin/kullanicilar',
-          telegram_data: { username: fullName || username || email, email, date: new Date().toLocaleString('tr-TR') }
-        }).catch(() => {});
-        if (!paymentAvailable) {
-          toast({ title: "Kayıt tamamlandı", description: "Hesabınız admin onayı bekliyor." });
-          window.location.href = "/onay-bekleniyor";
-        } else {
-          toast({ title: "Kayıt tamamlandı", description: "Aboneliğinizi aktif etmek için ödeme yapın." });
-          window.location.href = "/abonelik";
-        }
-      } catch (loginErr) {
-        // Giriş başarısız - OTP'ye düş
-        setShowOtp(true);
-      }
+      // Doğrulama ekranına geç — OTP doğrulanmadan giriş yapılmaz
+      setShowOtp(true);
+      toast({ title: "Kod gönderildi", description: `${email} adresine doğrulama kodu gönderildi.` });
     } catch (err) {
       setError(err.message || "Kayıt başarısız");
     } finally {
@@ -105,16 +79,15 @@ export default function Register() {
     setLoading(true);
     try {
       const result = await base44.auth.verifyOtp({ email, otpCode });
-      if (result?.access_token) {
-        base44.auth.setToken(result.access_token);
-        try {
-          await base44.auth.updateMe({
-            full_name: fullName, username, avatar,
-            membership_status: "pending",
-          });
-          await base44.functions.invoke('ensure-member-id').catch(() => {});
-        } catch {}
-      }
+      if (!result?.access_token) throw new Error("Doğrulama kodu geçersiz");
+      base44.auth.setToken(result.access_token);
+      try {
+        await base44.auth.updateMe({
+          full_name: fullName, username, avatar,
+          membership_status: "pending",
+        });
+      } catch {}
+      await base44.functions.invoke('ensure-member-id').catch(() => {});
       // Admin'e yeni kullanıcı bildirimi gönder (real-time + web push)
       base44.functions.invoke('admin-notify', {
         event: 'new_user',

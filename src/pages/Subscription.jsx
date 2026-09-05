@@ -22,18 +22,21 @@ export default function Subscription() {
 
   useEffect(() => {
     const load = async () => {
-      try {
-        const [planItems, methodsRes, subRes] = await Promise.all([
-          base44.entities.SubscriptionPlan.filter({ active: true }, 'sort_order', 50),
-          base44.functions.invoke('payment-service', { action: 'get_available_methods' }),
-          base44.functions.invoke('payment-service', { action: 'get_my_subscription' }),
-        ]);
-        setPlans(planItems);
-        setMethods(methodsRes.data || methodsRes || []);
-        const subData = subRes.data || subRes;
+      const [planItems, methodsRes, subRes] = await Promise.allSettled([
+        base44.entities.SubscriptionPlan.filter({ active: true }, 'sort_order', 50),
+        base44.functions.invoke('payment-service', { action: 'get_available_methods' }),
+        base44.functions.invoke('payment-service', { action: 'get_my_subscription' }),
+      ]);
+      if (planItems.status === 'fulfilled') setPlans(planItems.value || []);
+      if (methodsRes.status === 'fulfilled') {
+        const m = methodsRes.value;
+        setMethods(m.data || m || []);
+      }
+      if (subRes.status === 'fulfilled') {
+        const subData = subRes.value.data || subRes.value;
         setMySub(subData.subscription);
         setPendingPayments(subData.pendingPayments || []);
-      } catch {}
+      }
       setLoading(false);
     };
     load();
