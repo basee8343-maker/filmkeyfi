@@ -73,6 +73,10 @@ export default function AppLayout() {
         base44.auth.logout().catch(() => {});
         window.location.href = '/login?banned=1';
       }
+      // Admin üyeliği onayladığında anında ana sayfaya yönlendir
+      if (ev.type === 'update' && ev.data?.id === user.id && ev.data?.membership_status === 'active' && !membershipActive(user)) {
+        window.location.href = '/';
+      }
       if (ev.type === 'delete' && (ev.data?.id === user.id || ev.id === user.id)) {
         triggerBanNotice('removed');
         base44.auth.logout().catch(() => {});
