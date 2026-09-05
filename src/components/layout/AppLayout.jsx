@@ -13,6 +13,7 @@ import RoleCelebrationOverlay from '@/components/role/RoleCelebrationOverlay';
 import WhatsNewModal from '@/components/WhatsNewModal';
 import { detectConnectionType } from '@/lib/connectionType';
 import { triggerBanNotice } from '@/lib/banNotice';
+import { useToast } from '@/components/ui/use-toast';
 
 // Abonelik gerektirmeyen sayfalar
 const EXEMPT_PATHS = ['/abonelik', '/destek', '/bildirimler', '/odeme', '/güvenlik-protokolü', '/bakim'];
@@ -25,6 +26,7 @@ export default function AppLayout() {
   useRoleCelebration();
   useRoleLabels();
   const { publicSettings } = useAuth();
+  const { toast } = useToast();
   // RoleCelebrationOverlay renders a full-screen animated character when role changes
   const isRoom = pathname.startsWith('/oda/');
 
@@ -120,11 +122,15 @@ export default function AppLayout() {
   useEffect(() => {
     if (!user) return;
     const unsubNotif = base44.entities.Notification.subscribe((ev) => {
-      if (ev.type === 'create' && ev.data?.user_id === user.id && ev.data?.type === 'suspended') {
+      if (ev.type !== 'create' || ev.data?.user_id !== user.id) return;
+      if (ev.data?.type === 'suspended') {
         triggerBanNotice('banned');
         base44.auth.logout().catch(() => {});
         window.location.href = '/login?banned=1';
+        return;
       }
+      // Yeni bildirimleri anlık toast olarak göster
+      toast({ title: ev.data?.title || 'Bildirim', description: ev.data?.body });
     });
     const unsubUser = base44.entities.User.subscribe((ev) => {
       if (ev.type === 'update' && ev.data?.id === user.id && ev.data?.is_banned) {
@@ -142,7 +148,15 @@ export default function AppLayout() {
         window.location.href = '/login?removed=1';
       }
     });
-    return () => { unsubNotif(); unsubUser(); };
+    // Oda dışındayken yeni özel mesaj gelince toast göster
+    const unsubDM = base44.entities.DirectMessage.subscribe((ev) => {
+      if (ev.type !== 'create') return;
+      const msg = ev.data;
+      if (!msg || msg.recipient_id !== user.id) return;
+      if (window.location.pathname.startsWith('/oda/') || window.location.pathname === '/arkadaslar') return;
+      toast({ title: msg.sender_name || 'Yeni mesaj', description: (msg.text || 'Yeni bir mesajınız var').slice(0, 100) });
+    });
+    return () => { unsubNotif(); unsubUser(); unsubDM(); };
   }, [user?.id]);
 
   // Oturum heartbeat — aktif kalma sinyali + opsiyonel GPS
@@ -161,6 +175,29 @@ export default function AppLayout() {
     beat();
     const id = setInterval(beat, 45000);
     return () => clearInterval(id);
+  }, [user?.id]);
+
+  // Sayfa görünür olunca anlık güvenlik kontrolü — kullanıcı geri döndüğünde ban/askıya alma/silme tespiti
+  useEffect(() => {
+    const onVisible = async () => {
+      if (document.visibilityState !== 'visible' || !user) return;
+      try {
+        const u = await base44.auth.me();
+        if (u?.is_banned || u?.role === 'banned' || u?.is_suspended || u?.membership_status === 'suspended') {
+          triggerBanNotice('banned');
+          base44.auth.logout().catch(() => {});
+          window.location.href = '/login?banned=1';
+        }
+      } catch (e) {
+        if (e?.status === 401 || e?.status === 403 || e?.status === 404) {
+          triggerBanNotice('removed');
+          base44.auth.logout().catch(() => {});
+          window.location.href = '/login?removed=1';
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [user?.id]);
 
   // Sosyal girişle yeni kayıt olan kullanıcı için admin bildirimi (email kaydı zaten Register'da gönderir, dedup ref_id ile engeller)

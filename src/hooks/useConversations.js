@@ -57,7 +57,9 @@ export default function useConversations() {
     window.addEventListener('social-thread-open', onThreadOpen);
     const reconnect = () => load();
     window.addEventListener('online', reconnect);
-    return () => { unsub(); window.removeEventListener('social-thread-open', onThreadOpen); window.removeEventListener('online', reconnect); };
+    // Polling yedeği — realtime kaçırsa diye 10sn'de bir yenile
+    const interval = setInterval(load, 10000);
+    return () => { unsub(); window.removeEventListener('social-thread-open', onThreadOpen); window.removeEventListener('online', reconnect); clearInterval(interval); };
   }, [user?.id, load]);
 
   const optimisticHide = useCallback((conversationId) => {

@@ -98,7 +98,9 @@ export default function useChatMessages(conversationId) {
       }
     });
 
-    return () => { unsub(); unsubConv(); };
+    // Polling yedeği — realtime kaçırsa diye 8sn'de bir yenile
+    const interval = setInterval(() => loadRef.current(), 8000);
+    return () => { unsub(); unsubConv(); clearInterval(interval); };
   }, [conversationId, userId]);
 
   const send = useCallback(async (content) => {

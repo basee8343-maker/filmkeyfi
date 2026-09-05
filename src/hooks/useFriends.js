@@ -34,7 +34,9 @@ export default function useFriends() {
     });
     const reconnect = () => reload();
     window.addEventListener('online', reconnect);
-    return () => { offFriends(); window.removeEventListener('online', reconnect); };
+    // Polling yedeği — realtime kaçırsa diye 10sn'de bir yenile
+    const interval = setInterval(reload, 10000);
+    return () => { offFriends(); window.removeEventListener('online', reconnect); clearInterval(interval); };
   }, [user?.id, reload]);
 
   const invoke = async (payload) => {
