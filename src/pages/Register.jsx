@@ -70,7 +70,7 @@ export default function Register() {
         try {
           await base44.auth.updateMe({
             full_name: fullName, username, avatar,
-            membership_status: (paymentRequired || !paymentAvailable) ? "pending" : "active",
+            membership_status: paymentAvailable ? "pending" : "pending",
           });
           await base44.functions.invoke('ensure-member-id').catch(() => {});
         } catch {}
@@ -85,12 +85,9 @@ export default function Register() {
         if (!paymentAvailable) {
           toast({ title: "Kayıt tamamlandı", description: "Hesabınız admin onayı bekliyor." });
           window.location.href = "/onay-bekleniyor";
-        } else if (paymentRequired) {
+        } else {
           toast({ title: "Kayıt tamamlandı", description: "Aboneliğinizi aktif etmek için ödeme yapın." });
           window.location.href = "/abonelik";
-        } else {
-          toast({ title: "Kayıt tamamlandı", description: "Film Keyfi'ne hoş geldiniz!" });
-          window.location.href = "/";
         }
       } catch (loginErr) {
         // Giriş başarısız - OTP'ye düş
@@ -113,7 +110,7 @@ export default function Register() {
         try {
           await base44.auth.updateMe({
             full_name: fullName, username, avatar,
-            membership_status: (paymentRequired || !paymentAvailable) ? "pending" : "active",
+            membership_status: "pending",
           });
           await base44.functions.invoke('ensure-member-id').catch(() => {});
         } catch {}
@@ -130,12 +127,9 @@ export default function Register() {
       if (!paymentAvailable) {
         toast({ title: "Kayıt tamamlandı", description: "Hesabınız admin onayı bekliyor." });
         window.location.href = "/onay-bekleniyor";
-      } else if (paymentRequired) {
+      } else {
         toast({ title: "Kayıt tamamlandı", description: "Aboneliğinizi aktif etmek için ödeme yapın." });
         window.location.href = "/abonelik";
-      } else {
-        toast({ title: "Kayıt tamamlandı", description: "Film Keyfi'ne hoş geldiniz!" });
-        window.location.href = "/";
       }
     } catch (err) {
       setError(err.message || "Geçersiz doğrulama kodu");
@@ -157,7 +151,7 @@ export default function Register() {
   const handleProvider = async (provider) => {
     if (!acceptTerms) { setError('Kullanım koşullarını kabul etmelisiniz'); return; }
     setError(''); setSocialLoading(provider);
-    try { const dest = !paymentAvailable ? '/onay-bekleniyor' : (paymentRequired ? '/abonelik' : '/'); await base44.auth.loginWithProvider(provider, dest); }
+    try { const dest = !paymentAvailable ? '/onay-bekleniyor' : '/abonelik'; await base44.auth.loginWithProvider(provider, dest); }
     catch (err) { setError(err.message || 'Sosyal kayıt başlatılamadı'); setSocialLoading(''); }
   };
 
@@ -215,7 +209,7 @@ export default function Register() {
           <div className="bg-[#141414]/95 backdrop-blur-sm rounded-2xl border border-[#2a2a2a] p-6 shadow-2xl">
             <h2 className="text-xl font-bold text-white mb-1">Hesap Oluştur</h2>
             {!paymentAvailable && <div className="mb-4 p-3 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs">⚠️ Hesabınız admin onayı ile aktif edilecektir. Onay sonrası ana sayfaya yönlendirileceksiniz.</div>}
-            {paymentAvailable && paymentRequired && <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">ℹ️ Kayıt sonrası abonelik seçerek ödeme yapmanız gerekir.</div>}
+            {paymentAvailable && <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">ℹ️ Kayıt sonrası abonelik seçerek ödeme yapmanız gerekir.</div>}
             <p className="text-sm text-[#a0a0a0] mb-6">Lütfen bilgilerinizi eksiksiz doldurun.</p>
 
             {error && <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">{error}</div>}
