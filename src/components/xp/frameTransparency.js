@@ -28,14 +28,13 @@ export function makeTransparentFrame(src) {
       const palette = [...paletteCounts].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k]) => k.split(',').map(Number));
       const removable = (i) => {
         const rgb = [data[i], data[i + 1], data[i + 2]];
-        return Math.max(...rgb) - Math.min(...rgb) < 24 && palette.some((p) => colorDistance(rgb, p) < 38);
+        return Math.max(...rgb) - Math.min(...rgb) < 36 && palette.some((p) => colorDistance(rgb, p) < 58);
       };
-      const seen = new Uint8Array(width * height), queue = [];
-      const seed = (x, y) => { const p = y * width + x; if (!seen[p] && removable(p * 4)) { seen[p] = 1; queue.push(p); } };
-      for (let x = 0; x < width; x++) { seed(x, 0); seed(x, height - 1); }
-      for (let y = 0; y < height; y++) { seed(0, y); seed(width - 1, y); }
-      for (let y = Math.floor(cy - radius); y <= cy + radius; y++) for (let x = Math.floor(cx - radius); x <= cx + radius; x++) if (Math.hypot(x - cx, y - cy) < radius) seed(x, y);
-      for (let q = 0; q < queue.length; q++) { const p = queue[q], x = p % width, y = Math.floor(p / width); data[p * 4 + 3] = 0; if (x) seed(x - 1, y); if (x + 1 < width) seed(x + 1, y); if (y) seed(x, y - 1); if (y + 1 < height) seed(x, y + 1); }
+      // Dama deseni JPEG içinde birbirinden kopuk karelere bölündüğü için tüm eşleşen
+      // arka plan piksellerini doğrudan gerçek alpha şeffaflığına dönüştür.
+      for (let i = 0; i < data.length; i += 4) {
+        if (removable(i)) data[i + 3] = 0;
+      }
       ctx.putImageData(pixels, 0, 0);
       resolve(canvas.toDataURL('image/png'));
     };
