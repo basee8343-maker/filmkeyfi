@@ -3,7 +3,7 @@ import { Eye, EyeOff, Instagram, Lock, MessageCircle, MessageSquare, MessageSqua
 import { useToast } from '@/components/ui/use-toast';
 import { base44 } from '@/api/base44Client';
 
-export default function RoomSettingsContent({ room, canMod, participants, roomModerators, onAssignMod, onRemoveMod, roomName, setRoomName, onSaveName, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie, onDeleteRoom, roomLevels, onSetLevel }) {
+export default function RoomSettingsContent({ room, canMod, participants, roomModerators, onAssignMod, onRemoveMod, roomName, setRoomName, onSaveName, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie, onDeleteRoom }) {
   const { toast } = useToast();
   const [showBanned, setShowBanned] = useState(false);
   const [showMods, setShowMods] = useState(false);
@@ -73,24 +73,6 @@ export default function RoomSettingsContent({ room, canMod, participants, roomMo
               </div>
             )}
           </>
-        )}
-        {room.is_personal && canMod && onSetLevel && (
-          <div className="space-y-1.5">
-            <p className="text-xs font-bold text-muted-foreground px-1">Seviye Yönetimi</p>
-            <div className="rounded-xl border border-border bg-secondary/40 p-2 space-y-1.5 max-h-40 overflow-y-auto">
-              {participants.filter((p) => p.user_id !== room.owner_id).map((p) => {
-                const lvl = roomLevels?.[p.user_id] || 1;
-                return (
-                  <div key={p.user_id} className="flex items-center gap-2">
-                    <span className="text-xs truncate flex-1">{p.name}</span>
-                    <button onClick={() => onSetLevel(p.user_id, Math.max(1, lvl - 1))} className="w-6 h-6 rounded-lg bg-secondary text-xs font-bold">-</button>
-                    <span className="text-xs font-bold w-8 text-center">{lvl}</span>
-                    <button onClick={() => onSetLevel(p.user_id, lvl + 1)} className="w-6 h-6 rounded-lg bg-secondary text-xs font-bold">+</button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         )}
         {showBanned && (
           <div className="rounded-xl border border-border bg-secondary/40 p-2 space-y-1.5 max-h-40 overflow-y-auto">

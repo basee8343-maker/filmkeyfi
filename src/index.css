@@ -5,6 +5,14 @@
 @layer base {
   :root {
     /* AYDINLIK TEMA */
+    --level-basic: 215 14% 42%;
+    --level-blue: 214 85% 44%;
+    --level-violet: 266 75% 49%;
+    --level-pink: 323 80% 43%;
+    --level-gold: 36 92% 34%;
+    --level-red: 0 76% 44%;
+    --level-premium: 273 74% 47%;
+    --level-max: 38 90% 36%;
     --background: 240 20% 98%;
     --foreground: 240 10% 10%;
     --card: 0 0% 100%;
@@ -47,6 +55,14 @@
 
   .dark {
     /* KARANLIK TEMA — sinema neon */
+    --level-basic: 215 15% 78%;
+    --level-blue: 212 94% 69%;
+    --level-violet: 266 92% 77%;
+    --level-pink: 324 92% 74%;
+    --level-gold: 39 96% 64%;
+    --level-red: 0 91% 73%;
+    --level-premium: 273 95% 81%;
+    --level-max: 43 96% 72%;
     --background: 240 10% 4%;
     --foreground: 0 0% 98%;
     --card: 240 8% 7%;
@@ -101,6 +117,32 @@
 }
 
 @layer utilities {
+  [data-level-tier] { --level-tone: var(--level-basic); --level-glow: 0px; }
+  [data-level-tier="blue"] { --level-tone: var(--level-blue); --level-glow: 5px; }
+  [data-level-tier="violet"] { --level-tone: var(--level-violet); --level-glow: 6px; }
+  [data-level-tier="pink"] { --level-tone: var(--level-pink); --level-glow: 7px; }
+  [data-level-tier="gold"] { --level-tone: var(--level-gold); --level-glow: 8px; }
+  [data-level-tier="red"] { --level-tone: var(--level-red); --level-glow: 9px; }
+  [data-level-tier="premium"] { --level-tone: var(--level-premium); --level-glow: 10px; }
+  [data-level-tier="max"] { --level-tone: var(--level-max); --level-glow: 12px; }
+  .room-level-badge {
+    color: hsl(var(--level-tone));
+    border-color: hsl(var(--level-tone) / 0.5);
+    background: hsl(var(--level-tone) / 0.1);
+    box-shadow: 0 0 var(--level-glow) hsl(var(--level-tone) / 0.18);
+  }
+  .room-level-badge[data-level-tier="premium"], .room-level-badge[data-level-tier="max"] {
+    background: linear-gradient(115deg, hsl(var(--level-violet) / 0.22), hsl(var(--level-gold) / 0.16));
+    border-color: hsl(var(--level-gold) / 0.65);
+  }
+  .room-level-message { box-shadow: inset 0 0 0 1px hsl(var(--level-tone) / 0.3); }
+  .room-level-profile:is([data-level-tier="gold"], [data-level-tier="red"], [data-level-tier="premium"], [data-level-tier="max"])::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(110deg, transparent, hsl(var(--level-tone) / 0.22), transparent);
+    animation: room-level-shimmer 4s ease-in-out infinite;
+  }
+  @keyframes room-level-shimmer { 0%, 100% { opacity: 0.15; } 50% { opacity: 0.8; } }
+  @media (prefers-reduced-motion: reduce) { .room-level-profile::before { animation: none !important; } }
   .glass {
     background: rgba(15, 15, 20, 0.6);
     backdrop-filter: blur(16px);

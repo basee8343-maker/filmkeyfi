@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { X } from 'lucide-react';
 import RoomSettingsContent from '@/components/player/RoomSettingsContent';
 
-export default function RoomSettingsMenu({ open, onClose, room, canMod, participants, roomModerators, onAssignMod, onRemoveMod, roomName, setRoomName, onSaveName, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie, onDeleteRoom, roomLevels, onSetLevel }) {
+export default function RoomSettingsMenu({ open, onClose, room, canMod, participants, roomModerators, onAssignMod, onRemoveMod, roomName, setRoomName, onSaveName, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie, onDeleteRoom }) {
   const touchStart = useRef({ x: 0, y: 0 });
   if (!open) return null;
 
@@ -18,7 +18,7 @@ export default function RoomSettingsMenu({ open, onClose, room, canMod, particip
         onSaveName={onSaveName} password={password} setPassword={setPassword} passwordOpen={passwordOpen}
         setPasswordOpen={setPasswordOpen} onVoice={onVoice} onChat={onChat} onHidden={onHidden}
         onPassword={onPassword} onRemovePassword={onRemovePassword} onUnban={onUnban} onPickMovie={onPickMovie}
-        onDeleteRoom={onDeleteRoom} roomLevels={roomLevels} onSetLevel={onSetLevel}
+        onDeleteRoom={onDeleteRoom}
       />
     </div>
   );
