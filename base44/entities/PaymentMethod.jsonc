@@ -49,6 +49,13 @@
     "test_mode": {
       "type": "boolean",
       "default": false
+    },
+    "required_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
     }
   },
   "required": [

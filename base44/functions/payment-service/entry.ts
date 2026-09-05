@@ -11,9 +11,24 @@ export default async function(req) {
     // === ÖDEME YÖNTEMLERİNİ GETİR (herkes erişebilir, gizli bilgi yok) ===
     if (action === 'get_available_methods') {
       const methods = await base44.asServiceRole.entities.PaymentMethod.filter({ enabled: true }, 'sort_order', 50);
+      const configs = await base44.asServiceRole.entities.PaymentProviderConfig.list('-updated_date', 50);
       const result = methods.map((m) => {
-        if (m.provider_key === 'bank_transfer') {
-          if (!m.iban || !m.bank_name || !m.account_holder) return null;
+        const required = m.required_fields || [];
+        // Zorunlu alanlar seçilmişse, hepsi dolu olmalı; yoksa varsayılan kontrol
+        if (required.length > 0) {
+          for (const field of required) {
+            if (field === 'merchant_key' || field === 'merchant_salt') {
+              const cfg = configs.find((c) => c.provider_key === m.provider_key);
+              if (!cfg || !cfg[field]) return null;
+            } else {
+              if (!m[field]) return null;
+            }
+          }
+        } else {
+          // Varsayılan: banka transferi için temel alanlar gerekli
+          if (m.type === 'bank_transfer' && (!m.iban || !m.bank_name || !m.account_holder)) return null;
+        }
+        if (m.type === 'bank_transfer') {
           return {
             provider_key: m.provider_key, display_name: m.display_name, type: m.type,
             sort_order: m.sort_order, description: m.description,
