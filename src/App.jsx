@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -9,51 +10,50 @@ import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
 // Add page imports here
 import AppLayout from '@/components/layout/AppLayout';
-import Home from '@/pages/Home';
-import Browse from '@/pages/Browse';
-import MovieDetail from '@/pages/MovieDetail';
-import Watch from '@/pages/Watch';
-import WatchParty from '@/pages/WatchParty';
-import CreateRoom from '@/pages/CreateRoom';
-import Profile from '@/pages/Profile';
-import MyList from '@/pages/MyList';
-import Search from '@/pages/Search';
-import Support from '@/pages/Support';
-import Notifications from '@/pages/Notifications';
-import AdminLayout from '@/pages/admin/AdminLayout';
-import AdminDashboard from '@/pages/admin/AdminDashboard';
-import AdminUsers from '@/pages/admin/AdminUsers';
-import AdminMovies from '@/pages/admin/AdminMovies';
-
-import AdminSupport from '@/pages/admin/AdminSupport';
-import AdminPayments from '@/pages/admin/AdminPayments';
-import AdminNotifications from '@/pages/admin/AdminNotifications';
-import AdminTelegram from '@/pages/admin/AdminTelegram';
-import AdminCategories from '@/pages/admin/AdminCategories';
-import OpenRooms from '@/pages/OpenRooms';
-import AdminReports from '@/pages/admin/AdminReports';
-import AdminUserReports from '@/pages/admin/AdminUserReports';
-import AdminSettings from '@/pages/admin/AdminSettings';
-import AdminSecurity from '@/pages/admin/AdminSecurity';
-import Subscription from '@/pages/Subscription';
-import PaymentResult from '@/pages/PaymentResult';
-import PaymentHistory from '@/pages/PaymentHistory';
-import MaintenanceMode from '@/pages/MaintenanceMode';
 import { ThemeProvider } from '@/lib/ThemeContext';
-import UserProfile from '@/pages/UserProfile';
 import { Navigate } from 'react-router-dom';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
-import PendingApproval from '@/pages/PendingApproval';
-import BannedScreen from '@/pages/BannedScreen';
-import SecurityProtocol from '@/pages/SecurityProtocol';
-import Friends from '@/pages/Friends';
 
-import AdminPromoVideo from '@/pages/admin/AdminPromoVideo';
-import AdminSessions from '@/pages/admin/AdminSessions';
-import AdminUpdates from '@/pages/admin/AdminUpdates';
+const Home = lazy(() => import('@/pages/Home'));
+const Browse = lazy(() => import('@/pages/Browse'));
+const MovieDetail = lazy(() => import('@/pages/MovieDetail'));
+const Watch = lazy(() => import('@/pages/Watch'));
+const WatchParty = lazy(() => import('@/pages/WatchParty'));
+const CreateRoom = lazy(() => import('@/pages/CreateRoom'));
+const Profile = lazy(() => import('@/pages/Profile'));
+const MyList = lazy(() => import('@/pages/MyList'));
+const Search = lazy(() => import('@/pages/Search'));
+const Support = lazy(() => import('@/pages/Support'));
+const Notifications = lazy(() => import('@/pages/Notifications'));
+const OpenRooms = lazy(() => import('@/pages/OpenRooms'));
+const Subscription = lazy(() => import('@/pages/Subscription'));
+const PaymentResult = lazy(() => import('@/pages/PaymentResult'));
+const PaymentHistory = lazy(() => import('@/pages/PaymentHistory'));
+const MaintenanceMode = lazy(() => import('@/pages/MaintenanceMode'));
+const UserProfile = lazy(() => import('@/pages/UserProfile'));
+const Login = lazy(() => import('@/pages/Login'));
+const Register = lazy(() => import('@/pages/Register'));
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+const PendingApproval = lazy(() => import('@/pages/PendingApproval'));
+const BannedScreen = lazy(() => import('@/pages/BannedScreen'));
+const SecurityProtocol = lazy(() => import('@/pages/SecurityProtocol'));
+const Friends = lazy(() => import('@/pages/Friends'));
+const AdminLayout = lazy(() => import('@/pages/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('@/pages/admin/AdminDashboard'));
+const AdminUsers = lazy(() => import('@/pages/admin/AdminUsers'));
+const AdminMovies = lazy(() => import('@/pages/admin/AdminMovies'));
+const AdminSupport = lazy(() => import('@/pages/admin/AdminSupport'));
+const AdminPayments = lazy(() => import('@/pages/admin/AdminPayments'));
+const AdminNotifications = lazy(() => import('@/pages/admin/AdminNotifications'));
+const AdminTelegram = lazy(() => import('@/pages/admin/AdminTelegram'));
+const AdminCategories = lazy(() => import('@/pages/admin/AdminCategories'));
+const AdminReports = lazy(() => import('@/pages/admin/AdminReports'));
+const AdminUserReports = lazy(() => import('@/pages/admin/AdminUserReports'));
+const AdminSettings = lazy(() => import('@/pages/admin/AdminSettings'));
+const AdminSecurity = lazy(() => import('@/pages/admin/AdminSecurity'));
+const AdminPromoVideo = lazy(() => import('@/pages/admin/AdminPromoVideo'));
+const AdminSessions = lazy(() => import('@/pages/admin/AdminSessions'));
+const AdminUpdates = lazy(() => import('@/pages/admin/AdminUpdates'));
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -80,6 +80,7 @@ const AuthenticatedApp = () => {
 
   // Render the main app
   return (
+    <Suspense fallback={<div className="fixed inset-0 flex items-center justify-center bg-background"><div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" /></div>}>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -133,6 +134,7 @@ const AuthenticatedApp = () => {
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
+    </Suspense>
   );
 };
 
