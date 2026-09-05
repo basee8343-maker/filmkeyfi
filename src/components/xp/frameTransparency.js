@@ -12,28 +12,33 @@ function palette(data, width, height, accepts) {
   return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([key]) => key.split(',').map(Number));
 }
 
-export function makeTransparentFrame(src) {
-  if (cache.has(src)) return cache.get(src);
+export function makeTransparentFrame(src, crop) {
+  const cacheKey = `${src}|${crop ? `${crop.col},${crop.row},${crop.columns},${crop.rows}` : 'full'}`;
+  if (cache.has(cacheKey)) return cache.get(cacheKey);
   const task = new Promise((resolve, reject) => {
     const image = new window.Image();
     image.crossOrigin = 'anonymous';
     image.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+      const columns = crop?.columns || 1, rows = crop?.rows || 1;
+      const sourceWidth = image.naturalWidth / columns, sourceHeight = image.naturalHeight / rows;
+      canvas.width = Math.round(sourceWidth); canvas.height = Math.round(sourceHeight);
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(image, 0, 0);
+      ctx.drawImage(image, (crop?.col || 0) * sourceWidth, (crop?.row || 0) * sourceHeight, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
       const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const { data, width, height } = pixels;
-      const cx = width / 2, cy = height / 2, unit = Math.min(width, height);
+      const cx = width / 2, cy = height * (crop?.centerY || .5), unit = Math.min(width, height);
       const edge = palette(data, width, height, (x, y) => x < width * .06 || x > width * .94 || y < height * .06 || y > height * .94);
       const center = palette(data, width, height, (x, y) => Math.hypot(x - cx, y - cy) < unit * .25);
       for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
         const pixel = y * width + x, rgb = rgbAt(data, pixel), radius = Math.hypot(x - cx, y - cy) / unit;
-        const centerBg = radius < .235 && center.some((color) => distance(rgb, color) < 70);
-        const edgeBg = radius > .34 && edge.some((color) => distance(rgb, color) < 48);
-        if (radius < .185 || centerBg || edgeBg) data[pixel * 4 + 3] = 0;
+        const innerRadius = crop?.innerRadius || .185;
+        const centerBg = radius < innerRadius + .055 && center.some((color) => distance(rgb, color) < 70);
+        const edgeBg = radius > .34 && edge.some((color) => distance(rgb, color) < 58);
+        if (radius < innerRadius || centerBg || edgeBg) data[pixel * 4 + 3] = 0;
       }
       ctx.putImageData(pixels, 0, 0);
+      if (crop) return resolve(canvas.toDataURL('image/png'));
       let minX = width, minY = height, maxX = -1, maxY = -1;
       for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
         if (data[(y * width + x) * 4 + 3] > 24) {
@@ -53,6 +58,6 @@ export function makeTransparentFrame(src) {
     image.onerror = reject;
     image.src = src;
   });
-  cache.set(src, task);
+  cache.set(cacheKey, task);
   return task;
 }

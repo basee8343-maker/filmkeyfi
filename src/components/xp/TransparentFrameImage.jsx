@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { makeTransparentFrame } from '@/components/xp/frameTransparency';
 
-export default function TransparentFrameImage({ src, animated }) {
+export default function TransparentFrameImage({ src, animated, crop }) {
   const [transparentSrc, setTransparentSrc] = useState('');
 
   useEffect(() => {
     let active = true;
     setTransparentSrc('');
-    makeTransparentFrame(src).then((url) => active && setTransparentSrc(url));
+    makeTransparentFrame(src, crop).then((url) => active && setTransparentSrc(url));
     return () => { active = false; };
-  }, [src]);
+  }, [src, crop]);
 
   if (!transparentSrc) return null;
   return (
