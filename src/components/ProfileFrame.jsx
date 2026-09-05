@@ -16,7 +16,7 @@ export default function ProfileFrame({ frame, children, size = 'md', className =
           ? <Image src={avatar} className="h-full w-full object-cover object-center" fittingType="fill" focalPointX={0.5} focalPointY={0.5} />
           : <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-white">{(name || '?')[0]}</span>}
       </div>
-      <div className="pointer-events-none absolute -inset-[34%] z-[2] h-[168%] w-[168%] overflow-visible">
+      <div className="pointer-events-none absolute left-1/2 top-1/2 z-[2] h-[168%] w-[168%] max-w-none -translate-x-1/2 -translate-y-1/2 overflow-visible">
         <TransparentFrameImage src={frameInfo.image_url} animated={false} />
       </div>
     </div>

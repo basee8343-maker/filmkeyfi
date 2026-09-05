@@ -18,7 +18,7 @@ export default function ProfileHeader({ user, pkg, expired, editing, avatar, onA
   const { levels: roomLevels } = useRoomLevels([user.id]);
   const xpStats = useXp([user.id])[user.id];
   return <header className="flex flex-col items-center text-center mb-7">
-    <div className="relative">
+    <div className="relative mb-8">
       {user.profile_frame ? (
         <ProfileFrame frame={user.profile_frame} size="lg" avatar={avatar || user.avatar} name={name} />
       ) : (
@@ -26,7 +26,7 @@ export default function ProfileHeader({ user, pkg, expired, editing, avatar, onA
       )}
       {editing && <label className="absolute right-1 bottom-1 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer z-10"><Camera className="w-5 h-5" /><input type="file" accept="image/*" className="hidden" onChange={onAvatar} /></label>}
     </div>
-    <h1 className="mt-4 text-3xl font-extrabold flex items-center gap-2">{name}{user.role === 'admin' && <Crown className="w-6 h-6 text-amber-400" />}</h1>
+    <h1 className="text-3xl font-extrabold flex items-center gap-2">{name}{user.role === 'admin' && <Crown className="w-6 h-6 text-amber-400" />}</h1>
     <p className="text-muted-foreground">{user.email}</p>
     <span className="mt-2 rounded-md bg-amber-500/15 px-3 py-1 text-sm font-semibold text-amber-400">{status}</span>
     {hasRole && <div className="mt-2"><RoleBadge user={user} size="lg" /></div>}

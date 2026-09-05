@@ -34,7 +34,21 @@ export function makeTransparentFrame(src) {
         if (radius < .185 || centerBg || edgeBg) data[pixel * 4 + 3] = 0;
       }
       ctx.putImageData(pixels, 0, 0);
-      resolve(canvas.toDataURL('image/png'));
+      let minX = width, minY = height, maxX = -1, maxY = -1;
+      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+        if (data[(y * width + x) * 4 + 3] > 24) {
+          minX = Math.min(minX, x); minY = Math.min(minY, y);
+          maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
+        }
+      }
+      if (maxX < minX || maxY < minY) return resolve(canvas.toDataURL('image/png'));
+      const contentWidth = maxX - minX + 1, contentHeight = maxY - minY + 1;
+      const outputSize = Math.ceil(Math.max(contentWidth, contentHeight) * 1.04);
+      const output = document.createElement('canvas');
+      output.width = outputSize; output.height = outputSize;
+      const outputCtx = output.getContext('2d');
+      outputCtx.drawImage(canvas, minX, minY, contentWidth, contentHeight, (outputSize - contentWidth) / 2, (outputSize - contentHeight) / 2, contentWidth, contentHeight);
+      resolve(output.toDataURL('image/png'));
     };
     image.onerror = reject;
     image.src = src;

@@ -89,15 +89,17 @@ export default function UserProfile({ userId, roomIdOverride, onBack, onMessage,
       <button onClick={() => onBack ? onBack() : navigate(-1)} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground mb-4"><ArrowLeft className="w-4 h-4" /> Geri</button>
       {err ? <p className="text-center text-destructive py-10">{err}</p> : profile && (
         <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center">
-          {profile.profile_frame ? (
-            <ProfileFrame frame={profile.profile_frame} size="lg" avatar={profile.avatar} name={profile.username || profile.full_name}>
-              {profile.avatar ? <Image src={profile.avatar} className="w-28 h-28 rounded-full object-cover" fittingType="fill" /> :
-                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-4xl font-bold">{(profile.username || profile.full_name || '?')[0]}</div>}
-            </ProfileFrame>
-          ) : (
-            <XpAvatar avatar={profile.avatar} name={profile.username || profile.full_name} frame={xpStats?.frame} size="lg" />
-          )}
-          <h1 className="max-w-full text-2xl font-extrabold mt-4 flex flex-wrap justify-center items-center gap-2 [overflow-wrap:anywhere]">{profile.title || profile.username || profile.full_name || 'Kullanıcı'} {(profile.role === 'admin' || profile.role === 'moderator') && <Crown className="w-5 h-5 text-amber-400" />}</h1>
+          <div className="relative mb-8">
+            {profile.profile_frame ? (
+              <ProfileFrame frame={profile.profile_frame} size="lg" avatar={profile.avatar} name={profile.username || profile.full_name}>
+                {profile.avatar ? <Image src={profile.avatar} className="w-28 h-28 rounded-full object-cover" fittingType="fill" /> :
+                  <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-4xl font-bold">{(profile.username || profile.full_name || '?')[0]}</div>}
+              </ProfileFrame>
+            ) : (
+              <XpAvatar avatar={profile.avatar} name={profile.username || profile.full_name} frame={xpStats?.frame} size="lg" />
+            )}
+          </div>
+          <h1 className="max-w-full text-2xl font-extrabold flex flex-wrap justify-center items-center gap-2 [overflow-wrap:anywhere]">{profile.title || profile.username || profile.full_name || 'Kullanıcı'} {(profile.role === 'admin' || profile.role === 'moderator') && <Crown className="w-5 h-5 text-amber-400" />}</h1>
           {getRoleInfo(profile).label && <div className="mt-1.5"><RoleBadge user={profile} size="md" /></div>}
           {['admin', 'moderator'].includes(profile.role) && <p className="mt-2 text-sm font-bold text-primary">{profile.role === 'admin' ? 'YÖNETİCİ' : 'MODERATÖR'}</p>}
           <div className="mt-3"><RoomLevelBadge level={roomLevels[id]} profile /></div>
