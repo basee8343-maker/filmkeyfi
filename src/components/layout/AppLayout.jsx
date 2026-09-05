@@ -129,13 +129,18 @@ export default function AppLayout() {
     return () => clearInterval(id);
   }, [user?.id]);
 
-  // Yedek kontrol — realtime kaçırsa diye periyodik ban/silme durumu
+  // Hızlı yedek kontrol — 3sn'de bir ban/askıya alma/silme durumu (realtime kaçırsa diye)
   useEffect(() => {
     if (!user) return;
     const check = async () => {
       try {
         const u = await base44.auth.me();
-        if (u?.is_banned) { triggerBanNotice('banned'); base44.auth.logout().catch(() => {}); window.location.href = '/login?banned=1'; return; }
+        if (u?.is_banned || u?.role === 'banned' || u?.is_suspended || u?.membership_status === 'suspended') {
+          triggerBanNotice('banned');
+          base44.auth.logout().catch(() => {});
+          window.location.href = '/login?banned=1';
+          return;
+        }
         // Admin hesapları için cihaz/session kontrolü atlanır — çoklu cihaz girişine izin verilir
         if (u?.role === 'admin') return;
         const stored = localStorage.getItem('filmkeyfi_session_' + u.id);
@@ -153,7 +158,7 @@ export default function AppLayout() {
         }
       }
     };
-    const id = setInterval(check, 60000);
+    const id = setInterval(check, 3000);
     return () => clearInterval(id);
   }, [user?.id]);
 

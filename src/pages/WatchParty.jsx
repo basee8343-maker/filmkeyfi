@@ -268,6 +268,27 @@ export default function WatchParty() {
     }
   }, [room?.participants, user?.id]);
 
+  // Atılma tespiti yedeği — 3sn polling (realtime kaçırsa diye)
+  useEffect(() => {
+    if (!user || joinCount === 0 || !room || room.owner_id === user.id || isMod || ghostRef.current) return;
+    const intervalId = setInterval(async () => {
+      if (kickedRef.current) { clearInterval(intervalId); return; }
+      try {
+        const res = await base44.functions.invoke('room-presence', { action: 'get', room_id: id });
+        const r = res.data?.room;
+        if (!r) { kickedRef.current = true; clearInterval(intervalId); navigate('/'); return; }
+        const stillIn = (r.participants || []).some((p) => p.user_id === user.id);
+        if (!stillIn) {
+          kickedRef.current = true;
+          clearInterval(intervalId);
+          toast({ title: 'Odadan atıldınız', variant: 'destructive' });
+          navigate('/');
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(intervalId);
+  }, [user?.id, room?.id, joinCount, isMod, ghostRef.current]);
+
   // İzleyici profillerini çek (gerçek avatarlar için)
   const participantIdsKey = (room?.participants || []).map((p) => p.user_id).filter(Boolean).sort().join(',');
   useEffect(() => {
