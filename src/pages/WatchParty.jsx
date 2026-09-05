@@ -344,20 +344,16 @@ export default function WatchParty() {
   // Oda içindeyken özel mesaj gelince üstte bildirim göster (sadece alıcı görür)
   useEffect(() => {
     if (!user?.id) return;
-    const unsub = base44.entities.DirectMessage.subscribe((event) => {
+    const unsub = base44.entities.ChatMessage.subscribe((event) => {
       if (event.type !== 'create') return;
       const msg = event.data;
-      if (!msg || msg.recipient_id !== user.id || msg.sender_id === user.id) return;
-      if (directOpenRef.current) return;
+      if (!msg || msg.receiver_id !== user.id || msg.sender_id === user.id || directOpenRef.current) return;
       setDmNotifLeaving(false);
       base44.functions.invoke('user-profile', { user_id: msg.sender_id })
-        .then((res) => setDmNotif({ id: msg.id, name: msg.sender_name, avatar: res.data?.avatar }))
-        .catch(() => setDmNotif({ id: msg.id, name: msg.sender_name, avatar: null }));
+        .then((res) => setDmNotif({ id: msg.id, senderId: msg.sender_id, name: msg.sender_name, avatar: res.data?.avatar }))
+        .catch(() => setDmNotif({ id: msg.id, senderId: msg.sender_id, name: msg.sender_name, avatar: null }));
       clearTimeout(dmNotifTimer.current);
-      dmNotifTimer.current = setTimeout(() => {
-        setDmNotifLeaving(true);
-        setTimeout(() => setDmNotif(null), 400);
-      }, 5000);
+      dmNotifTimer.current = setTimeout(() => { setDmNotifLeaving(true); setTimeout(() => setDmNotif(null), 400); }, 5000);
     });
     return () => { unsub(); clearTimeout(dmNotifTimer.current); };
   }, [user?.id]);
@@ -625,7 +621,6 @@ export default function WatchParty() {
   const src = movie?.video_url || movie?.hls_url || movie?.external_url || '';
   const chatEnabled = room.chat_enabled;
   const visibleParticipants = (room.participants || []).filter((participant) => participant.user_id === room.owner_id || viewerProfiles[participant.user_id]?.role !== 'admin');
-  const recentParticipants = (room.recent_participants || []).filter((participant) => !visibleParticipants.some((current) => current.user_id === participant.user_id));
   const openDirectMessage = (userId) => { setProfileCard(null); setDirectTarget(userId); setDirectOpen(true); setChatOpen(false); setShowViewers(false); };
 
   return (
@@ -635,7 +630,7 @@ export default function WatchParty() {
         <RoomNotifications participants={room?.participants || []} currentUserId={user?.id} />
         <RoleEntrance roomId={id} joinTrigger={joinCount} />
         {dmNotif && (
-          <div onClick={() => { setDirectOpen(true); setDmNotif(null); clearTimeout(dmNotifTimer.current); }} className={`absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] flex items-center gap-2 rounded-xl bg-card/95 border border-border px-3 py-2 shadow-2xl backdrop-blur-xl max-w-[70%] cursor-pointer ${dmNotifLeaving ? 'dm-notif-out' : 'dm-notif-in'}`}>
+          <div onClick={() => { setDirectTarget(dmNotif.senderId); setDirectOpen(true); setDmNotif(null); clearTimeout(dmNotifTimer.current); }} className={`absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] flex items-center gap-2 rounded-xl bg-card/95 border border-border px-3 py-2 shadow-2xl backdrop-blur-xl max-w-[70%] cursor-pointer ${dmNotifLeaving ? 'dm-notif-out' : 'dm-notif-in'}`}>
             {dmNotif.avatar ? <Image src={dmNotif.avatar} className="w-8 h-8 rounded-full" fittingType="fill" /> : <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">{dmNotif.name?.[0]}</div>}
             <div className="min-w-0"><p className="text-xs font-bold truncate">{dmNotif.name}</p><p className="text-[10px] text-muted-foreground">mesaj yazdı</p></div>
           </div>
@@ -683,7 +678,7 @@ export default function WatchParty() {
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setChatOpen(false); }}
           >
-            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onDirect={() => { setDirectTarget(null); setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} onDirectUser={openDirectMessage} directUnread={directUnread} ownerId={room?.owner_id} roomModerators={room?.room_moderators || []} participants={room?.participants || []} viewerProfiles={viewerProfiles} presenceMap={presenceMap} onProfileCard={setProfileCard} onToggleChat={toggleChat} settingsProps={{ room, canMod, participants: room?.participants || [], roomModerators: room?.room_moderators || [], onAssignMod: assignMod, onRemoveMod: removeMod, roomName: roomNameEdit, setRoomName: setRoomNameEdit, onSaveName: saveRoomName, password: pwSetInput, setPassword: setPwSetInput, passwordOpen: showPwSet, setPasswordOpen: setShowPwSet, onVoice: toggleVoice, onChat: toggleChat, onHidden: toggleHidden, onPassword: () => savePassword(), onRemovePassword: () => setShowPwRemoveConfirm(true), onUnban: unbanUser, onPickMovie: () => setMoviePickerOpen(true), onDeleteRoom: deleteRoom, roomLevels, onSetLevel: setLevel }} />
+            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onDirect={() => { setDirectTarget(null); setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} onDirectUser={openDirectMessage} directUnread={directUnread} ownerId={room?.owner_id} roomModerators={room?.room_moderators || []} participants={room?.participants || []} recentParticipants={room?.recent_participants || []} viewerProfiles={viewerProfiles} presenceMap={presenceMap} onProfileCard={setProfileCard} onToggleChat={toggleChat} settingsProps={{ room, canMod, participants: room?.participants || [], roomModerators: room?.room_moderators || [], onAssignMod: assignMod, onRemoveMod: removeMod, roomName: roomNameEdit, setRoomName: setRoomNameEdit, onSaveName: saveRoomName, password: pwSetInput, setPassword: setPwSetInput, passwordOpen: showPwSet, setPasswordOpen: setShowPwSet, onVoice: toggleVoice, onChat: toggleChat, onHidden: toggleHidden, onPassword: () => savePassword(), onRemovePassword: () => setShowPwRemoveConfirm(true), onUnban: unbanUser, onPickMovie: () => setMoviePickerOpen(true), onDeleteRoom: deleteRoom, roomLevels, onSetLevel: setLevel }} />
           </div>
         )}
 
@@ -720,7 +715,6 @@ export default function WatchParty() {
                 );
               })}
             </div>
-            {recentParticipants.length > 0 && <div className="mt-2 pt-2 border-t border-border"><p className="px-1 mb-1 text-[10px] font-bold text-muted-foreground uppercase">Son katılanlar</p><div className="space-y-1">{recentParticipants.map((p) => <button key={p.user_id} onClick={() => setProfileCard(p.user_id)} className="flex items-center gap-1.5 text-xs py-1 w-full text-left hover:bg-secondary/50 rounded px-1">{(p.avatar || viewerProfiles[p.user_id]?.avatar) ? <Image src={p.avatar || viewerProfiles[p.user_id]?.avatar} className="w-6 h-6 rounded-full" fittingType="fill" /> : <span className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center font-bold">{(p.name || '?')[0]}</span>}<span className="flex-1 truncate">{p.name}</span><span className="text-[9px] text-muted-foreground">ayrıldı</span></button>)}</div></div>}
           </div>
         )}
         <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} participants={room.participants || []} roomModerators={room.room_moderators || []} onAssignMod={assignMod} onRemoveMod={removeMod} roomName={roomNameEdit} setRoomName={setRoomNameEdit} onSaveName={saveRoomName} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} onDeleteRoom={deleteRoom} roomLevels={roomLevels} onSetLevel={setLevel} />

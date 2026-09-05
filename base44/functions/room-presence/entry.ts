@@ -17,7 +17,7 @@ async function updatePresenceRoom(base44, userId, roomId) {
 function rememberParticipant(room, participant) {
   if (!participant) return room.recent_participants || [];
   const recent = (room.recent_participants || []).filter((item) => item.user_id !== participant.user_id);
-  return [{ user_id: participant.user_id, name: participant.name, avatar: participant.avatar || '', left_at: new Date().toISOString() }, ...recent].slice(0, 100);
+  return [{ user_id: participant.user_id, name: participant.name, avatar: participant.avatar || '', joined_at: participant.joined_at || new Date().toISOString(), left_at: new Date().toISOString() }, ...recent].slice(0, 100);
 }
 
 export default async function(req) {
@@ -101,7 +101,7 @@ export default async function(req) {
         if (participants.length >= (room.max_users || 10)) {
           return Response.json({ error: 'oda dolu' }, { status: 403 });
         }
-        participants.push({ user_id: user.id, name, avatar: user.avatar || '', muted: false, speaking: false });
+        participants.push({ user_id: user.id, name, avatar: user.avatar || '', joined_at: new Date().toISOString(), muted: false, speaking: false });
         await base44.asServiceRole.entities.Room.update(room_id, { participants });
         const roleInfo = getRoleInfo(me, labelOverrides);
         const roleMeta = roleInfo.label ? `{{ROLE|${roleInfo.key || ''}|${roleInfo.color || ''}|${roleInfo.animation || 'pulse'}}}` : '';

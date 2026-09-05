@@ -54,7 +54,7 @@ export default async function(req) {
       chat_auto_delete_minutes: 3,
       chat_auto_delete_at: new Date(Date.now() + 3 * 60000).toISOString(),
       recent_participants: [],
-      participants: [{ user_id: user.id, name: owner_name, avatar: user.avatar || '', muted: false, speaking: false }]
+      participants: [{ user_id: user.id, name: owner_name, avatar: user.avatar || '', joined_at: new Date().toISOString(), muted: false, speaking: false }]
     });
     await base44.asServiceRole.entities.RoomMessage.create({
       room_id: room.id, user_id: user.id, user_name: owner_name,

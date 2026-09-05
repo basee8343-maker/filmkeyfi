@@ -156,7 +156,14 @@ export default function AppLayout() {
       if (window.location.pathname.startsWith('/oda/') || window.location.pathname === '/arkadaslar') return;
       toast({ title: msg.sender_name || 'Yeni mesaj', description: (msg.text || 'Yeni bir mesajınız var').slice(0, 100) });
     });
-    return () => { unsubNotif(); unsubUser(); unsubDM(); };
+    const unsubChatMessage = base44.entities.ChatMessage.subscribe((ev) => {
+      if (ev.type !== 'create') return;
+      const msg = ev.data;
+      if (!msg || msg.receiver_id !== user.id || msg.sender_id === user.id) return;
+      if (window.location.pathname.startsWith('/oda/') || window.location.pathname === '/arkadaslar') return;
+      toast({ title: msg.sender_name || 'Yeni mesaj', description: (msg.content || 'Yeni bir mesajınız var').slice(0, 100) });
+    });
+    return () => { unsubNotif(); unsubUser(); unsubDM(); unsubChatMessage(); };
   }, [user?.id]);
 
   // Oturum heartbeat — aktif kalma sinyali + opsiyonel GPS

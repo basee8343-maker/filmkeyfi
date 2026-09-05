@@ -56,10 +56,10 @@ export default function useConversations() {
     };
     window.addEventListener('social-thread-open', onThreadOpen);
     const reconnect = () => load();
+    const onVisible = () => { if (document.visibilityState === 'visible') load(); };
     window.addEventListener('online', reconnect);
-    // Polling yedeği — realtime kaçırsa diye 10sn'de bir yenile
-    const interval = setInterval(load, 10000);
-    return () => { unsub(); window.removeEventListener('social-thread-open', onThreadOpen); window.removeEventListener('online', reconnect); clearInterval(interval); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { unsub(); window.removeEventListener('social-thread-open', onThreadOpen); window.removeEventListener('online', reconnect); document.removeEventListener('visibilitychange', onVisible); };
   }, [user?.id, load]);
 
   const optimisticHide = useCallback((conversationId) => {

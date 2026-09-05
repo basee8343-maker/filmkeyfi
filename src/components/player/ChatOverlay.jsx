@@ -18,10 +18,11 @@ import RoleNameEffect from '@/components/role/RoleNameEffect';
 import UserProfileCard from '@/components/player/UserProfileCard';
 import EmojiPicker from '@/components/player/EmojiPicker';
 import RoomSettingsContent from '@/components/player/RoomSettingsContent';
+import ParticipantHistoryPanel from '@/components/player/ParticipantHistoryPanel';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
-export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, onDirectUser, directUnread = 0, ownerId, roomModerators = [], participants = [], viewerProfiles = {}, presenceMap = {}, onProfileCard, settingsProps, onToggleChat }) {
+export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onClose, autoDeleteMinutes = 0, countdownText = '', onSetAutoDelete, voice, voiceEnabled, onSettings, onDirect, onDirectUser, directUnread = 0, ownerId, roomModerators = [], participants = [], recentParticipants = [], viewerProfiles = {}, presenceMap = {}, onProfileCard, settingsProps, onToggleChat }) {
   const { user } = useCurrentUser();
   const { toast } = useToast();
   const [messages, setMessages] = useState([]);
@@ -347,25 +348,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
           ))}
           </div>
           ) : msgFilter === 'izleyici' ? (
-          <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-1 bg-black">
-          {participants.length === 0 ? <p className="text-center text-sm text-[#888] py-8">İzleyici yok</p> :
-          participants.map((p) => {
-            const prof = viewerProfiles[p.user_id];
-            const avatar = p.avatar || prof?.avatar;
-            const presence = presenceMap[p.user_id];
-            const isOnline = presence?.online && (Date.now() - new Date(presence.last_seen).getTime() < 60000);
-            return (
-              <button key={p.user_id} onClick={() => onProfileCard?.(p.user_id)} className="flex items-center gap-2 w-full text-left py-1.5 hover:bg-white/5 rounded-lg px-1">
-                <div className="shrink-0 relative">
-                  {avatar ? <Image src={avatar} className="w-8 h-8 rounded-full object-cover" fittingType="fill" /> : <span className="w-8 h-8 rounded-full bg-gradient-to-br from-[#8B31FF] to-[#5F24A1] flex items-center justify-center text-xs font-bold text-white">{(p.name || '?')[0]}</span>}
-                  <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-black ${isOnline ? 'bg-green-400' : 'bg-red-400'}`} />
-                </div>
-                <span className="flex-1 truncate text-sm text-white">{p.name}{p.user_id === ownerId && <Crown className="w-3 h-3 text-amber-400 inline ml-0.5" />}</span>
-                {!isOnline && <span className="text-[10px] text-red-400 shrink-0">çevrim dışı</span>}
-              </button>
-            );
-          })}
-          </div>
+          <ParticipantHistoryPanel participants={participants} recentParticipants={recentParticipants} profiles={viewerProfiles} presenceMap={presenceMap} ownerId={ownerId} onSelect={onProfileCard} />
           ) : msgFilter === 'yetkililer' ? (
           <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-1 bg-black">
           {roomMods.length === 0 ? <p className="text-center text-sm text-[#888] py-8">Henüz yetkili yok.</p> :

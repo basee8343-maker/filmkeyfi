@@ -87,20 +87,11 @@ export default function useChatMessages(conversationId) {
       });
     });
 
-    // Conversation subscription — last_message_at değişince mesajları yeniden yükle
-    // Bu, karşı taraf mesaj gönderdiğinde anlık güncelleme sağlar
-    const unsubConv = base44.entities.Conversation.subscribe((event) => {
-      if (event.data?.id !== conversationId) return;
-      const newLast = event.data?.last_message_at;
-      if (newLast && newLast !== lastMessageAtRef.current) {
-        lastMessageAtRef.current = newLast;
-        loadRef.current();
-      }
-    });
-
-    // Polling yedeği — realtime kaçırsa diye 8sn'de bir yenile
-    const interval = setInterval(() => loadRef.current(), 8000);
-    return () => { unsub(); unsubConv(); clearInterval(interval); };
+    const onVisible = () => { if (document.visibilityState === 'visible') loadRef.current(); };
+    const onOnline = () => loadRef.current();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', onOnline);
+    return () => { unsub(); document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('online', onOnline); };
   }, [conversationId, userId]);
 
   const send = useCallback(async (content) => {

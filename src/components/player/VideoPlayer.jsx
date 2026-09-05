@@ -153,7 +153,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
       <video ref={videoRef} src={src} className="w-full h-full object-contain"
         onLoadedMetadata={onLoaded} onTimeUpdate={onTime} onPlay={handlePlay} onPause={handlePause}
         onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onEnded={onEnded}
-        crossOrigin="anonymous" playsInline controls={false} disablePictureInPicture={!isOwner} />
+        crossOrigin="anonymous" preload="metadata" playsInline controls={false} disablePictureInPicture={!isOwner} />
 
       {buffering && <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}
 

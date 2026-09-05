@@ -116,6 +116,10 @@
           "avatar": {
             "type": "string"
           },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time"
+          },
           "left_at": {
             "type": "string",
             "format": "date-time"
@@ -137,6 +141,10 @@
           },
           "avatar": {
             "type": "string"
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time"
           },
           "muted": {
             "type": "boolean"
