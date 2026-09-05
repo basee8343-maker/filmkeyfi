@@ -1058,6 +1058,9 @@
   .friendship-level-energy { animation: friendship-level-energy 2s ease-in-out infinite; }
   .friendship-level-particle { position: absolute; left: 30%; top: 40%; width: 4px; height: 4px; border-radius: 9999px; background: currentColor; box-shadow: 14px 6px currentColor, 26px -4px currentColor; animation: friendship-level-particle 2s ease-out infinite; }
   .friendship-level-up { animation: friendship-level-up 2.6s ease-in-out forwards; }
+  @keyframes xp-frame-breathe { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.045); filter: brightness(1.18); } }
+  .xp-frame-asset { animation: xp-frame-breathe 3s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .xp-frame-asset { animation: none; } }
   .friendship-frame-basic { border-radius: 9999px; }
   .friendship-frame-glow { border-radius: 1rem; box-shadow: 0 0 14px currentColor; }
   .friendship-frame-neon { border-radius: 35% 65% 35% 65%; box-shadow: 0 0 18px currentColor; }
