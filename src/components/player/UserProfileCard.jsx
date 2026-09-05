@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { X, Copy, UserPlus, MessageSquare, Mic, MicOff, UserMinus, Flag, Ban } from 'lucide-react';
 import { Image } from '@/components/ui/image';
@@ -11,7 +10,6 @@ export default function UserProfileCard({ userId, roomId, canMod, voiceEnabled, 
   const { toast } = useToast();
   const [profile, setProfile] = useState(null);
   const [isFriend, setIsFriend] = useState(false);
-  const [friendshipId, setFriendshipId] = useState(null);
   const [requestSent, setRequestSent] = useState(false);
   const [showReport, setShowReport] = useState(false);
 
@@ -19,10 +17,11 @@ export default function UserProfileCard({ userId, roomId, canMod, voiceEnabled, 
     if (!userId) return;
     base44.functions.invoke('user-profile', { user_id: userId }).then((res) => setProfile(res.data)).catch(() => {});
     if (user?.id && userId !== user.id) {
-      base44.entities.Friendship.filter({ members: userId, status: 'accepted' }, '-created_date', 50)
+      base44.entities.Friendship.filter({ members: userId }, '-created_date', 50)
         .then((friendships) => {
-          const f = friendships.find((x) => x.members.includes(user.id));
-          if (f) { setIsFriend(true); setFriendshipId(f.id); }
+          const relation = friendships.find((item) => item.members.includes(user.id));
+          setIsFriend(relation?.status === 'accepted');
+          setRequestSent(relation?.status === 'pending');
         }).catch(() => {});
     }
   }, [userId, user?.id]);
@@ -40,9 +39,11 @@ export default function UserProfileCard({ userId, roomId, canMod, voiceEnabled, 
 
   const openChat = () => { onMessage?.(userId); onClose?.(); };
   const blockUser = async () => {
-    const blocked = [...new Set([...(user?.blocked_users || []), userId])];
-    await base44.auth.updateMe({ blocked_users: blocked });
-    toast({ title: 'Kullanıcı engellendi' }); onClose?.();
+    try {
+      const blocked = [...new Set([...(user?.blocked_users || []), userId])];
+      await base44.auth.updateMe({ blocked_users: blocked });
+      toast({ title: 'Kullanıcı engellendi' }); onClose?.();
+    } catch (e) { toast({ title: 'Engellenemedi', description: e.message, variant: 'destructive' }); }
   };
 
   const submitReport = (reason) => {
@@ -60,12 +61,10 @@ export default function UserProfileCard({ userId, roomId, canMod, voiceEnabled, 
     <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-card border border-border rounded-xl p-3 w-full max-w-[220px] shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-2">
-          <Link to={`/kullanici/${userId}`} onClick={onClose}>
-            {profile.avatar ? <Image src={profile.avatar} className="w-10 h-10 rounded-full" fittingType="fill" /> : <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-sm">{(profile.username || '?')[0]}</div>}
-          </Link>
+          <div>{profile.avatar ? <Image src={profile.avatar} className="w-10 h-10 rounded-full" fittingType="fill" /> : <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-sm">{(profile.username || '?')[0]}</div>}</div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary"><X className="w-4 h-4" /></button>
         </div>
-        <Link to={`/kullanici/${userId}`} onClick={onClose} className="block font-semibold text-sm mb-1 truncate hover:underline">{profile.username || profile.full_name || 'Kullanıcı'}</Link>
+        <p className="font-semibold text-sm mb-1 truncate">{profile.username || profile.full_name || 'Kullanıcı'}</p>
         <div className="flex items-center gap-1 mb-2.5">
           <span className="text-[10px] text-muted-foreground font-mono truncate">#{profile.member_id || userId?.slice(-8)}</span>
           <button onClick={copyMemberId} className="p-0.5 rounded hover:bg-secondary"><Copy className="w-3 h-3 text-muted-foreground" /></button>

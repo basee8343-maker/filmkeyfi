@@ -83,7 +83,6 @@ export default async function(req) {
             if (blockedBy.includes(friendId)) return Response.json({ error: 'Kullanıcı sizi engelledi' }, { status: 403 });
             if (blockedBy.includes(user.id)) return Response.json({ error: 'Bu kullanıcıyı engellediniz' }, { status: 403 });
           }
-          if (friendship.status !== 'accepted') return Response.json({ error: 'Arkadaş olmanız gerek' }, { status: 403 });
         }
       }
 
