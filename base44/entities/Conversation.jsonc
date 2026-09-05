@@ -40,6 +40,13 @@
       },
       "default": []
     },
+    "read_receipts_disabled_for": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "last_message_text": {
       "type": "string",
       "default": ""

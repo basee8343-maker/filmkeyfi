@@ -163,6 +163,21 @@ export default async function(req) {
       return Response.json({ ok: true, offline_for: newOfflineFor });
     }
 
+    // toggle_read_receipts: Okundu tiklerini bu kullanıcı için aç/kapat
+    if (action === 'toggle_read_receipts') {
+      const conversationId = String(body.conversation_id || '');
+      const conversation = await base44.asServiceRole.entities.Conversation.get(conversationId).catch(() => null);
+      if (!conversation) return Response.json({ error: 'Sohbet bulunamadı' }, { status: 404 });
+      if (!(conversation.members || []).includes(user.id)) return Response.json({ error: 'yetkisiz' }, { status: 403 });
+      const disabledFor = conversation.read_receipts_disabled_for || [];
+      const enabled = typeof body.enabled === 'boolean' ? body.enabled : disabledFor.includes(user.id);
+      const nextDisabledFor = enabled
+        ? disabledFor.filter((id) => id !== user.id)
+        : [...new Set([...disabledFor, user.id])];
+      await base44.asServiceRole.entities.Conversation.update(conversationId, { read_receipts_disabled_for: nextDisabledFor });
+      return Response.json({ ok: true, read_receipts_disabled_for: nextDisabledFor });
+    }
+
     // delete_message: Tek mesajı SADECE bu kullanıcı için sil
     // Karşı taraf mesajı görmeye devam eder
     if (action === 'delete_message') {

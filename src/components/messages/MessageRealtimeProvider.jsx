@@ -76,6 +76,7 @@ export default function MessageRealtimeProvider({ userId, children }) {
   }, [userId, reload]);
   const badges = useMemo(() => ({ requests, messages: conversations.reduce((sum, item) => sum + (item.user1_id === userId ? item.unread_user1 || 0 : item.unread_user2 || 0), 0) }), [requests, conversations, userId]);
   const optimisticHide = useCallback((id) => setConversations((items) => items.filter((item) => item.id !== id)), []);
+  const optimisticPatch = useCallback((id, patch) => setConversations((items) => items.map((item) => item.id === id ? { ...item, ...patch } : item)), []);
   const getProgression = useCallback((otherId) => progressions.find((item) => (item.members || []).includes(otherId)) || null, [progressions]);
-  return <MessageRealtimeContext.Provider value={{ conversations, loading, reload, optimisticHide, badges, progressions, getProgression }}>{children}</MessageRealtimeContext.Provider>;
+  return <MessageRealtimeContext.Provider value={{ conversations, loading, reload, optimisticHide, optimisticPatch, badges, progressions, getProgression }}>{children}</MessageRealtimeContext.Provider>;
 }
