@@ -15,6 +15,7 @@ import { detectConnectionType } from '@/lib/connectionType';
 import { triggerBanNotice } from '@/lib/banNotice';
 import { useToast } from '@/components/ui/use-toast';
 import MessageRealtimeProvider from '@/components/messages/MessageRealtimeProvider';
+import RoutePreloader from '@/components/layout/RoutePreloader';
 
 // Abonelik gerektirmeyen sayfalar
 const EXEMPT_PATHS = ['/abonelik', '/destek', '/bildirimler', '/odeme', '/güvenlik-protokolü', '/bakim'];
@@ -210,10 +211,11 @@ export default function AppLayout() {
   }, [user?.id]);
 
   if (isRoom) {
-    return <MessageRealtimeProvider userId={user?.id}><div className="min-h-screen bg-background"><RoleCelebrationOverlay /><Outlet /></div></MessageRealtimeProvider>;
+    return <MessageRealtimeProvider userId={user?.id}><div className="min-h-screen bg-background"><RoutePreloader /><RoleCelebrationOverlay /><Outlet /></div></MessageRealtimeProvider>;
   }
   return (
     <MessageRealtimeProvider userId={user?.id}><div className="min-h-screen bg-background">
+      <RoutePreloader />
       <RoleCelebrationOverlay />
       <WhatsNewModal />
       <Navbar />

@@ -402,16 +402,16 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
           </p>
         </div>
       )}
-      {chatEnabled && msgFilter === 'all' && <form onSubmit={send} className="p-2.5 border-t border-white/10 flex items-center gap-2 bg-black">
+      {chatEnabled && msgFilter === 'all' && <div className="p-2.5 border-t border-white/10 flex items-center gap-2 bg-black">
         <label className="p-2 rounded-lg hover:bg-white/10 cursor-pointer text-white">
           <ImageIcon className="w-5 h-5" />
-          <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhoto} disabled={uploading} />
+          <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" tabIndex={-1} aria-hidden="true" onChange={onPhoto} disabled={uploading} />
         </label>
         <button type="button" onClick={() => setShowEmoji(!showEmoji)} className="p-2 rounded-lg hover:bg-white/10 text-white"><Smile className="w-5 h-5" /></button>
-        <input value={text} onChange={(e) => { setText(e.target.value); sendTyping(); }} placeholder="Mesaj yazın..." className="flex-1 bg-[#1a1a1a] rounded-full px-4 py-2 text-sm outline-none text-white placeholder:text-[#666]" />
-        <button type="submit" disabled={!text.trim() || uploading} className="p-2.5 rounded-full disabled:opacity-50" style={{ background: '#ffcc00' }}><Send className="w-4 h-4 text-black" /></button>
+        <input value={text} onChange={(e) => { setText(e.target.value); sendTyping(); }} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(e); } }} inputMode="text" enterKeyHint="send" autoComplete="off" autoCorrect="off" autoCapitalize="sentences" spellCheck={false} placeholder="Mesaj yazın..." className="flex-1 min-w-0 bg-[#1a1a1a] rounded-full px-4 py-2 text-sm outline-none text-white placeholder:text-[#666]" />
+        <button type="button" onClick={send} disabled={!text.trim() || uploading} className="p-2.5 rounded-full disabled:opacity-50" style={{ background: '#ffcc00' }}><Send className="w-4 h-4 text-black" /></button>
         {uploading && <span className="text-xs text-[#888] animate-pulse shrink-0">...</span>}
-      </form>}
+      </div>}
 
       {modTarget && (
         <ChatUserMenu
