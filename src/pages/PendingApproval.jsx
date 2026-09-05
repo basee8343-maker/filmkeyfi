@@ -15,6 +15,11 @@ export default function PendingApproval() {
       const me = await base44.auth.me();
       setUser(me);
       userIdRef.current = me.id;
+      if (me.is_banned || me.role === 'banned' || me.is_suspended || me.membership_status === 'suspended') {
+        base44.auth.logout().catch(() => {});
+        window.location.href = '/login?banned=1';
+        return;
+      }
       if (me.membership_status === "active") {
         window.location.href = "/";
         return;
@@ -22,7 +27,12 @@ export default function PendingApproval() {
       const ps = await base44.functions.invoke('public-settings', {});
       const settings = ps.data || ps;
       setPaymentAvailable(settings.payment_available !== false);
-    } catch {}
+    } catch (e) {
+      if (e?.status === 401 || e?.status === 403 || e?.status === 404) {
+        base44.auth.logout().catch(() => {});
+        window.location.href = '/login?removed=1';
+      }
+    }
   };
 
   const userIdRef = useRef(null);
@@ -32,7 +42,7 @@ export default function PendingApproval() {
     const interval = setInterval(() => {
       setChecking(true);
       check().finally(() => setChecking(false));
-    }, 5000);
+    }, 3000);
     // Gerçek zamanlı: admin üyeliği onayladığında veritabanından anında olay gelir
     const unsub = base44.entities.User.subscribe((event) => {
       if (event.type === 'update' && event.data?.id === userIdRef.current && event.data?.membership_status === 'active') {
