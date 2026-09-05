@@ -137,26 +137,6 @@ import frameCatalog from '@/components/profile/frameCatalog';
 
 export const FRAME_DEFINITIONS = {
   '': { label: 'Yok', color: '', gradient: '' },
-  'galatasaray': {
-    label: 'Galatasaray', color: '#ED1C24',
-    image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/57814afab_C3294E4C-0C9F-47E7-8F21-8635F3216C8E.png',
-    colors: ['#ED1C24', '#fbbf24'],
-  },
-  'fenerbahce': {
-    label: 'Fenerbahçe', color: '#002244',
-    image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/0c8c65422_33FB3401-4269-43D4-BCB7-7CD83827C516.png',
-    colors: ['#002244', '#facc15'],
-  },
-  'besiktas': {
-    label: 'Beşiktaş', color: '#000000',
-    image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/409026575_1391E6B7-78D2-4960-ACF8-C85B43BBD70F.png',
-    colors: ['#000000', '#e5e7eb'],
-  },
-  'trabzonspor': {
-    label: 'Trabzonspor', color: '#6B0C72',
-    image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/c1ab8665f_68781285-2AB1-44F1-8F15-41D3B81AB66F.png',
-    colors: ['#6B0C72', '#4A90D9'],
-  },
   ...frameCatalog,
 };
 

@@ -90,21 +90,12 @@ export const ROLE_DEFINITIONS: Record<string, any> = {
 };
 
 export const FRAME_DEFINITIONS: Record<string, any> = {
-  '': { label: 'Yok', color: '', gradient: '' },
-  'galatasaray': { label: 'Galatasaray', color: '#ED1C24', colors: ['#ED1C24', '#fbbf24'] },
-  'fenerbahce': { label: 'Fenerbahçe', color: '#002244', colors: ['#002244', '#facc15'] },
-  'besiktas': { label: 'Beşiktaş', color: '#000000', colors: ['#000000', '#e5e7eb'] },
-  'trabzonspor': { label: 'Trabzonspor', color: '#6B0C72', colors: ['#6B0C72', '#4A90D9'] },
-  'admin_yardimcisi': { label: 'Admin Yardımcısı', color: '#1d4ed8' },
-  'admin_mavi_kirmizi': { label: 'Admin', color: '#e11d48' },
-  'turgay': { label: 'Turgay Mavi', color: '#1565c0' },
-  'admin_kralicesi': { label: 'Admin Kraliçesi', color: '#db2777' },
-  'turgay_ates': { label: 'Turgay Ateş', color: '#f97316' },
-  'ahu': { label: 'Ahu', color: '#d4a74d' },
-  'kurt_kral': { label: 'Kurt Kral', color: '#dc2626' },
-  'ask': { label: 'Aşk', color: '#dc2626' },
-  'kalp': { label: 'Kalp', color: '#ef4444' },
-  'ertugrul': { label: 'Ertuğrul', color: '#b91c1c' },
+  '': { label: 'Yok', color: '' },
+  galatasaray: { label: 'Galatasaray', color: '#ED1C24' }, fenerbahce: { label: 'Fenerbahçe', color: '#facc15' }, besiktas: { label: 'Beşiktaş', color: '#e5e7eb' }, trabzonspor: { label: 'Trabzonspor', color: '#6B0C72' },
+  admin_yardimcisi: { label: 'Admin Yardımcısı', color: '#1d4ed8' }, admin_mavi_kirmizi: { label: 'Admin', color: '#e11d48' }, turgay: { label: 'Turgay Mavi', color: '#1565c0' }, admin_kralicesi: { label: 'Admin Kraliçesi', color: '#db2777' },
+  turgay_ates: { label: 'Turgay Ateş', color: '#f97316' }, ahu: { label: 'Ahu', color: '#d4a74d' }, kurt_kral: { label: 'Kurt Kral', color: '#dc2626' }, ask: { label: 'Aşk', color: '#dc2626' }, kalp: { label: 'Kalp', color: '#ef4444' }, ertugrul: { label: 'Ertuğrul', color: '#b91c1c' },
+  zengin: { label: 'Zengin', color: '#ef4444' }, vip: { label: 'VIP', color: '#ef4444' }, kral: { label: 'Kral', color: '#dc2626' }, ates: { label: 'Ateş', color: '#f97316' },
+  lvl_75: { label: 'LVL 75', level: 75 }, lvl_150: { label: 'LVL 150', level: 150 }, lvl_250: { label: 'LVL 250', level: 250 }, lvl_500: { label: 'LVL 500', level: 500 }, lvl_750: { label: 'LVL 750', level: 750 }, lvl_max: { label: 'LVL MAX', level: 1000 },
 };
 
 export const ANIMATION_DEFINITIONS: { key: string; label: string }[] = [

@@ -50,10 +50,11 @@ export default async function(req) {
     if (action === 'set_room_level') {
       const level = Number(body.level);
       if (!validRoomLevel(level)) return Response.json({ error: 'LVL 1–1000 arasında tam sayı olmalıdır.' }, { status: 400 });
-      await setRoomLevel(base44, target, level);
-      await base44.asServiceRole.entities.AdminLog.create({ admin_id: me.id, admin_name: adminName, action: 'Ortak LVL güncellendi', target: target.email || user_id, details: `LVL ${level}` }).catch(() => {});
-      await upsertNotification(base44, { user_id, title: 'LVL seviyeniz güncellendi', body: `Yeni seviyeniz: LVL ${level}`, type: 'info' });
-      return Response.json({ ok: true, level });
+      const saved = await setRoomLevel(base44, target, level);
+      const appliedLevel = saved.level;
+      await base44.asServiceRole.entities.AdminLog.create({ admin_id: me.id, admin_name: adminName, action: 'Ortak LVL güncellendi', target: target.email || user_id, details: `LVL ${appliedLevel}` }).catch(() => {});
+      await upsertNotification(base44, { user_id, title: 'LVL seviyeniz güncellendi', body: `Yeni seviyeniz: LVL ${appliedLevel}`, type: 'info' });
+      return Response.json({ ok: true, level: appliedLevel });
     }
 
     if (action === 'assign_role') {
@@ -64,6 +65,7 @@ export default async function(req) {
         custom_role: null,
       });
       const roleDef = ROLE_DEFINITIONS[role_key || ''];
+      if (['founder', 'queen_admin', 'admin_helper'].includes(role_key)) await setRoomLevel(base44, { ...target, display_role: role_key }, 1000);
       await base44.asServiceRole.entities.AdminLog.create({
         admin_id: me.id, admin_name: adminName,
         action: 'Rol atandı', target: target.email || user_id,
@@ -91,7 +93,8 @@ export default async function(req) {
     if (action === 'assign_frame') {
       const { frame } = body;
       if (!FRAME_DEFINITIONS[frame] && frame !== '') return Response.json({ error: 'geçersiz çerçeve' }, { status: 400 });
-      await base44.asServiceRole.entities.User.update(user_id, { profile_frame: frame });
+      const unlocked = frame ? [...new Set([...(target.unlocked_profile_frames || []), frame])] : (target.unlocked_profile_frames || []);
+      await base44.asServiceRole.entities.User.update(user_id, { profile_frame: frame, unlocked_profile_frames: unlocked });
       await base44.asServiceRole.entities.AdminLog.create({
         admin_id: me.id, admin_name: adminName,
         action: 'Çerçeve atandı', target: target.email || user_id,

@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sanitizeText, validateUrl, rateLimit, safeErrorResponse } from '../../shared/security.ts';
+import { FRAME_DEFINITIONS } from '../../shared/roles.ts';
 
 export default async function(req) {
   try {
@@ -7,7 +8,7 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json();
-    let { username, phone, avatar, full_name } = body || {};
+    let { username, phone, avatar, full_name, profile_frame } = body || {};
 
     // Rate limit: 10 güncelleme / dakika
     const rl = await rateLimit(base44, 'profile:' + user.id, user.id, 10, 60000);
@@ -31,6 +32,12 @@ export default async function(req) {
         const a = validateUrl(avatar);
         if (a) updates.avatar = a;
       }
+    }
+    if (profile_frame !== undefined) {
+      const frame = String(profile_frame || '');
+      const unlocked = me.unlocked_profile_frames || [];
+      if (frame && (!FRAME_DEFINITIONS[frame] || !unlocked.includes(frame))) return Response.json({ error: 'Bu çerçeve hesabınızda açık değil.' }, { status: 403 });
+      updates.profile_frame = frame;
     }
     // Moderator'ün full_name'i kilitli — backend seviyesinde değiştirilemez
     if (full_name !== undefined && me.role !== 'moderator') {

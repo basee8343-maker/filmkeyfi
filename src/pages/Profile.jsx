@@ -46,6 +46,6 @@ export default function Profile() {
     {tab === 'history' && <div>{historyMovies.length > 0 && <button onClick={clearHistory} className="mb-3 flex items-center gap-2 rounded-lg bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground"><Trash2 className="w-4 h-4" />Tümünü Sil</button>}<ProfileMovieGrid movies={historyMovies} empty="Henüz bir şey izlemediniz." /></div>}
     {tab === 'list' && <ProfileMovieGrid movies={list} empty="Henüz listenize film eklemediniz." />}
     {tab === 'favs' && <ProfileMovieGrid movies={favs} empty="Henüz favori yok." />}
-    {tab === 'settings' && <ProfileSettings user={user} />}
+    {tab === 'settings' && <ProfileSettings user={user} onUpdated={reload} />}
   </div>;
 }

@@ -62,6 +62,13 @@
       "type": "string",
       "default": ""
     },
+    "unlocked_profile_frames": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
     "special_frame_id": {
       "type": "string",
       "default": ""
