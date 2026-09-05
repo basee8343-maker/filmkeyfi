@@ -20,20 +20,8 @@ export const daysInApp = (createdDate) =>
   createdDate ? Math.max(0, Math.floor((Date.now() - new Date(createdDate).getTime()) / 86400000)) : 0;
 
 // Manuel admin çerçevesi her zaman otomatik XP çerçevesinden önceliklidir.
-export function resolveFrame(frames, xp, manualFrameId) {
-  const list = (frames || []).filter((frame) => frame.active !== false).sort((a, b) => (a.min_xp || 0) - (b.min_xp || 0));
-  if (manualFrameId) {
-    const manual = (frames || []).find((frame) => frame.id === manualFrameId);
-    if (manual) return { current: manual, next: null, manual: true };
-  }
-  if (!list.length) return { current: FALLBACK_FRAME, next: null, manual: false };
-  let current = list[0];
-  let next = null;
-  list.forEach((frame) => {
-    if (xp >= (frame.min_xp || 0)) current = frame;
-    else if (!next) next = frame;
-  });
-  return { current, next, manual: false };
+export function resolveFrame() {
+  return { current: null, next: null, manual: false };
 }
 
 export function xpProgress(xp, current, next) {

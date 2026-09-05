@@ -35,11 +35,8 @@ export default async function (req) {
       return Response.json({ user_xp: updated });
     }
 
-    if (action === 'set_manual_frame') {
-      const target = await base44.asServiceRole.entities.User.get(body.user_id);
-      const row = await ensureUserXp(base44, target.id, target.username || target.full_name);
-      const updated = await base44.asServiceRole.entities.UserXp.update(row.id, { manual_frame_id: body.frame_id || '' });
-      return Response.json({ user_xp: updated });
+    if (['set_manual_frame', 'save_frame', 'delete_frame'].includes(action)) {
+      return Response.json({ error: 'XP çerçeveleri kaldırıldı. Kullanıcılar bölümündeki profil çerçevelerini kullanın.' }, { status: 410 });
     }
 
     if (action === 'save_settings') {
@@ -51,26 +48,7 @@ export default async function (req) {
       return Response.json({ settings: updated });
     }
 
-    if (action === 'save_frame') {
-      const data = {
-        name: String(body.name || '').slice(0, 60) || 'Çerçeve',
-        min_xp: Math.max(0, num(body.min_xp)),
-        style: body.style || 'starter',
-        image_url: body.image_url || '',
-        active: body.active !== false,
-        animated: body.animated !== false,
-        sort_order: num(body.sort_order),
-      };
-      const frame = body.frame_id
-        ? await base44.asServiceRole.entities.XpFrame.update(body.frame_id, data)
-        : await base44.asServiceRole.entities.XpFrame.create(data);
-      return Response.json({ frame });
-    }
 
-    if (action === 'delete_frame') {
-      await base44.asServiceRole.entities.XpFrame.delete(body.frame_id);
-      return Response.json({ ok: true });
-    }
 
     if (action === 'get_user') {
       const row = await getUserXp(base44, body.user_id);

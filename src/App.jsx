@@ -56,7 +56,7 @@ const AdminSecurity = lazy(() => import('@/pages/admin/AdminSecurity'));
 const AdminPromoVideo = lazy(() => import('@/pages/admin/AdminPromoVideo'));
 const AdminSessions = lazy(() => import('@/pages/admin/AdminSessions'));
 const AdminUpdates = lazy(() => import('@/pages/admin/AdminUpdates'));
-const AdminXp = lazy(() => import('@/pages/admin/AdminXp'));
+
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -133,7 +133,7 @@ const AuthenticatedApp = () => {
           <Route path="tanitim-videosu" element={<AdminPromoVideo />} />
           <Route path="oturumlar" element={<AdminSessions />} />
           <Route path="guncellemeler" element={<AdminUpdates />} />
-          <Route path="xp" element={<AdminXp />} />
+          <Route path="xp" element={<Navigate to="/admin/kullanicilar" replace />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

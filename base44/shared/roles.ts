@@ -95,16 +95,16 @@ export const FRAME_DEFINITIONS: Record<string, any> = {
   'fenerbahce': { label: 'Fenerbahçe', color: '#002244', colors: ['#002244', '#facc15'] },
   'besiktas': { label: 'Beşiktaş', color: '#000000', colors: ['#000000', '#e5e7eb'] },
   'trabzonspor': { label: 'Trabzonspor', color: '#6B0C72', colors: ['#6B0C72', '#4A90D9'] },
-  'turgay': { label: 'Turgay', color: '#1565c0' },
-  'admin_mavi_kirmizi': { label: 'Admin Mavi Kırmızı', color: '#e11d48' },
-  'ahu': { label: 'Ahu', color: '#d4a74d' },
   'admin_yardimcisi': { label: 'Admin Yardımcısı', color: '#1d4ed8' },
-  'kral': { label: 'Kral', color: '#dc2626' },
+  'admin_mavi_kirmizi': { label: 'Admin', color: '#e11d48' },
+  'turgay': { label: 'Turgay Mavi', color: '#1565c0' },
   'admin_kralicesi': { label: 'Admin Kraliçesi', color: '#db2777' },
+  'turgay_ates': { label: 'Turgay Ateş', color: '#f97316' },
+  'ahu': { label: 'Ahu', color: '#d4a74d' },
+  'kurt_kral': { label: 'Kurt Kral', color: '#dc2626' },
   'ask': { label: 'Aşk', color: '#dc2626' },
-  'admin_aslan': { label: 'Admin Aslan', color: '#b91c1c' },
   'kalp': { label: 'Kalp', color: '#ef4444' },
-  'ates': { label: 'Ateş', color: '#f97316' },
+  'ertugrul': { label: 'Ertuğrul', color: '#b91c1c' },
 };
 
 export const ANIMATION_DEFINITIONS: { key: string; label: string }[] = [
