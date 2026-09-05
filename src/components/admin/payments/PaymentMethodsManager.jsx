@@ -169,7 +169,7 @@ export default function PaymentMethodsManager() {
         {methods.map((m) => {
           const cfg = configs.find((c) => c.provider_key === m.provider_key);
           return (
-            <div key={m.id} className="bg-[#16161e] border border-white/5 rounded-xl p-4">
+            <div key={m.id} onClick={() => setEditing({ ...m, _config: cfg })} className="bg-[#16161e] border border-white/5 hover:border-purple-500/40 rounded-xl p-4 cursor-pointer transition-colors">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: m.type === 'bank_transfer' ? '#3b82f620' : '#7c3aed20' }}>
                   {m.type === 'bank_transfer' ? <Landmark className="w-5 h-5 text-blue-400" /> : <CreditCard className="w-5 h-5 text-purple-400" />}
@@ -178,7 +178,9 @@ export default function PaymentMethodsManager() {
                   <p className="font-semibold text-white text-sm truncate">{m.display_name}</p>
                   <p className="text-xs text-gray-400 truncate">{m.provider_key}</p>
                 </div>
-                <ToggleSwitch checked={m.enabled} onChange={() => toggleEnabled(m)} />
+                <div onClick={(e) => e.stopPropagation()}>
+                  <ToggleSwitch checked={m.enabled} onChange={() => toggleEnabled(m)} />
+                </div>
               </div>
 
               {m.type === 'bank_transfer' && (
@@ -216,7 +218,7 @@ export default function PaymentMethodsManager() {
 
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
                 <span className={`text-xs font-semibold ${m.enabled ? 'text-green-400' : 'text-red-400'}`}>{m.enabled ? 'Aktif' : 'Pasif'}</span>
-                <button onClick={() => setEditing({ ...m, _config: cfg })} className="text-sm text-purple-400 font-semibold">Düzenle</button>
+                <span className="text-sm text-purple-400 font-semibold">Düzenle →</span>
               </div>
             </div>
           );
