@@ -45,7 +45,8 @@ export default async function(req) {
     const isOwner = room.owner_id === user.id;
     const isRoomMod = (room.room_moderators || []).includes(user.id);
     const canModRoom = isOwner || isMod || isRoomMod;
-    const ghost = isAdmin && !isOwner;
+    const hasVisibleRole = !!(me.display_role || me.custom_role?.name || me.special_frame_id);
+    const ghost = isAdmin && !isOwner && !hasVisibleRole;
     const labelOverrides = await getRoleLabelOverrides(base44);
 
     if (action === 'join') {
@@ -103,9 +104,11 @@ export default async function(req) {
         }
         participants.push({ user_id: user.id, name, avatar: user.avatar || '', joined_at: new Date().toISOString(), muted: false, speaking: false });
         await base44.asServiceRole.entities.Room.update(room_id, { participants });
-        const roleInfo = getRoleInfo(me, labelOverrides);
+      }
+      const roleInfo = getRoleInfo(me, labelOverrides);
+      const frameInfo = await getSpecialFrameInfo(base44, me, true);
+      if (!already || roleInfo.label || frameInfo) {
         const roleMeta = roleInfo.label ? `{{ROLE|${roleInfo.key || ''}|${roleInfo.color || ''}|${roleInfo.animation || 'pulse'}}}` : '';
-        const frameInfo = await getSpecialFrameInfo(base44, me, true);
         const frameMeta = frameInfo ? `{{FRAME|${frameInfo.id}|${frameInfo.theme_color}|${frameInfo.text_color}|${frameInfo.glow_color}|${frameInfo.title}}}` : '';
         const titlePrefix = frameInfo?.title
           ? `${frameInfo.title} `
@@ -183,11 +186,14 @@ export default async function(req) {
     if (action === 'kick' || action === 'ban') {
       if (!canModRoom) return Response.json({ error: 'yetkisiz' }, { status: 403 });
       const targetUser = await base44.asServiceRole.entities.User.get(target_id).catch(() => null);
-      // Yetki hiyerarşisi: site sahibi herkesi atabilir, moderator'ler sadece normal kullanıcıları
-      if (isSiteOwner(targetUser)) return Response.json({ error: 'Site sahibi atılamaz' }, { status: 403 });
+      // Yetki hiyerarşisi: kurucu korunur; admin yardımcısı ve kraliçeyi yalnızca kurucu atabilir.
+      const actorRoleKey = me?.display_role || '';
       const targetRoleKey = targetUser?.display_role || '';
-      if (targetRoleKey === 'queen_admin' || targetRoleKey === 'admin_helper') return Response.json({ error: 'Admin kraliçesi ve admin yardımcısı atılamaz' }, { status: 403 });
-      if (immuneToModeration(targetUser) && !isSiteOwner(me)) return Response.json({ error: 'Bu kullanıcıyı atamazsınız' }, { status: 403 });
+      if (targetRoleKey === 'founder') return Response.json({ error: 'Kurucu odadan atılamaz' }, { status: 403 });
+      if ((targetRoleKey === 'queen_admin' || targetRoleKey === 'admin_helper') && actorRoleKey !== 'founder') {
+        return Response.json({ error: 'Bu rolü yalnızca kurucu odadan atabilir' }, { status: 403 });
+      }
+      if (immuneToModeration(targetUser) && actorRoleKey !== 'founder') return Response.json({ error: 'Bu kullanıcıyı atamazsınız' }, { status: 403 });
       const targetParticipant = (room.participants || []).find((p) => p.user_id === target_id);
       const participants = (room.participants || []).filter((p) => p.user_id !== target_id);
       const targetName = targetParticipant?.name || 'Kullanıcı';

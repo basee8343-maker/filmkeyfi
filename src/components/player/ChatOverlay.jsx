@@ -12,7 +12,7 @@ import RoleBadge from '@/components/RoleBadge';
 import ProfileFrame from '@/components/ProfileFrame';
 import useMessageProfiles from '@/hooks/useMessageProfiles';
 import { mergeMessages, upsertMessage } from '@/lib/realtimeMessages';
-import { parseRoleMetadata, getRoleInfo, isModerator } from '@/lib/roles';
+import { parseRoleMetadata, parseFrameMetadata, getRoleInfo, isModerator } from '@/lib/roles';
 import RoleMessageEffect from '@/components/role/RoleMessageEffect';
 import RoleNameEffect from '@/components/role/RoleNameEffect';
 import UserProfileCard from '@/components/player/UserProfileCard';
@@ -298,12 +298,14 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2 bg-black" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
         {loading ? <p className="text-center text-sm text-[#888] py-8">Yükleniyor...</p> :
          messages.length === 0 ? <p className="text-center text-sm text-[#888] py-8">Henüz mesaj yok. İlk mesajı sen at! 🍿</p> :
-         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { const lower = (m.text || '').toLowerCase(); if (lower.includes('katıldı') || lower.includes('ayrıldı') || lower.includes('moderatör')) return false; } return true; }).map((m) => (
+         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { const lower = (m.text || '').toLowerCase(); const frame = parseFrameMetadata(m.text); const hasRoleEntry = !!frame.frameId || parseRoleMetadata(frame.rest).hasRole; if (lower.includes('katıldı')) return hasRoleEntry; if (lower.includes('ayrıldı') || lower.includes('moderatör')) return false; } return true; }).map((m) => (
             <div key={m.id} className={`flex gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
               {m.type === 'system' ? (
                 (() => {
-                  const { text: cleanText, color, hasRole } = parseRoleMetadata(m.text);
-                  const isRole = hasRole && /^\p{Extended_Pictographic}/u.test(cleanText);
+                  const frame = parseFrameMetadata(m.text);
+                  const { text: cleanText, color: roleColor, hasRole } = parseRoleMetadata(frame.rest);
+                  const color = roleColor || frame.textColor || '#8b5cf6';
+                  const isRole = hasRole || !!frame.frameId;
                   return (
                     <span
                       className={`text-xs px-3 py-1.5 rounded-full ${isRole ? 'font-bold neon-entrance' : 'text-[#888] bg-[#1a1a1a]'}`}

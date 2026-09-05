@@ -250,7 +250,7 @@ export default function WatchParty() {
 
   // Atılma tespiti: katılımcı listesinden çıkarıldıysa yönlendir
   useEffect(() => {
-    if (!user || !joinedRef.current || !room || room.owner_id === user.id || isMod || ghostRef.current) return;
+    if (!user || !joinedRef.current || !room || room.owner_id === user.id || ghostRef.current) return;
     const stillIn = (room.participants || []).some((p) => p.user_id === user.id);
     if (!stillIn && !kickedRef.current) {
       kickedRef.current = true;
@@ -272,7 +272,7 @@ export default function WatchParty() {
 
   // Atılma tespiti yedeği — 3sn polling (realtime kaçırsa diye)
   useEffect(() => {
-    if (!user || joinCount === 0 || !room || room.owner_id === user.id || isMod || ghostRef.current) return;
+    if (!user || joinCount === 0 || !room || room.owner_id === user.id || ghostRef.current) return;
     const intervalId = setInterval(async () => {
       if (kickedRef.current) { clearInterval(intervalId); return; }
       try {
@@ -597,7 +597,8 @@ export default function WatchParty() {
 
   const src = movie?.video_url || movie?.hls_url || movie?.external_url || '';
   const chatEnabled = room.chat_enabled;
-  const visibleParticipants = (room.participants || []).filter((participant) => participant.user_id === room.owner_id || viewerProfiles[participant.user_id]?.role !== 'admin');
+  const founderCanSeeAdmins = user?.display_role === 'founder';
+  const visibleParticipants = (room.participants || []).filter((participant) => participant.user_id === room.owner_id || viewerProfiles[participant.user_id]?.role !== 'admin' || founderCanSeeAdmins);
   const openDirectMessage = (userId) => { setProfileCard(null); setDirectTarget(userId); setDirectOpen(true); setChatOpen(false); setShowViewers(false); };
 
   return (
