@@ -11,7 +11,7 @@ import { Mic, MicOff, Crown, X, Eye, ArrowLeft, UserMinus, MessageSquare, Trash2
 import { Image } from '@/components/ui/image';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
-import UserProfileCard from '@/components/player/UserProfileCard';
+
 
 import LiveKitDebugPanel from '@/components/player/LiveKitDebugPanel';
 import RoomDirectMessages from '@/components/player/RoomDirectMessages';
@@ -77,7 +77,7 @@ export default function WatchParty() {
     return unsub;
   }, []);
   const [roomNameEdit, setRoomNameEdit] = useState('');
-  const [profileCard, setProfileCard] = useState(null);
+  const openUserProfile = (userId) => navigate(`/kullanici/${userId}?room=${encodeURIComponent(id)}`);
   const [presenceMap, setPresenceMap] = useState({});
   const isOwner = user?.id === room?.owner_id;
   const isMod = user?.role === 'admin' || user?.role === 'moderator';
@@ -599,7 +599,7 @@ export default function WatchParty() {
   const chatEnabled = room.chat_enabled;
   const founderCanSeeAdmins = user?.display_role === 'founder';
   const visibleParticipants = (room.participants || []).filter((participant) => participant.user_id === room.owner_id || viewerProfiles[participant.user_id]?.role !== 'admin' || founderCanSeeAdmins);
-  const openDirectMessage = (userId) => { setProfileCard(null); setDirectTarget(userId); setDirectOpen(true); setChatOpen(false); setShowViewers(false); };
+  const openDirectMessage = (userId) => { setDirectTarget(userId); setDirectOpen(true); setChatOpen(false); setShowViewers(false); };
 
   return (
     <div className="fixed inset-x-0 top-0 h-screen h-[100dvh] bg-black flex flex-col overflow-hidden" style={{ touchAction: 'pan-y', overscrollBehavior: 'none' }}>
@@ -650,7 +650,7 @@ export default function WatchParty() {
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setChatOpen(false); }}
           >
-            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onDirect={() => { setDirectTarget(null); setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} onDirectUser={openDirectMessage} directUnread={directUnread} ownerId={room?.owner_id} roomModerators={room?.room_moderators || []} participants={room?.participants || []} recentParticipants={room?.recent_participants || []} viewerProfiles={viewerProfiles} presenceMap={presenceMap} onProfileCard={setProfileCard} onToggleChat={toggleChat} settingsProps={{ room, canMod, participants: room?.participants || [], roomModerators: room?.room_moderators || [], onAssignMod: assignMod, onRemoveMod: removeMod, roomName: roomNameEdit, setRoomName: setRoomNameEdit, onSaveName: saveRoomName, password: pwSetInput, setPassword: setPwSetInput, passwordOpen: showPwSet, setPasswordOpen: setShowPwSet, onVoice: toggleVoice, onChat: toggleChat, onHidden: toggleHidden, onPassword: () => savePassword(), onRemovePassword: () => setShowPwRemoveConfirm(true), onUnban: unbanUser, onPickMovie: () => setMoviePickerOpen(true), onDeleteRoom: deleteRoom, roomLevels, onSetLevel: setLevel }} />
+            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onDirect={() => { setDirectTarget(null); setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} onDirectUser={openDirectMessage} directUnread={directUnread} ownerId={room?.owner_id} roomModerators={room?.room_moderators || []} participants={room?.participants || []} recentParticipants={room?.recent_participants || []} viewerProfiles={viewerProfiles} presenceMap={presenceMap} onProfileCard={openUserProfile} onToggleChat={toggleChat} settingsProps={{ room, canMod, participants: room?.participants || [], roomModerators: room?.room_moderators || [], onAssignMod: assignMod, onRemoveMod: removeMod, roomName: roomNameEdit, setRoomName: setRoomNameEdit, onSaveName: saveRoomName, password: pwSetInput, setPassword: setPwSetInput, passwordOpen: showPwSet, setPasswordOpen: setShowPwSet, onVoice: toggleVoice, onChat: toggleChat, onHidden: toggleHidden, onPassword: () => savePassword(), onRemovePassword: () => setShowPwRemoveConfirm(true), onUnban: unbanUser, onPickMovie: () => setMoviePickerOpen(true), onDeleteRoom: deleteRoom, roomLevels, onSetLevel: setLevel }} />
           </div>
         )}
 
@@ -676,7 +676,7 @@ export default function WatchParty() {
                 const presence = presenceMap[p.user_id];
                 const isOnline = presence?.online && (Date.now() - new Date(presence.last_seen).getTime() < 60000);
                 return (
-                  <button key={p.user_id} onClick={() => setProfileCard(p.user_id)} className="flex items-center gap-1.5 text-xs py-0.5 w-full text-left hover:bg-secondary/50 rounded px-1">
+                  <button key={p.user_id} onClick={() => openUserProfile(p.user_id)} className="flex items-center gap-1.5 text-xs py-0.5 w-full text-left hover:bg-secondary/50 rounded px-1">
                     <div className="shrink-0 relative">
                       {avatar ? <Image src={avatar} className="w-6 h-6 rounded-full object-cover" fittingType="fill" /> : <span className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-[10px] font-bold">{(p.name || '?')[0]}</span>}
                       <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-card ${isOnline ? 'bg-green-400' : 'bg-red-400'}`} />
@@ -702,9 +702,7 @@ export default function WatchParty() {
         confirmText="Kaldır"
         onConfirm={() => savePassword('')}
       />
-      {profileCard && (
-        <UserProfileCard userId={profileCard} roomId={id} canMod={canMod} voiceEnabled={room?.voice_enabled} onClose={() => setProfileCard(null)} onKick={(uid) => { kickUser(uid); setProfileCard(null); }} onToggleMute={toggleMuteUser} onMessage={openDirectMessage} muted={room?.participants?.find((p) => p.user_id === profileCard)?.muted} />
-      )}
+
       <MoviePickerSheet open={moviePickerOpen} onClose={() => setMoviePickerOpen(false)} onSelect={changeMovie} currentMovieId={movie?.id} />
     </div>
   );

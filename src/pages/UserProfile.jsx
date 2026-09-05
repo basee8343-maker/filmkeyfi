@@ -9,9 +9,11 @@ import { useToast } from '@/components/ui/use-toast';
 import RoleBadge from '@/components/RoleBadge';
 import ProfileFrame from '@/components/ProfileFrame';
 import { getRoleInfo } from '@/lib/roles';
+import ProfileRoomActions from '@/components/profile/ProfileRoomActions';
 
 export default function UserProfile() {
   const { id } = useParams();
+  const roomId = new URLSearchParams(window.location.search).get('room');
   const navigate = useNavigate();
   const { user: me } = useCurrentUser();
   const { toast } = useToast();
@@ -23,16 +25,26 @@ export default function UserProfile() {
   const [err, setErr] = useState('');
 
   useEffect(() => {
-    base44.functions.invoke('user-profile', { user_id: id })
-      .then((res) => setProfile(res.data))
-      .catch((e) => setErr(e.response?.data?.error || e.message))
-      .finally(() => setLoading(false));
+    let active = true;
+    setProfile(null); setErr(''); setLoading(true);
+    const load = () => base44.functions.invoke('user-profile', { user_id: id })
+      .then((res) => { if (active) { setProfile(res.data); setErr(''); } })
+      .catch((e) => { if (active) setErr(e.response?.data?.error || e.message); })
+      .finally(() => { if (active) setLoading(false); });
+    load();
+    const off = base44.entities.User.subscribe((event) => { if ((event.data?.id || event.id) === id) load(); });
+    return () => { active = false; off(); };
   }, [id]);
 
   useEffect(() => {
     if (!me?.id || me.id === id) return;
-    base44.entities.Friendship.list('-updated_date', 200)
-      .then((items) => setRelation(items.find((item) => item.members?.includes(id)) || null));
+    let active = true;
+    setRelation(null);
+    const load = () => base44.entities.Friendship.filter({ members: me.id }, '-updated_date', 200)
+      .then((items) => { if (active) setRelation(items.find((item) => item.members?.includes(id)) || null); });
+    load();
+    const off = base44.entities.Friendship.subscribe(load);
+    return () => { active = false; off(); };
   }, [id, me?.id]);
 
   const addFriend = async () => {
@@ -62,7 +74,7 @@ export default function UserProfile() {
   const isSelf = me?.id === id;
 
   return (
-    <div className="px-4 sm:px-6 py-6 max-w-2xl mx-auto">
+    <div className="w-full min-w-0 px-4 sm:px-6 py-6 pb-[calc(2rem+env(safe-area-inset-bottom))] max-w-2xl mx-auto">
       <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground mb-4"><ArrowLeft className="w-4 h-4" /> Geri</button>
       {err ? <p className="text-center text-destructive py-10">{err}</p> : profile && (
         <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center">
@@ -70,8 +82,9 @@ export default function UserProfile() {
             {profile.avatar ? <Image src={profile.avatar} className="w-28 h-28 rounded-full object-cover" fittingType="fill" /> :
               <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-4xl font-bold">{(profile.username || profile.full_name || '?')[0]}</div>}
           </ProfileFrame>
-          <h1 className="text-2xl font-extrabold mt-4 flex items-center gap-2">{profile.title || profile.username || profile.full_name || 'Kullanıcı'} {(profile.role === 'admin' || profile.role === 'moderator') && <Crown className="w-5 h-5 text-amber-400" />}</h1>
-          {getRoleInfo({ display_role: profile.display_role, custom_role: profile.custom_role }).label && <div className="mt-1.5"><RoleBadge user={{ display_role: profile.display_role, custom_role: profile.custom_role }} size="md" /></div>}
+          <h1 className="max-w-full text-2xl font-extrabold mt-4 flex flex-wrap justify-center items-center gap-2 [overflow-wrap:anywhere]">{profile.title || profile.username || profile.full_name || 'Kullanıcı'} {(profile.role === 'admin' || profile.role === 'moderator') && <Crown className="w-5 h-5 text-amber-400" />}</h1>
+          {getRoleInfo(profile).label && <div className="mt-1.5"><RoleBadge user={profile} size="md" /></div>}
+          {['admin', 'moderator'].includes(profile.role) && <p className="mt-2 text-sm font-bold text-primary">{profile.role === 'admin' ? 'YÖNETİCİ' : 'MODERATÖR'}</p>}
           {profile.title && <p className="text-base font-semibold text-gradient mt-1">{profile.title}</p>}
           {profile.username && profile.username !== profile.title && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
           <div className="mt-4 inline-flex items-center gap-2 bg-secondary/60 rounded-full pl-4 pr-1.5 py-1.5">
@@ -84,6 +97,8 @@ export default function UserProfile() {
           {!isSelf && (!relation || ['removed', 'rejected'].includes(relation.status)) && <button onClick={addFriend} disabled={requesting} className="mt-5 inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold disabled:opacity-50"><UserPlus className="w-4 h-4" />{requesting ? 'Gönderiliyor...' : 'Arkadaş Ekle'}</button>}
           {!isSelf && relation?.status === 'pending' && <p className="mt-5 text-sm font-semibold text-amber-400">Arkadaşlık isteği bekliyor</p>}
           {!isSelf && relation?.status === 'accepted' && <div className="mt-5 flex flex-col items-center gap-3"><p className="text-sm font-semibold text-green-400">Arkadaşsınız</p><button onClick={startChat} className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold"><MessageCircle className="w-4 h-4" /> Mesaj Yaz</button></div>}
+          {!isSelf && relation?.status !== 'accepted' && (me?.role === 'admin' || profile.role === 'admin') && <button onClick={startChat} className="mt-3 rounded-lg bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">Mesaj Yaz</button>}
+          <ProfileRoomActions userId={id} me={me} roomId={roomId} />
           {isSelf && <Link to="/profil" className="mt-5 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-semibold">Profili Düzenle</Link>}
           {!isSelf && <button onClick={() => setReportOpen(true)} className="mt-3 inline-flex items-center gap-2 bg-destructive/10 text-destructive border border-destructive/20 px-4 py-2 rounded-lg text-sm font-semibold"><Flag className="w-4 h-4" /> Şikayet Et</button>}
         </div>

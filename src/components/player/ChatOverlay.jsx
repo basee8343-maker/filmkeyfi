@@ -6,20 +6,15 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
 import { Image } from '@/components/ui/image';
-import ChatUserMenu from '@/components/player/ChatUserMenu';
-import ReportDialog from '@/components/ReportDialog';
-import RoleBadge from '@/components/RoleBadge';
-import ProfileFrame from '@/components/ProfileFrame';
+
 import useMessageProfiles from '@/hooks/useMessageProfiles';
 import { mergeMessages, upsertMessage } from '@/lib/realtimeMessages';
-import { parseRoleMetadata, parseFrameMetadata, getRoleInfo, isModerator } from '@/lib/roles';
-import RoleMessageEffect from '@/components/role/RoleMessageEffect';
-import RoleNameEffect from '@/components/role/RoleNameEffect';
-import UserProfileCard from '@/components/player/UserProfileCard';
+import { parseRoleMetadata, parseFrameMetadata } from '@/lib/roles';
+import RoomChatMessage from '@/components/player/RoomChatMessage';
 import EmojiPicker from '@/components/player/EmojiPicker';
 import RoomSettingsContent from '@/components/player/RoomSettingsContent';
 import ParticipantHistoryPanel from '@/components/player/ParticipantHistoryPanel';
-import FriendshipLevelBadge, { getFriendshipLevelTheme } from '@/components/friends/FriendshipLevelBadge';
+
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
@@ -30,11 +25,9 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   const [text, setText] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [modTarget, setModTarget] = useState(null); // { userId, userName, userAvatar }
-  const [userMenu, setUserMenu] = useState(null);
-  const [reportTarget, setReportTarget] = useState(null);
+
   const [uploading, setUploading] = useState(false);
-  const [menuProfile, setMenuProfile] = useState(null);
+
   const [lightbox, setLightbox] = useState(null);
   const [showAutoDeleteMenu, setShowAutoDeleteMenu] = useState(false);
   const [msgFilter, setMsgFilter] = useState('all');
@@ -184,16 +177,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
     catch (err) { toast({ title: 'Silinemedi', description: err.response?.data?.error || err.message, variant: 'destructive' }); }
   };
 
-  const handleUserClick = (e, m) => {
-    if (m.user_id === user?.id) return;
-    e.preventDefault();
-    setUserMenu({ userId: m.user_id, userName: m.user_name, userAvatar: m.user_avatar });
-  };
 
-  useEffect(() => {
-    if (!userMenu?.userId) { setMenuProfile(null); return; }
-    base44.functions.invoke('user-profile', { user_id: userMenu.userId }).then((res) => setMenuProfile(res.data)).catch(() => {});
-  }, [userMenu?.userId]);
 
   const onPhoto = async (e) => {
     const f = e.target.files?.[0]; if (!f) return;
@@ -209,36 +193,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
     } finally { setUploading(false); e.target.value = ''; }
   };
 
-  const copyMemberId = async () => {
-    const mid = menuProfile?.member_id;
-    if (!mid) return;
-    try { await navigator.clipboard.writeText(mid); toast({ title: 'Üye No kopyalandı', description: mid }); }
-    catch { toast({ title: 'Kopyalanamadı', variant: 'destructive' }); }
-  };
-  const blockUser = async () => {
-    try { await base44.functions.invoke('role-management', { action: 'ban_user', user_id: userMenu.userId, reason: 'Sohbet üzerinden engellendi' }); toast({ title: 'Kullanıcı engellendi' }); setUserMenu(null); }
-    catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
-  };
-  const deleteUser = async () => {
-    if (!confirm('Bu kullanıcı kalıcı olarak silinsin mi?')) return;
-    try { await base44.entities.User.delete(userMenu.userId); toast({ title: 'Kullanıcı silindi' }); setUserMenu(null); }
-    catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
-  };
 
-  const kickFromRoom = async () => {
-    try { await base44.functions.invoke('room-presence', { action: 'kick', room_id: roomId, target_id: userMenu.userId }); toast({ title: 'Kullanıcı odadan atıldı' }); setUserMenu(null); }
-    catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
-  };
-
-  const personalBlock = async () => {
-    try {
-      const newBlocked = [...new Set([...blockedUsers, userMenu.userId])];
-      await base44.auth.updateMe({ blocked_users: newBlocked });
-      setBlockedUsers(newBlocked);
-      toast({ title: 'Kullanıcı engellendi', description: 'Artık mesajlarını görmeyeceksiniz.' });
-      setUserMenu(null);
-    } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
-  };
 
   return (
     <div className="h-full min-h-0 flex flex-col bg-black text-white">
@@ -295,11 +250,11 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
           </div>
         )
       ) : msgFilter === 'all' ? (
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2 bg-black" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
+      <div ref={scrollRef} className="flex min-w-0 flex-1 min-h-0 flex-col gap-3 overflow-x-hidden overflow-y-auto overscroll-contain p-3 bg-black" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
         {loading ? <p className="text-center text-sm text-[#888] py-8">Yükleniyor...</p> :
          messages.length === 0 ? <p className="text-center text-sm text-[#888] py-8">Henüz mesaj yok. İlk mesajı sen at! 🍿</p> :
          messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { const lower = (m.text || '').toLowerCase(); const frame = parseFrameMetadata(m.text); const hasRoleEntry = !!frame.frameId || parseRoleMetadata(frame.rest).hasRole; if (lower.includes('katıldı')) return hasRoleEntry; if (lower.includes('ayrıldı') || lower.includes('moderatör')) return false; } return true; }).map((m) => (
-            <div key={m.id} className={`flex gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
+            <div key={m.id} className={`flex w-full min-w-0 shrink-0 gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
               {m.type === 'system' ? (
                 (() => {
                   const frame = parseFrameMetadata(m.text);
@@ -308,7 +263,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                   const isRole = hasRole || !!frame.frameId;
                   return (
                     <span
-                      className={`text-xs px-3 py-1.5 rounded-full ${isRole ? 'font-bold neon-entrance' : 'text-[#888] bg-[#1a1a1a]'}`}
+                      className={`min-w-0 max-w-full whitespace-pre-wrap [overflow-wrap:anywhere] text-xs px-3 py-1.5 rounded-full ${isRole ? 'font-bold neon-entrance' : 'text-[#888] bg-[#1a1a1a]'}`}
                       style={isRole ? {
                         background: `linear-gradient(135deg, ${color}33, ${color}22)`,
                         color: color,
@@ -321,30 +276,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                   );
                 })()
               ) : (
-                <>
-                  <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="shrink-0">
-                    {profiles[m.user_id]?.profile_frame ? <ProfileFrame frame={profiles[m.user_id].profile_frame} size="sm" avatar={profiles[m.user_id]?.avatar || m.user_avatar} name={m.user_name} /> : (profiles[m.user_id]?.avatar || m.user_avatar) ? <Image src={profiles[m.user_id]?.avatar || m.user_avatar} className="w-7 h-7 rounded-full object-cover" fittingType="fill" /> : <span className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-xs font-bold">{(m.user_name || '?')[0]}</span>}
-                  </Link>
-                  <div className="min-w-0 flex-1">
-                   <div className="flex items-center gap-1.5 flex-wrap">
-                     {m.user_id === ownerId && <Crown className="w-3 h-3 text-amber-400 shrink-0" />}
-                     {(roomModerators.includes(m.user_id) || isModerator(profiles[m.user_id])) && m.user_id !== ownerId && <Shield className="w-3 h-3 text-blue-400 shrink-0" />}
-                     <Link to={`/kullanici/${m.user_id}`} onClick={(e) => handleUserClick(e, m)} className="text-xs font-semibold truncate hover:underline">
-                       <RoleNameEffect nameEffect={getRoleInfo(profiles[m.user_id] || m)?.name_effect} color={getRoleInfo(profiles[m.user_id] || m)?.color}>{m.user_name}{user?.id === m.user_id && ' (Sen)'}</RoleNameEffect>
-                     </Link>
-                     {m.user_id === ownerId && <span className="text-[10px] text-amber-400 font-bold shrink-0">Oda Sahibi</span>}
-                     <FriendshipLevelBadge level={roomLevels[m.user_id] || 1} variant="room" maxLevel={Infinity} />
-                     {profiles[m.user_id] && (profiles[m.user_id].display_role || profiles[m.user_id].custom_role?.name) && <RoleBadge user={profiles[m.user_id]} size="sm" showLabel={false} />}
-                   </div>
-                   <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')} msgEffect={getRoleInfo(profiles[m.user_id] || m)?.msg_effect} msgColor={getRoleInfo(profiles[m.user_id] || m)?.color}>
-                      {m.file_url && <Image src={m.file_url} alt="foto" className="rounded-lg max-w-[180px] max-h-44 object-cover mb-1 cursor-pointer block" fittingType="fit" onClick={() => setLightbox(m.file_url)} />}
-                      {m.text && (() => { const trimmed = m.text.trim(); const animEmojis = ['😂','❤️','🔥','👏','🎉','😍','😱','😢','👍','🍿','🎬','💀']; if (animEmojis.includes(trimmed) && trimmed.length <= 3) { const ac = ['😂','👏','😢','👍'].includes(trimmed) ? 'anim-emoji-bounce' : ['❤️','🎉','😍','🍿'].includes(trimmed) ? 'anim-emoji-pulse' : 'anim-emoji-shake'; return <span className={`text-3xl inline-block anim-emoji ${ac}`}>{trimmed}</span>; } return <p className={`text-sm break-words rounded-lg px-2.5 py-1.5 inline-block bg-[#1a1a1a] text-white shadow-lg ${getFriendshipLevelTheme(roomLevels[m.user_id] || 1, Infinity).bubble}`}>{m.text}</p>; })()}
-                    </RoleMessageEffect>
-                  </div>
-                  {(isOwner || user?.id === m.user_id) && (
-                    <button onClick={() => del(m.id)} className="opacity-0 group-hover:opacity-100 p-1 text-muted-foreground hover:text-destructive" title={isOwner && user?.id !== m.user_id ? 'Sahip: herkesten sil' : 'Sil'}><Trash2 className="w-3.5 h-3.5" /></button>
-                  )}
-                </>
+                <RoomChatMessage message={m} profile={profiles[m.user_id]} level={roomLevels[m.user_id] || 1} ownerId={ownerId} roomModerators={roomModerators} currentUserId={user?.id} canDelete={isOwner || user?.id === m.user_id} onDelete={del} onImage={setLightbox} />
               )}
             </div>
           ))}
@@ -415,19 +347,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
         {uploading && <span className="text-xs text-[#888] animate-pulse shrink-0">...</span>}
       </div>}
 
-      {modTarget && (
-        <ChatUserMenu
-          userId={modTarget.userId}
-          userName={modTarget.userName}
-          userAvatar={modTarget.userAvatar}
-          roomId={roomId}
-          onClose={() => setModTarget(null)}
-        />
-      )}
-      {userMenu && (
-        <UserProfileCard userId={userMenu.userId} roomId={roomId} canMod={isOwner} voiceEnabled={false} onClose={() => setUserMenu(null)} onKick={kickFromRoom} onMessage={onDirectUser} />
-      )}
-      {reportTarget && <ReportDialog targetId={reportTarget.userId} targetName={reportTarget.userName} context="room" contextId={roomId} onClose={() => setReportTarget(null)} />}
+
       {lightbox && <div onClick={() => setLightbox(null)} className="fixed inset-0 z-[110] bg-black/90 flex items-center justify-center p-4"><button className="absolute top-4 right-4 text-white p-2"><X className="w-6 h-6" /></button><Image src={lightbox} className="max-w-full max-h-full rounded-lg" fittingType="fit" /></div>}
     </div>
   );
