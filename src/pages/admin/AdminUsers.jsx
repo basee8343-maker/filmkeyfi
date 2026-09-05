@@ -158,7 +158,10 @@ export default function AdminUsers({ pendingOnly = false }) {
               <div key={u.id} className="bg-card border border-border rounded-xl p-3 flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <UserBadge userId={u.id} name={u.username || u.full_name || '?'} avatar={u.avatar} memberId={u.member_id} size="md" displayRole={u.display_role} customRole={u.custom_role} profileFrame={u.profile_frame} />
-                  <p className="text-xs text-muted-foreground truncate hidden sm:block">{u.email}</p>
+                  <div className="hidden sm:block min-w-0">
+                    <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+                    {u.payment_reference && <p className="text-xs text-purple-400 font-mono truncate">Ref: {u.payment_reference}</p>}
+                  </div>
                 </div>
                 <span className={`text-xs px-2 py-1 rounded ${isActive ? 'bg-green-500/20 text-green-400' : u.membership_status === 'pending' ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}`}>{isActive ? 'Aktif' : u.membership_status === 'pending' ? 'Beklemede' : 'Askıya Alındı'}</span>
                 {paidUserIds.has(u.id) && <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 font-semibold">ÖDENDİ</span>}
@@ -188,6 +191,7 @@ export default function AdminUsers({ pendingOnly = false }) {
             <div className="space-y-1.5 text-sm">
               <p><span className="text-muted-foreground">Kullanıcı adı:</span> {detail.username || detail.full_name || '-'}</p>
               <p><span className="text-muted-foreground">Üye No:</span> {detail.member_id || '-'}</p>
+              <p><span className="text-muted-foreground">Ödeme Referans No:</span> <span className="font-mono font-bold text-purple-400">{detail.payment_reference || '-'}</span></p>
               <p><span className="text-muted-foreground">E-posta:</span> {detail.email}</p>
               <p><span className="text-muted-foreground">Kayıt tarihi:</span> {detail.created_date ? new Date(detail.created_date).toLocaleDateString('tr-TR') : '-'}</p>
               <p><span className="text-muted-foreground">Üyelik durumu:</span> {detail.membership_status || '-'}</p>
