@@ -11,13 +11,13 @@ export default function ProfileFrame({ frame, children, size = 'md', className =
 
   return (
     <div className={`relative shrink-0 overflow-visible ${dims} ${className}`} title={frameInfo.label}>
-      <div className="absolute inset-[16%] overflow-hidden rounded-full bg-background">
+      <div className="absolute inset-0 overflow-hidden rounded-full bg-background">
         {avatar
-          ? <Image src={avatar} className="h-full w-full" fittingType="fill" />
+          ? <Image src={avatar} className="h-full w-full object-cover object-center" fittingType="fill" focalPointX={0.5} focalPointY={0.5} />
           : <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-white">{(name || '?')[0]}</span>}
       </div>
       <div className="pointer-events-none absolute -inset-[34%] z-[2] h-[168%] w-[168%] overflow-visible">
-        <TransparentFrameImage src={frameInfo.image_url} animated />
+        <TransparentFrameImage src={frameInfo.image_url} animated={false} />
       </div>
     </div>
   );

@@ -17,26 +17,25 @@ export default function XpAvatar({ avatar, name, frame, userId, size = 'sm', cla
   const resolved = frame || auto[userId]?.frame;
   const style = frameStyle(resolved);
   const dims = SIZES[size] || SIZES.sm;
-  const animated = resolved?.animated !== false;
   const hasFrameAsset = Boolean(resolved?.image_url);
   const needsAlphaCleanup = resolved?.image_url?.includes('generated_image');
 
   return (
     <div className={`relative shrink-0 ${dims.box} ${className}`} title={resolved?.name || ''}>
       {/* Katman 1 — profil fotoğrafı */}
-      <div className="absolute inset-[9%] rounded-full overflow-hidden bg-background">
+      <div className="absolute inset-0 rounded-full overflow-hidden bg-background">
         {avatar
-          ? <Image src={avatar} className="w-full h-full object-cover" fittingType="fill" />
+          ? <Image src={avatar} className="w-full h-full object-cover object-center" fittingType="fill" focalPointX={0.5} focalPointY={0.5} />
           : <span className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-white ${dims.text}`}>{(name || '?')[0]}</span>}
       </div>
       {/* Katman 2 — merkezi ve dışı gerçek alpha şeffaf SVG frame */}
       <div className="pointer-events-none absolute -inset-[26%] w-[152%] h-[152%] z-[2] overflow-visible">
         {needsAlphaCleanup ? (
-          <TransparentFrameImage src={resolved.image_url} animated={animated} />
+          <TransparentFrameImage src={resolved.image_url} animated={false} />
         ) : hasFrameAsset ? (
-          <Image src={resolved.image_url} alt="" aria-hidden="true" fittingType="fit" className={`w-full h-full overflow-visible ${animated ? 'xp-frame-asset' : ''}`} />
+          <Image src={resolved.image_url} alt="" aria-hidden="true" fittingType="fit" className="w-full h-full overflow-visible" />
         ) : (
-          <XpFrameArtwork type={resolved?.style} colors={style.colors} glow={style.glow} animated={animated} />
+          <XpFrameArtwork type={resolved?.style} colors={style.colors} glow={style.glow} animated={false} />
         )}
       </div>
     </div>
