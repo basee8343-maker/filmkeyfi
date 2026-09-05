@@ -8,6 +8,8 @@ import RoleFrameManager from '@/components/admin/RoleFrameManager';
 import RoleLabelEditor from '@/components/admin/RoleLabelEditor';
 import RoomLevelManager from '@/components/admin/RoomLevelManager';
 import useRoomLevels from '@/hooks/useRoomLevels';
+import XpManager from '@/components/admin/XpManager';
+import useXp from '@/hooks/useXp';
 
 const btn = 'px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap';
 
@@ -24,6 +26,7 @@ export default function AdminUsers({ pendingOnly = false }) {
   const [onlineUsers, setOnlineUsers] = useState(new Set());
 
   const { levels: roomLevels } = useRoomLevels(users.map((user) => user.id));
+  const xpMap = useXp(users.map((user) => user.id));
 
   const filtered = users.filter((u) => {
     if (idQuery.trim() && u.member_id !== idQuery.trim()) return false;
@@ -171,7 +174,7 @@ export default function AdminUsers({ pendingOnly = false }) {
                 {paidUserIds.has(u.id) && <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 font-semibold">ÖDENDİ</span>}
                 {onlineUsers.has(u.id) ? <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400">Online</span> : <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">Offline</span>}
                 {u.is_banned && <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 font-semibold" title={u.ban_reason}>🚫 ENGELLİ</span>}
-                {!pendingOnly && <><RoomLevelManager user={u} level={roomLevels[u.id]} onUpdated={load} /><RoleFrameManager user={u} onUpdated={load} /></>}
+                {!pendingOnly && <><RoomLevelManager user={u} level={roomLevels[u.id]} onUpdated={load} /><XpManager user={u} stats={xpMap[u.id]} /><RoleFrameManager user={u} onUpdated={load} /></>}
                 <div className="flex flex-wrap gap-1.5">
                 {!pendingOnly && <button onClick={() => setDetail(u)} className={`${btn} bg-secondary hover:bg-secondary/70`}>GÖRÜNTÜLE</button>}
                 {!isActive && paidUserIds.has(u.id) && <button onClick={() => approve(u)} className={`${btn} bg-green-500/20 text-green-400 hover:bg-green-500/30`}>AKTİF ET</button>}

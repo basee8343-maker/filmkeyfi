@@ -1,6 +1,7 @@
 import { History, UsersRound, Crown } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import RoomLevelBadge from '@/components/levels/RoomLevelBadge';
+import XpAvatar from '@/components/xp/XpAvatar';
 
 const ago = (value) => {
   if (!value) return 'yakın zamanda katıldı';
@@ -13,7 +14,7 @@ const ago = (value) => {
 
 function Person({ person, profile, level, ownerId, status, onSelect }) {
   const avatar = person.avatar || profile?.avatar;
-  return <button onClick={() => onSelect?.(person.user_id)} className="flex w-full min-w-0 items-center gap-2 rounded-lg px-1 py-1.5 text-left hover:bg-white/5"><span className="relative shrink-0">{avatar ? <Image src={avatar} className="h-8 w-8 rounded-full" fittingType="fill" /> : <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-white">{(person.name || '?')[0]}</span>}<span className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border border-black ${status === 'online' ? 'bg-green-400' : 'bg-red-500'}`} /></span><span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-white">{person.name}{person.user_id === ownerId && <Crown className="ml-1 inline h-3 w-3 text-amber-400" />}</span><span className="block truncate text-[10px] text-[#888]">{status === 'recent' ? ago(person.joined_at || person.left_at) : status === 'online' ? 'çevrim içi' : 'çevrim dışı'}</span></span><RoomLevelBadge level={level} textOnly /></button>;
+  return <button onClick={() => onSelect?.(person.user_id)} className="flex w-full min-w-0 items-center gap-2 rounded-lg px-1 py-1.5 text-left hover:bg-white/5"><span className="relative shrink-0"><XpAvatar avatar={avatar} name={person.name} userId={person.user_id} size="xs" /><span className={`absolute bottom-0 right-0 h-2 w-2 rounded-full border border-black ${status === 'online' ? 'bg-green-400' : 'bg-red-500'}`} /></span><span className="min-w-0 flex-1"><span className="block truncate text-xs font-semibold text-white">{person.name}{person.user_id === ownerId && <Crown className="ml-1 inline h-3 w-3 text-amber-400" />}</span><span className="block truncate text-[10px] text-[#888]">{status === 'recent' ? ago(person.joined_at || person.left_at) : status === 'online' ? 'çevrim içi' : 'çevrim dışı'}</span></span><RoomLevelBadge level={level} textOnly /></button>;
 }
 
 export default function ParticipantHistoryPanel({ participants, recentParticipants, profiles, presenceMap, roomLevels, ownerId, onSelect }) {

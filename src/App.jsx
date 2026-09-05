@@ -12,6 +12,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import AppLayout from '@/components/layout/AppLayout';
 import { ThemeProvider } from '@/lib/ThemeContext';
 import RoomLevelProvider from '@/components/levels/RoomLevelProvider';
+import XpProvider from '@/components/xp/XpProvider';
 import { Navigate } from 'react-router-dom';
 
 const Home = lazy(() => import('@/pages/Home'));
@@ -55,6 +56,7 @@ const AdminSecurity = lazy(() => import('@/pages/admin/AdminSecurity'));
 const AdminPromoVideo = lazy(() => import('@/pages/admin/AdminPromoVideo'));
 const AdminSessions = lazy(() => import('@/pages/admin/AdminSessions'));
 const AdminUpdates = lazy(() => import('@/pages/admin/AdminUpdates'));
+const AdminXp = lazy(() => import('@/pages/admin/AdminXp'));
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -131,6 +133,7 @@ const AuthenticatedApp = () => {
           <Route path="tanitim-videosu" element={<AdminPromoVideo />} />
           <Route path="oturumlar" element={<AdminSessions />} />
           <Route path="guncellemeler" element={<AdminUpdates />} />
+          <Route path="xp" element={<AdminXp />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
@@ -146,6 +149,7 @@ function App() {
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <RoomLevelProvider>
+        <XpProvider>
         <ThemeProvider>
           <Router>
             <ScrollToTop />
@@ -153,6 +157,7 @@ function App() {
           </Router>
           <Toaster />
         </ThemeProvider>
+        </XpProvider>
         </RoomLevelProvider>
       </QueryClientProvider>
     </AuthProvider>

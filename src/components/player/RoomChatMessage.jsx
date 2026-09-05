@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Crown, Shield, Trash2 } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import ProfileFrame from '@/components/ProfileFrame';
+import XpAvatar from '@/components/xp/XpAvatar';
 import RoleBadge from '@/components/RoleBadge';
 import RoleNameEffect from '@/components/role/RoleNameEffect';
 import RoleMessageEffect from '@/components/role/RoleMessageEffect';
@@ -16,7 +17,7 @@ function RoomChatMessage({ message, profile, level, ownerId, roomModerators, cur
   const emojiMotion = ['😂','👏','😢','👍'].includes(trimmed) ? 'anim-emoji-bounce' : ['❤️','🎉','😍','🍿'].includes(trimmed) ? 'anim-emoji-pulse' : 'anim-emoji-shake';
   return <article className="group flex w-full min-w-0 shrink-0 items-start gap-2">
     <button type="button" onClick={() => onOpenProfile?.(message.user_id)} className="mt-1 shrink-0" aria-label={`${message.user_name} profilini aç`}>
-      {profile?.profile_frame ? <ProfileFrame frame={profile.profile_frame} size="sm" avatar={avatar} name={message.user_name} /> : avatar ? <Image src={avatar} alt={message.user_name} className="h-7 w-7 rounded-full" fittingType="fill" /> : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{(message.user_name || '?')[0]}</span>}
+      {profile?.profile_frame ? <ProfileFrame frame={profile.profile_frame} size="sm" avatar={avatar} name={message.user_name} /> : <XpAvatar avatar={avatar} name={message.user_name} userId={message.user_id} size="xs" />}
     </button>
     <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
       <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5">

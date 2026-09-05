@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sanitizeText, rateLimit, safeErrorResponse, logSecurity } from '../../shared/security.ts';
 import { findProfanity } from '../../shared/profanity.ts';
 import { advanceRoomLevel } from '../../shared/roomLevels.ts';
+import { awardMessageXp } from '../../shared/xp.ts';
 
 export default async function(req) {
   try {
@@ -57,10 +58,12 @@ export default async function(req) {
       }).catch(() => {});
       return Response.json({ error: 'Mesajınız uygunsuz içerik tespit edildiği için engellendi.', filtered: true }, { status: 400 });
     }
-    await base44.asServiceRole.entities.RoomMessage.create({
+    const created = await base44.asServiceRole.entities.RoomMessage.create({
       room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
       text: clean, type: 'user'
     });
+    // Arka planda XP kazanımı — kullanıcı arayüzünde mesaj sayısı gösterilmez.
+    try { await awardMessageXp(base44, user.id, name, created.id); } catch {}
     // Tek kalıcı seviye yalnızca özel odalarda ilerler; tüm oda türlerinde aynı değer görünür.
     if (room.is_personal) {
       try {
