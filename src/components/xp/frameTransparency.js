@@ -1,5 +1,6 @@
 const cache = new Map();
 const resolvedCache = new Map();
+const metricsCache = new Map();
 const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 const rgbAt = (data, pixel) => [data[pixel * 4], data[pixel * 4 + 1], data[pixel * 4 + 2]];
 
@@ -7,14 +8,44 @@ function palette(data, width, height, accepts) {
   const counts = new Map();
   for (let y = 0; y < height; y += 2) for (let x = 0; x < width; x += 2) {
     if (!accepts(x, y)) continue;
-    const key = rgbAt(data, y * width + x).map((v) => Math.round(v / 16) * 16).join(',');
+    const pixel = y * width + x;
+    if (data[pixel * 4 + 3] < 200) continue;
+    const key = rgbAt(data, pixel).map((value) => Math.round(value / 16) * 16).join(',');
     counts.set(key, (counts.get(key) || 0) + 1);
   }
-  return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 24).map(([key]) => key.split(',').map(Number));
+  return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 12).map(([key]) => key.split(',').map(Number));
 }
 
-const frameCacheKey = (src, crop) => `${src}|${crop ? `${crop.col},${crop.row},${crop.columns},${crop.rows}` : 'full'}`;
+function findOpening(data, width, height) {
+  const unit = Math.min(width, height);
+  let best = { x: width / 2, y: height * .48, radius: unit * .25 };
+  const step = Math.max(4, Math.round(unit / 42));
+  const rayCount = 40;
+  for (let cy = height * .34; cy <= height * .61; cy += step) {
+    for (let cx = width * .36; cx <= width * .64; cx += step) {
+      if (data[(Math.round(cy) * width + Math.round(cx)) * 4 + 3] > 48) continue;
+      const rays = [];
+      for (let ray = 0; ray < rayCount; ray++) {
+        const angle = (ray / rayCount) * Math.PI * 2;
+        let radius = 2;
+        for (; radius < unit * .44; radius += 3) {
+          const x = Math.round(cx + Math.cos(angle) * radius);
+          const y = Math.round(cy + Math.sin(angle) * radius);
+          if (x < 0 || x >= width || y < 0 || y >= height || data[(y * width + x) * 4 + 3] > 56) break;
+        }
+        rays.push(radius);
+      }
+      rays.sort((a, b) => a - b);
+      const radius = rays[Math.floor(rayCount * .22)];
+      if (radius > best.radius) best = { x: cx, y: cy, radius };
+    }
+  }
+  return best;
+}
+
+const frameCacheKey = (src, crop) => `v3|${src}|${crop ? `${crop.col},${crop.row},${crop.columns},${crop.rows}` : 'full'}`;
 export const getTransparentFrame = (src, crop) => resolvedCache.get(frameCacheKey(src, crop)) || '';
+export const getFrameMetrics = (src, crop) => metricsCache.get(frameCacheKey(src, crop)) || null;
 
 export function makeTransparentFrame(src, crop) {
   const cacheKey = frameCacheKey(src, crop);
@@ -33,28 +64,29 @@ export function makeTransparentFrame(src, crop) {
       const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const { data, width, height } = pixels;
       const unit = Math.min(width, height);
-      const guessX = width / 2, guessY = height * (crop?.centerY || .5);
-      const edge = palette(data, width, height, (x, y) => x < width * .08 || x > width * .92 || y < height * .08 || y > height * .92);
-      const center = palette(data, width, height, (x, y) => Math.hypot(x - guessX, y - guessY) < unit * .28);
-      const edgeBackground = edge.slice(0, 8), centerBackground = center.slice(0, 6);
-      let sumX = 0, sumY = 0, centerCount = 0;
-      for (let y = 0; y < height; y += 2) for (let x = 0; x < width; x += 2) {
-        if (Math.hypot(x - guessX, y - guessY) > unit * .34) continue;
-        const rgb = rgbAt(data, y * width + x);
-        if (centerBackground.some((color) => distance(rgb, color) < 84)) { sumX += x; sumY += y; centerCount++; }
+      let transparentSamples = 0, totalSamples = 0;
+      for (let y = 0; y < height; y += 4) for (let x = 0; x < width; x += 4) {
+        totalSamples++;
+        if (data[(y * width + x) * 4 + 3] < 200) transparentSamples++;
       }
-      const cx = centerCount ? sumX / centerCount : guessX;
-      const cy = centerCount ? sumY / centerCount : guessY;
-      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
-        const pixel = y * width + x, rgb = rgbAt(data, pixel), radius = Math.hypot(x - cx, y - cy) / unit;
-        const innerRadius = crop?.innerRadius || .185;
-        const centerDistance = Math.min(...centerBackground.map((color) => distance(rgb, color)));
-        const edgeDistance = Math.min(...edgeBackground.map((color) => distance(rgb, color)));
-        if (edgeDistance < 82 || radius < innerRadius || (radius < innerRadius + .12 && centerDistance < 92)) data[pixel * 4 + 3] = 0;
-        else if (edgeDistance < 112) data[pixel * 4 + 3] = Math.min(data[pixel * 4 + 3], Math.round((edgeDistance - 82) * 8.5));
+
+      if (transparentSamples / totalSamples < .01) {
+        const guessX = width / 2, guessY = height * (crop?.centerY || .5);
+        const edgeBackground = palette(data, width, height, (x, y) => x < width * .06 || x > width * .94 || y < height * .06 || y > height * .94).slice(0, 5);
+        const centerBackground = palette(data, width, height, (x, y) => Math.hypot(x - guessX, y - guessY) < unit * .2).slice(0, 4);
+        for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+          const pixel = y * width + x;
+          const rgb = rgbAt(data, pixel);
+          const radius = Math.hypot(x - guessX, y - guessY) / unit;
+          const edgeDistance = edgeBackground.length ? Math.min(...edgeBackground.map((color) => distance(rgb, color))) : 999;
+          const centerDistance = centerBackground.length ? Math.min(...centerBackground.map((color) => distance(rgb, color))) : 999;
+          const nearEdge = x < width * .13 || x > width * .87 || y < height * .13 || y > height * .87;
+          if ((nearEdge && edgeDistance < 42) || radius < (crop?.innerRadius || .18) || (radius < .31 && centerDistance < 48)) data[pixel * 4 + 3] = 0;
+        }
+        ctx.putImageData(pixels, 0, 0);
       }
-      ctx.putImageData(pixels, 0, 0);
-      if (crop) return resolve(canvas.toDataURL('image/png'));
+
+      const opening = findOpening(data, width, height);
       let minX = width, minY = height, maxX = -1, maxY = -1;
       for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
         if (data[(y * width + x) * 4 + 3] > 24) {
@@ -62,13 +94,17 @@ export function makeTransparentFrame(src, crop) {
           maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
         }
       }
-      if (maxX < minX || maxY < minY) return resolve(canvas.toDataURL('image/png'));
-      const halfExtent = Math.max(cx - minX, maxX - cx, cy - minY, maxY - cy);
+      if (maxX < minX || maxY < minY || crop) {
+        metricsCache.set(cacheKey, { avatarScale: 1, openingX: .5, openingY: .5 });
+        return resolve(canvas.toDataURL('image/png'));
+      }
+      const halfExtent = Math.max(opening.x - minX, maxX - opening.x, opening.y - minY, maxY - opening.y);
       const outputSize = Math.ceil(halfExtent * 2 * 1.04);
       const output = document.createElement('canvas');
       output.width = outputSize; output.height = outputSize;
-      const outputCtx = output.getContext('2d');
-      outputCtx.drawImage(canvas, outputSize / 2 - cx, outputSize / 2 - cy);
+      output.getContext('2d').drawImage(canvas, outputSize / 2 - opening.x, outputSize / 2 - opening.y);
+      const avatarScale = Math.min(1.34, Math.max(.68, (opening.radius * 2 / outputSize) * 1.68 * .94));
+      metricsCache.set(cacheKey, { avatarScale, openingX: .5, openingY: .5 });
       resolve(output.toDataURL('image/png'));
     };
     image.onerror = reject;

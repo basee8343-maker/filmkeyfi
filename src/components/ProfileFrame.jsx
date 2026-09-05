@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { FRAME_DEFINITIONS } from '@/lib/roles';
 import { Image } from '@/components/ui/image';
 import TransparentFrameImage from '@/components/xp/TransparentFrameImage';
@@ -9,6 +10,7 @@ const SIZES = {
 };
 
 export default function ProfileFrame({ frame, children, size = 'md', className = '', avatar, name }) {
+  const [frameMetrics, setFrameMetrics] = useState(null);
   const frameInfo = FRAME_DEFINITIONS[frame];
   const dims = SIZES[size] || SIZES.md;
   if (!frame || !frameInfo?.image_url) return children || (
@@ -21,18 +23,18 @@ export default function ProfileFrame({ frame, children, size = 'md', className =
   const artworkClass = frameInfo.sprite
     ? 'h-[240%] w-[168%] -translate-x-1/2 -translate-y-[42%]'
     : 'h-[168%] w-[168%] -translate-x-1/2 -translate-y-1/2';
-  const avatarInset = frameInfo.avatarScale === 'large' ? '-inset-[11%]' : 'inset-0';
+  const avatarScale = frameMetrics?.avatarScale || 1;
 
   return (
     <div className={`relative shrink-0 overflow-visible ${frameInfo.sprite ? dims.sprite : dims.avatar} ${className}`} title={frameInfo.label}>
       <div className={`relative mx-auto ${dims.avatar}`}>
-        <div className={`absolute overflow-hidden rounded-full bg-background ${avatarInset}`}>
+        <div className="absolute inset-0 overflow-hidden rounded-full bg-background" style={{ transform: `scale(${avatarScale})` }}>
           {avatar
             ? <Image src={avatar} className="h-full w-full object-cover object-center" fittingType="fill" focalPointX={0.5} focalPointY={0.5} />
             : <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-white">{(name || '?')[0]}</span>}
         </div>
         <div className={`pointer-events-none absolute left-1/2 top-1/2 z-[2] max-w-none overflow-visible ${artworkClass}`}>
-          <TransparentFrameImage src={frameInfo.image_url} crop={frameInfo.sprite} animated={false} />
+          <TransparentFrameImage src={frameInfo.image_url} crop={frameInfo.sprite} animated={false} onMetrics={setFrameMetrics} />
         </div>
       </div>
     </div>
