@@ -16,6 +16,86 @@ const CARD_FIELDS = [
   { key: 'merchant_salt', label: 'Merchant Salt (Gizli)' },
 ];
 
+// Sanal POS sağlayıcı presetleri — her birine özel API alanları
+const POS_PROVIDERS = [
+  {
+    key: 'shopier',
+    label: 'Shopier',
+    fields: [
+      { key: 'merchant_id', label: 'Mağaza ID' },
+      { key: 'merchant_key', label: 'API Key (Gizli)', secret: true },
+      { key: 'merchant_salt', label: 'API Salt (Gizli)', secret: true },
+    ],
+  },
+  {
+    key: 'iyzico',
+    label: 'İyzico',
+    fields: [
+      { key: 'api_key', label: 'API Key (Gizli)', secret: true },
+      { key: 'secret_key', label: 'Secret Key (Gizli)', secret: true },
+      { key: 'sub_merchant_key', label: 'Sub Merchant Key (Gizli)', secret: true },
+      { key: 'base_url', label: 'API Base URL', placeholder: 'https://sandbox-api.iyzipay.com' },
+    ],
+  },
+  {
+    key: 'paytr',
+    label: 'PayTR',
+    fields: [
+      { key: 'merchant_id', label: 'Mağaza No' },
+      { key: 'merchant_key', label: 'Mağaza Anahtarı (Gizli)', secret: true },
+      { key: 'merchant_salt', label: 'Mağaza Salt (Gizli)', secret: true },
+    ],
+  },
+  {
+    key: 'parampos',
+    label: 'Param POS',
+    fields: [
+      { key: 'client_code', label: 'Client Code' },
+      { key: 'client_username', label: 'Kullanıcı Adı' },
+      { key: 'client_password', label: 'Şifre (Gizli)', secret: true },
+      { key: 'guid', label: 'GUID (Gizli)', secret: true },
+    ],
+  },
+  {
+    key: 'est',
+    label: 'Est POS (İş Bankası / Akbank / Ziraat)',
+    fields: [
+      { key: 'merchant_id', label: 'Mağaza ID' },
+      { key: 'store_key', label: 'Store Key (Gizli)', secret: true },
+      { key: 'terminal_id', label: 'Terminal ID' },
+    ],
+  },
+  {
+    key: 'nestpay',
+    label: 'NestPay (Denizbank / Halkbank / Vakıfbank)',
+    fields: [
+      { key: 'merchant_id', label: 'Mağaza ID' },
+      { key: 'store_key', label: 'Store Key (Gizli)', secret: true },
+      { key: 'terminal_id', label: 'Terminal ID' },
+    ],
+  },
+  {
+    key: 'stripe',
+    label: 'Stripe',
+    fields: [
+      { key: 'publishable_key', label: 'Publishable Key' },
+      { key: 'secret_key', label: 'Secret Key (Gizli)', secret: true },
+      { key: 'webhook_secret', label: 'Webhook Secret (Gizli)', secret: true },
+    ],
+  },
+  {
+    key: 'other_pos',
+    label: 'Diğer Sanal POS',
+    fields: [
+      { key: 'api_url', label: 'API URL' },
+      { key: 'api_key', label: 'API Key (Gizli)', secret: true },
+      { key: 'api_secret', label: 'API Secret (Gizli)', secret: true },
+    ],
+  },
+];
+
+const POS_PROVIDER_MAP = Object.fromEntries(POS_PROVIDERS.map((p) => [p.key, p]));
+
 export default function PaymentMethodsManager() {
   const [methods, setMethods] = useState([]);
   const [configs, setConfigs] = useState([]);
@@ -115,16 +195,24 @@ export default function PaymentMethodsManager() {
                 </div>
               )}
 
-              {m.type === 'card' && (
-                <div className="space-y-1 text-xs">
-                  {m.merchant_id && <p className="text-gray-300"><b className="text-gray-400">Merchant ID:</b> {m.merchant_id}</p>}
-                  <div className="flex items-center gap-1.5">
-                    <Key className="w-3 h-3 text-amber-400" />
-                    <span className={cfg?.merchant_key ? 'text-green-400' : 'text-red-400'}>{cfg?.merchant_key ? 'API anahtarları tanımlı' : 'API anahtarları eksik'}</span>
+              {m.type === 'card' && (() => {
+                const preset = POS_PROVIDER_MAP[m.provider_key];
+                const cfgFields = cfg?.config || {};
+                const hasMerchantKey = !!(cfg?.merchant_key || cfg?.merchant_salt);
+                const hasCfgFields = Object.keys(cfgFields).length > 0;
+                const configured = hasMerchantKey || hasCfgFields;
+                return (
+                  <div className="space-y-1 text-xs">
+                    {preset && <p className="text-gray-300"><b className="text-gray-400">Sağlayıcı:</b> {preset.label}</p>}
+                    {m.merchant_id && <p className="text-gray-300"><b className="text-gray-400">Merchant ID:</b> {m.merchant_id}</p>}
+                    <div className="flex items-center gap-1.5">
+                      <Key className="w-3 h-3 text-amber-400" />
+                      <span className={configured ? 'text-green-400' : 'text-red-400'}>{configured ? 'API anahtarları tanımlı' : 'API anahtarları eksik'}</span>
+                    </div>
+                    <p className="text-gray-400"><b className="text-gray-500">Mod:</b> {m.test_mode ? 'Test' : 'Canlı'}</p>
                   </div>
-                  <p className="text-gray-400"><b className="text-gray-500">Mod:</b> {m.test_mode ? 'Test' : 'Canlı'}</p>
-                </div>
-              )}
+                );
+              })()}
 
               <div className="flex items-center justify-between mt-3 pt-3 border-t border-white/5">
                 <span className={`text-xs font-semibold ${m.enabled ? 'text-green-400' : 'text-red-400'}`}>{m.enabled ? 'Aktif' : 'Pasif'}</span>
@@ -162,14 +250,37 @@ function MethodForm({ method, onSave, onClose }) {
   const [iban, setIban] = useState(method.iban || '');
   const [branch, setBranch] = useState(method.branch || '');
   const [paymentInstructions, setPaymentInstructions] = useState(method.payment_instructions || '');
-  const [merchantId, setMerchantId] = useState(method.merchant_id || '');
   const [testMode, setTestMode] = useState(method.test_mode || false);
-  const [merchantKey, setMerchantKey] = useState(method._config?.merchant_key || '');
-  const [merchantSalt, setMerchantSalt] = useState(method._config?.merchant_salt || '');
-  const [showKey, setShowKey] = useState(false);
-  const [showSalt, setShowSalt] = useState(false);
+  const [providerConfig, setProviderConfig] = useState(() => {
+    const cfg = {};
+    // Mevcut merchant_key/merchant_salt'ı geri yükle (Shopier uyumluluğu)
+    if (method._config?.merchant_key) cfg.merchant_key = method._config.merchant_key;
+    if (method._config?.merchant_salt) cfg.merchant_salt = method._config.merchant_salt;
+    if (method.merchant_id) cfg.merchant_id = method.merchant_id;
+    // config objesindeki diğer alanları da yükle
+    if (method._config?.config && typeof method._config.config === 'object') {
+      Object.assign(cfg, method._config.config);
+    }
+    return cfg;
+  });
+  const [showSecrets, setShowSecrets] = useState({});
   const [requiredFields, setRequiredFields] = useState(method.required_fields || []);
   const [saving, setSaving] = useState(false);
+
+  const selectedProvider = type === 'card' ? POS_PROVIDER_MAP[providerKey] : null;
+
+  const setCfgField = (key, value) => setProviderConfig((prev) => ({ ...prev, [key]: value }));
+  const toggleSecret = (key) => setShowSecrets((prev) => ({ ...prev, [key]: !prev[key] }));
+
+  const onProviderSelect = (key) => {
+    setProviderKey(key);
+    if (!displayName) {
+      const preset = POS_PROVIDER_MAP[key];
+      if (preset) setDisplayName(preset.label);
+    }
+    // Sağlayıcı değişince eski config alanlarını temizle
+    setProviderConfig({});
+  };
 
   const toggleRequired = (key) => {
     setRequiredFields((prev) => prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]);
@@ -180,8 +291,19 @@ function MethodForm({ method, onSave, onClose }) {
     setSaving(true);
     const data = { provider_key: providerKey, display_name: displayName, type, enabled, sort_order: Number(sortOrder), description, required_fields: requiredFields };
     if (type === 'bank_transfer') Object.assign(data, { bank_name: bankName, account_holder: accountHolder, iban, branch, payment_instructions: paymentInstructions });
-    if (type === 'card') Object.assign(data, { merchant_id: merchantId, test_mode: testMode });
-    const secretData = type === 'card' && (merchantKey || merchantSalt) ? { provider_key: providerKey, merchant_key: merchantKey, merchant_salt: merchantSalt, test_mode: testMode } : null;
+    if (type === 'card') {
+      Object.assign(data, { test_mode: testMode });
+      if (providerConfig.merchant_id) data.merchant_id = providerConfig.merchant_id;
+    }
+    // Sağlayıcıya özel tüm alanları config objesinde topla
+    const secretData = type === 'card' && selectedProvider ? (() => {
+      const cfg = { ...providerConfig };
+      // Shopier uyumluluğu: merchant_key/merchant_salt üst seviyede de kalsın
+      const top = { provider_key: providerKey, test_mode: testMode, config: cfg };
+      if (cfg.merchant_key) top.merchant_key = cfg.merchant_key;
+      if (cfg.merchant_salt) top.merchant_salt = cfg.merchant_salt;
+      return top;
+    })() : null;
     await onSave(data, secretData);
     setSaving(false);
   };
@@ -198,7 +320,17 @@ function MethodForm({ method, onSave, onClose }) {
         </div>
         <form onSubmit={submit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className={labelClass}>Sağlayıcı Anahtarı</label><input value={providerKey} onChange={(e) => setProviderKey(e.target.value)} placeholder="bank_transfer, paytr" required className={inputClass} /></div>
+            <div>
+              <label className={labelClass}>Sağlayıcı Anahtarı</label>
+              {type === 'card' ? (
+                <select value={providerKey} onChange={(e) => onProviderSelect(e.target.value)} required className={inputClass}>
+                  <option value="">Seçin...</option>
+                  {POS_PROVIDERS.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
+                </select>
+              ) : (
+                <input value={providerKey} onChange={(e) => setProviderKey(e.target.value)} placeholder="bank_transfer, paytr" required className={inputClass} />
+              )}
+            </div>
             <div><label className={labelClass}>Görünen Ad</label><input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Banka Transferi" required className={inputClass} /></div>
           </div>
           <div><label className={labelClass}>Tür</label>
@@ -231,30 +363,34 @@ function MethodForm({ method, onSave, onClose }) {
             </div>
           )}
 
-          {type === 'card' && (
+          {type === 'card' && selectedProvider && (
             <div className="space-y-3 bg-purple-500/5 rounded-lg p-3 border border-purple-500/10">
-              <p className="text-xs font-semibold text-purple-400">Sanal POS / API Anahtarları</p>
-              <div><label className={labelClass}>Merchant ID</label><input value={merchantId} onChange={(e) => setMerchantId(e.target.value)} className={inputClass} /></div>
-              <div>
-                <label className={labelClass}>Merchant Key (Gizli)</label>
-                <div className="relative">
-                  <input type={showKey ? 'text' : 'password'} value={merchantKey} onChange={(e) => setMerchantKey(e.target.value)} placeholder="••••••••" className={`${inputClass} pr-10`} />
-                  <button type="button" onClick={() => setShowKey(!showKey)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">{showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
+              <p className="text-xs font-semibold text-purple-400">{selectedProvider.label} — API Anahtarları</p>
+              {selectedProvider.fields.map((f) => (
+                <div key={f.key}>
+                  <label className={labelClass}>{f.label}</label>
+                  <div className="relative">
+                    <input
+                      type={f.secret ? (showSecrets[f.key] ? 'text' : 'password') : 'text'}
+                      value={providerConfig[f.key] || ''}
+                      onChange={(e) => setCfgField(f.key, e.target.value)}
+                      placeholder={f.placeholder || (f.secret ? '••••••••' : '')}
+                      className={`${inputClass} ${f.secret ? 'pr-10' : ''}`}
+                    />
+                    {f.secret && (
+                      <button type="button" onClick={() => toggleSecret(f.key)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">
+                        {showSecrets[f.key] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div>
-                <label className={labelClass}>Merchant Salt (Gizli)</label>
-                <div className="relative">
-                  <input type={showSalt ? 'text' : 'password'} value={merchantSalt} onChange={(e) => setMerchantSalt(e.target.value)} placeholder="••••••••" className={`${inputClass} pr-10`} />
-                  <button type="button" onClick={() => setShowSalt(!showSalt)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400">{showSalt ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
-                </div>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={testMode} onChange={(e) => setTestMode(e.target.checked)} className="w-4 h-4 accent-purple-500 shrink-0" /><span className="text-sm text-gray-300">Test Modu</span></label>
-              <p className="text-xs text-amber-400 bg-amber-500/10 rounded-lg p-2">⚠️ Merchant Key ve Salt güvenli şekilde backend'de saklanır, kullanıcıya gösterilmez.</p>
+              ))}
+              <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={testMode} onChange={(e) => setTestMode(e.target.checked)} className="w-4 h-4 accent-purple-500 shrink-0" /><span className="text-sm text-gray-300">Test Modu (Sandbox)</span></label>
+              <p className="text-xs text-amber-400 bg-amber-500/10 rounded-lg p-2">⚠️ Gizli API anahtarları backend'de güvenli şekilde saklanır, kullanıcıya gösterilmez.</p>
               <div>
                 <p className="text-xs text-gray-400 mb-2">Zorunlu alanları seçin (eksikse yöntem kullanıcıya gösterilmez):</p>
                 <div className="flex flex-wrap gap-2">
-                  {CARD_FIELDS.map((f) => (
+                  {selectedProvider.fields.map((f) => (
                     <button type="button" key={f.key} onClick={() => toggleRequired(f.key)} className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${requiredFields.includes(f.key) ? 'bg-green-500/20 border-green-500/40 text-green-400' : 'bg-white/5 border-white/10 text-gray-400'}`}>
                       {requiredFields.includes(f.key) ? '✓ ' : ''}{f.label}
                     </button>
@@ -262,6 +398,9 @@ function MethodForm({ method, onSave, onClose }) {
                 </div>
               </div>
             </div>
+          )}
+          {type === 'card' && !selectedProvider && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-400">⚠️ Lütfen bir sanal POS sağlayıcı seçin.</div>
           )}
 
           <div><label className={labelClass}>Sıralama</label><input type="number" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)} className={inputClass} /></div>
