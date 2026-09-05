@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { FRAME_DEFINITIONS } from '@/lib/roles';
 import ProfileFrame from '@/components/ProfileFrame';
 import { useToast } from '@/components/ui/use-toast';
+import { Minus, Plus } from 'lucide-react';
 
 export default function ProfileFrames({ user, onUpdated }) {
   const { toast } = useToast();
@@ -10,6 +11,7 @@ export default function ProfileFrames({ user, onUpdated }) {
   const [zoom, setZoom] = useState(user.profile_frame_scale || 100);
   const [zoomSaving, setZoomSaving] = useState(false);
   const keys = [...new Set([...(user.unlocked_profile_frames || []), user.profile_frame].filter((key) => FRAME_DEFINITIONS[key]))];
+  const adjust = (delta) => setZoom((z) => Math.min(180, Math.max(80, z + delta)));
   const choose = async (key) => {
     setSaving(key || 'remove');
     try {
@@ -35,7 +37,7 @@ export default function ProfileFrames({ user, onUpdated }) {
     </div>}
     {user.profile_frame && <div className="mt-4 flex flex-wrap items-center gap-4 rounded-xl border border-border bg-secondary/30 p-3">
       <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-visible"><ProfileFrame frame={user.profile_frame} avatar={user.avatar} name={user.username || user.full_name} size="sm" frameScale={zoom} /></div>
-      <div className="min-w-[180px] flex-1"><div className="mb-1 flex justify-between text-xs font-semibold"><span>Profil yakınlaştırma</span><span>%{zoom}</span></div><input type="range" min="80" max="180" step="1" value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="w-full accent-primary" /><p className="mt-1 text-[10px] text-muted-foreground">Çerçeve sabit kalır, sadece fotoğrafın yakınlaşır.</p><button disabled={zoomSaving} onClick={saveZoom} className="mt-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50">{zoomSaving ? 'Kaydediliyor...' : 'Yakınlaştırmayı Kaydet'}</button></div>
+      <div className="min-w-[180px] flex-1"><div className="mb-1 flex justify-between text-xs font-semibold"><span>Profil yakınlaştırma</span><span>%{zoom}</span></div><div className="flex items-center gap-2"><button onClick={() => adjust(-5)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary border border-border"><Minus className="w-3.5 h-3.5" /></button><input type="range" min="80" max="180" step="1" value={zoom} onChange={(e) => setZoom(Number(e.target.value))} className="flex-1 accent-primary" /><button onClick={() => adjust(5)} className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary border border-border"><Plus className="w-3.5 h-3.5" /></button></div><p className="mt-1 text-[10px] text-muted-foreground">Çerçeve sabit kalır, sadece fotoğrafın yakınlaşır.</p><button disabled={zoomSaving} onClick={saveZoom} className="mt-2 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50">{zoomSaving ? 'Kaydediliyor...' : 'Yakınlaştırmayı Kaydet'}</button></div>
     </div>}
   </section>;
 }

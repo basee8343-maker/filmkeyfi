@@ -10,6 +10,7 @@ export default function RoleFrameManager({ user, onUpdated }) {
   const [showBan, setShowBan] = useState(false);
   const [banReason, setBanReason] = useState('');
   const [banDesc, setBanDesc] = useState('');
+  const [removing, setRemoving] = useState(false);
 
   const currentRole = getRoleInfo(user);
   const isBanned = user.is_banned;
@@ -28,13 +29,23 @@ export default function RoleFrameManager({ user, onUpdated }) {
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
-  const assignFrame = async (frame) => {
+  const assignFrame = async (frame, duration_days = 0, entrance_enabled = false) => {
     try {
-      await base44.functions.invoke('role-management', { action: 'assign_frame', user_id: user.id, frame });
+      await base44.functions.invoke('role-management', { action: 'assign_frame', user_id: user.id, frame, duration_days, entrance_enabled });
       toast({ title: frame ? 'Çerçeve atandı' : 'Çerçeve kaldırıldı', description: FRAME_DEFINITIONS[frame]?.label || '' });
       onUpdated();
       return true;
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); return false; }
+  };
+
+  const removeFrame = async () => {
+    setRemoving(true);
+    try {
+      await base44.functions.invoke('role-management', { action: 'remove_frame', user_id: user.id });
+      toast({ title: 'Çerçeve geri alındı', description: user.profile_frame ? FRAME_DEFINITIONS[user.profile_frame]?.label || '' : '' });
+      onUpdated();
+    } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+    finally { setRemoving(false); }
   };
 
   const setNameEffect = async (effect) => {
@@ -87,6 +98,7 @@ export default function RoleFrameManager({ user, onUpdated }) {
         ))}
       </select>
       <FramePicker user={user} onSelect={assignFrame} />
+      {user.profile_frame && <button disabled={removing} onClick={removeFrame} className={`${btn} bg-red-500/20 text-red-400 hover:bg-red-500/30 disabled:opacity-50`}>ÇERÇEVEYİ GERİ AL</button>}
       <select value={user.name_effect || ''} onChange={(e) => setNameEffect(e.target.value)} className={selectClass} title="İsim animasyonu">
         <option value="">İsim Anim: Varsayılan</option>
         {NAME_EFFECT_OPTIONS.filter((o) => o.key).map((o) => (

@@ -91,25 +91,52 @@ export default async function(req) {
     }
 
     if (action === 'assign_frame') {
-      const { frame } = body;
+      const { frame, duration_days, entrance_enabled } = body;
       if (!FRAME_DEFINITIONS[frame] && frame !== '') return Response.json({ error: 'geçersiz çerçeve' }, { status: 400 });
       const unlocked = frame ? [...new Set([...(target.unlocked_profile_frames || []), frame])] : (target.unlocked_profile_frames || []);
-      await base44.asServiceRole.entities.User.update(user_id, { profile_frame: frame, unlocked_profile_frames: unlocked });
+      const updates: any = { profile_frame: frame, unlocked_profile_frames: unlocked, profile_frame_expires_at: null };
+      let dd = 0;
+      if (frame) {
+        dd = Number(duration_days) || 0;
+        if (dd > 0 && dd <= 365) {
+          updates.profile_frame_expires_at = new Date(Date.now() + dd * 86400000).toISOString();
+        }
+        if (entrance_enabled !== undefined) {
+          updates.profile_frame_entrance_enabled = !!entrance_enabled;
+        }
+      }
+      await base44.asServiceRole.entities.User.update(user_id, updates);
+      const expiryNote = dd > 0 ? ` (${dd} gün)` : ' (sürekli)';
       await base44.asServiceRole.entities.AdminLog.create({
         admin_id: me.id, admin_name: adminName,
         action: 'Çerçeve atandı', target: target.email || user_id,
-        details: frame || 'çerçeve kaldırıldı'
+        details: (frame || 'çerçeve kaldırıldı') + expiryNote
       }).catch(() => {});
       if (frame) {
         const fi = FRAME_DEFINITIONS[frame];
         if (fi) {
           await upsertNotification(base44, {
             user_id, title: `🖼️ Yeni Çerçeveniz: ${fi.label}`,
-            body: 'Profil çerçeveniz güncellendi.',
+            body: dd > 0 ? `Profil çerçeveniz ${dd} gün süreyle aktif.` : 'Profil çerçeveniz güncellendi.',
             type: 'role'
           });
         }
       }
+      return Response.json({ ok: true });
+    }
+
+    if (action === 'remove_frame') {
+      const currentFrame = target.profile_frame || '';
+      const unlocked = (target.unlocked_profile_frames || []).filter((f) => f !== currentFrame);
+      await base44.asServiceRole.entities.User.update(user_id, {
+        profile_frame: '', profile_frame_expires_at: null,
+        profile_frame_entrance_enabled: false, unlocked_profile_frames: unlocked
+      });
+      await base44.asServiceRole.entities.AdminLog.create({
+        admin_id: me.id, admin_name: adminName,
+        action: 'Çerçeve geri alındı', target: target.email || user_id,
+        details: currentFrame || 'yok'
+      }).catch(() => {});
       return Response.json({ ok: true });
     }
 

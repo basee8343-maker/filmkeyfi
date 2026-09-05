@@ -6,10 +6,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 export default function FramePicker({ user, onSelect }) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [duration, setDuration] = useState(0);
+  const [entrance, setEntrance] = useState(user.profile_frame_entrance_enabled || false);
   const selected = FRAME_DEFINITIONS[user.profile_frame];
   const choose = async (key) => {
     setSaving(true);
-    try { if (await onSelect(key)) setOpen(false); }
+    try { if (await onSelect(key, duration, entrance)) setOpen(false); }
     finally { setSaving(false); }
   };
   return <>
@@ -17,6 +19,19 @@ export default function FramePicker({ user, onSelect }) {
     <Dialog open={open} onOpenChange={(value) => !saving && setOpen(value)}>
       <DialogContent className="max-h-[85dvh] w-[calc(100%_-_2rem)] max-w-3xl overflow-y-auto rounded-xl">
         <DialogHeader><DialogTitle>Profil Çerçeveleri</DialogTitle><DialogDescription>{user.username || user.full_name || 'Kullanıcı'} için çerçeve seçin.</DialogDescription></DialogHeader>
+        <div className="flex flex-wrap gap-3 rounded-lg border border-border bg-secondary/30 p-3">
+          <label className="text-xs font-semibold flex flex-col gap-1">Çerçeve Süresi
+            <select value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="rounded-lg border border-border bg-card px-2 py-1.5 text-sm">
+              <option value={0}>Sürekli</option>
+              <option value={30}>1 Aylık (30 gün)</option>
+              <option value={7}>1 Haftalık (7 gün)</option>
+              <option value={90}>3 Aylık (90 gün)</option>
+            </select>
+          </label>
+          <label className="text-xs font-semibold flex flex-col gap-1">Üstten Giriş
+            <button type="button" onClick={() => setEntrance(!entrance)} className={`rounded-lg px-3 py-1.5 text-sm font-bold ${entrance ? 'bg-green-500/20 text-green-400' : 'bg-secondary text-muted-foreground'}`}>{entrance ? 'AÇIK' : 'KAPALI'}</button>
+          </label>
+        </div>
         <button disabled={saving} onClick={() => choose('')} className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold disabled:opacity-50">Çerçeveyi Kaldır</button>
         <h3 className="font-bold">Kullanıcı Çerçeveleri</h3>
         <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 lg:grid-cols-3">
