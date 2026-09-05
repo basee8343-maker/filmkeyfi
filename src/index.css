@@ -136,13 +136,30 @@
     border-color: hsl(var(--level-gold) / 0.65);
   }
   .room-level-message { box-shadow: inset 0 0 0 1px hsl(var(--level-tone) / 0.3); }
+  @keyframes level-heat { 0%,100% { filter: brightness(1); box-shadow: 0 0 var(--level-glow) hsl(var(--level-tone) / .2); } 50% { filter: brightness(1.45); box-shadow: 0 0 calc(var(--level-glow) + 8px) hsl(var(--level-tone) / .65); } }
+  @keyframes level-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+  @keyframes level-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  @keyframes level-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-1px); } 75% { transform: translateX(1px); } }
+  @keyframes level-tilt { 0%,100% { transform: rotate(-1deg); } 50% { transform: rotate(1deg); } }
+  @keyframes level-flare { 0% { opacity: 0; transform: translateX(-130%) skewX(-20deg); } 45%,55% { opacity: .9; } 100% { opacity: 0; transform: translateX(130%) skewX(-20deg); } }
+  .room-level-badge { animation: level-heat 2.2s ease-in-out infinite; }
+  .room-level-badge[data-level-motion="0"] { animation: level-heat 1.3s ease-in-out infinite, level-pulse 1.3s ease-in-out infinite; }
+  .room-level-badge[data-level-motion="1"] { animation: level-heat 1.7s ease-in-out infinite, level-float 1.7s ease-in-out infinite; }
+  .room-level-badge[data-level-motion="2"] { animation: level-heat 1.1s ease-in-out infinite, level-shake .8s ease-in-out infinite; }
+  .room-level-badge[data-level-motion="3"] { animation: level-heat 2s ease-in-out infinite, level-tilt 1.4s ease-in-out infinite; }
+  .room-level-badge[data-level-motion="4"] { animation: level-heat .95s ease-in-out infinite, level-pulse 1.9s ease-in-out infinite; }
+  .room-level-badge[data-level-motion="5"] { animation: level-heat 1.5s ease-in-out infinite, level-float 1s ease-in-out infinite; }
+  .room-level-badge[data-level-motion="6"] { animation: level-heat 1.8s ease-in-out infinite, level-tilt .9s ease-in-out infinite; }
+  .room-level-badge[data-level-motion="7"] { animation: level-heat .8s ease-in-out infinite, level-pulse .8s ease-in-out infinite; }
+  .room-level-badge::after { content: ''; position: absolute; inset: -30% -50%; pointer-events: none; background: linear-gradient(90deg, transparent, hsl(var(--level-tone) / .75), transparent); animation: level-flare 2.4s ease-in-out infinite; }
+  .room-level-badge > * { position: relative; z-index: 1; }
   .room-level-profile:is([data-level-tier="gold"], [data-level-tier="red"], [data-level-tier="premium"], [data-level-tier="max"])::before {
     content: ''; position: absolute; inset: 0; pointer-events: none;
     background: linear-gradient(110deg, transparent, hsl(var(--level-tone) / 0.22), transparent);
     animation: room-level-shimmer 4s ease-in-out infinite;
   }
   @keyframes room-level-shimmer { 0%, 100% { opacity: 0.15; } 50% { opacity: 0.8; } }
-  @media (prefers-reduced-motion: reduce) { .room-level-profile::before { animation: none !important; } }
+  @media (prefers-reduced-motion: reduce) { .room-level-profile::before, .room-level-badge, .room-level-badge::after { animation: none !important; } }
   .glass {
     background: rgba(15, 15, 20, 0.6);
     backdrop-filter: blur(16px);

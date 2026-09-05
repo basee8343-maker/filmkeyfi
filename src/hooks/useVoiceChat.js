@@ -136,17 +136,19 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       }
     })();
 
-    // Tarayıcılar kullanıcı etkileşimi olmadan ses otomatik oynatmayı engeller.
-    // İlk dokunma/tıkta sesi otomatik başlat — hoparlör butonuna basmaya gerek kalmasın.
+    // Mikrofon izninden bağımsız olarak ilk geçerli kullanıcı etkileşiminde uzak sesleri aç.
     const startAudioOnInteraction = () => {
-      roomRef.current?.startAudio().then(() => {
-        audioElementsRef.current.forEach((element) => element.play().catch(() => {}));
+      const activeRoom = roomRef.current;
+      if (!activeRoom) return;
+      activeRoom.startAudio().then(() => Promise.all([...audioElementsRef.current].map((element) => element.play().catch(() => {})))).then(() => {
         setAudioBlocked(false);
         setError('');
+        document.removeEventListener('pointerdown', startAudioOnInteraction);
+        document.removeEventListener('keydown', startAudioOnInteraction);
       }).catch(() => {});
     };
-    document.addEventListener('touchstart', startAudioOnInteraction, { once: true });
-    document.addEventListener('click', startAudioOnInteraction, { once: true });
+    document.addEventListener('pointerdown', startAudioOnInteraction);
+    document.addEventListener('keydown', startAudioOnInteraction);
 
     return () => {
       cancelled = true;
@@ -156,8 +158,8 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       room.localParticipant.setMicrophoneEnabled(false).catch(() => {});
       room.disconnect();
       if (roomRef.current === room) roomRef.current = null;
-      document.removeEventListener('touchstart', startAudioOnInteraction);
-      document.removeEventListener('click', startAudioOnInteraction);
+      document.removeEventListener('pointerdown', startAudioOnInteraction);
+      document.removeEventListener('keydown', startAudioOnInteraction);
       setActive(false);
       setSpeakingIds([]);
       setParticipantMicStates({});
@@ -166,15 +168,10 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     };
   }, [attachRemoteAudio, refreshState, roomId, user?.id, everVoiceEnabled]);
 
-  // Mikrofonu voiceEnabled değiştiğinde aç/kapat — Room'u yeniden bağlamadan, izin istemeden
+  // Odaya giriş yalnızca dinleme bağlantısını açar; mikrofon izni sadece kullanıcı düğmeye bastığında istenir.
   useEffect(() => {
-    if (!roomRef.current || connectionState !== 'connected' || !everVoiceEnabled) return;
-    roomRef.current.localParticipant.setMicrophoneEnabled(voiceEnabled, { echoCancellation: true, noiseSuppression: true, autoGainControl: true })
-      .then(refreshState)
-      .catch((micError) => {
-        console.error('[LiveKit] Mic toggle failed', micError);
-        if (micError?.name !== 'NotAllowedError') setError(friendlyMicError(micError));
-      });
+    if (!roomRef.current || connectionState !== 'connected' || !everVoiceEnabled || voiceEnabled) return;
+    roomRef.current.localParticipant.setMicrophoneEnabled(false).then(refreshState).catch(() => {});
   }, [voiceEnabled, connectionState, everVoiceEnabled, refreshState]);
 
   useEffect(() => {
@@ -198,9 +195,10 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       refreshState();
     } catch (micError) {
       console.error('[LiveKit] Microphone toggle failed', micError);
+      await retryAudio();
       setError(friendlyMicError(micError));
     } finally { setRequesting(false); }
-  }, [active, connectionState, refreshState, requesting]);
+  }, [active, connectionState, refreshState, requesting, retryAudio]);
 
   const toggleDeafen = useCallback(() => {
     const next = !deafenedRef.current;

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Image } from '@/components/ui/image';
+import { FRAME_DEFINITIONS, getRoleInfo } from '@/lib/roles';
 
-export default function RoomNotifications({ participants, currentUserId }) {
+export default function RoomNotifications({ participants, currentUserId, profiles = {} }) {
   const [notifications, setNotifications] = useState([]);
   const prevRef = useRef([]);
   const initializedRef = useRef(false);
@@ -34,13 +35,16 @@ export default function RoomNotifications({ participants, currentUserId }) {
 
   return (
     <div className="absolute top-[max(env(safe-area-inset-top),0.75rem)] left-1/2 -translate-x-1/2 z-[55] flex flex-col items-center gap-1.5 pointer-events-none w-max max-w-[85%]">
-      {notifications.map((n) => (
-        <div key={n.id} className={`flex items-center gap-2 bg-card/95 border border-border rounded-full pl-1.5 pr-3 py-1 shadow-lg backdrop-blur-md ${n.exiting ? (n.type === 'join' ? 'room-notif-out-left' : 'room-notif-out-right') : 'room-notif-in'}`}>
-          {n.participant.avatar ? <Image src={n.participant.avatar} className="w-6 h-6 rounded-full shrink-0" fittingType="fill" /> : <span className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center text-[11px] font-bold shrink-0">{(n.participant.name || '?')[0]}</span>}
-          <span className="text-xs font-medium whitespace-nowrap">{n.participant.name} {n.type === 'join' ? 'odaya katıldı' : 'odadan ayrıldı'}</span>
-          <span className={`w-2 h-2 rounded-full shrink-0 ${n.type === 'join' ? 'bg-green-500' : 'bg-red-500'}`} />
-        </div>
-      ))}
+      {notifications.map((n) => {
+        const profile = profiles[n.participant.user_id] || {};
+        const color = FRAME_DEFINITIONS[profile.profile_frame]?.colors?.[0] || getRoleInfo(profile).color || (n.type === 'join' ? '#22c55e' : '#ef4444');
+        const avatar = n.participant.avatar || profile.avatar;
+        const name = profile.title || n.participant.name || 'Kullanıcı';
+        return <div key={n.id} className={`flex min-w-52 items-center gap-2 rounded-2xl border bg-black/90 px-3 py-2 shadow-2xl backdrop-blur-xl ${n.exiting ? (n.type === 'join' ? 'room-notif-out-left' : 'room-notif-out-right') : 'room-notif-in'}`} style={{ borderColor: `${color}99`, color, boxShadow: `0 0 18px ${color}55, inset 0 0 14px ${color}18` }}>
+          {avatar ? <Image src={avatar} className="h-9 w-9 shrink-0 rounded-full border" style={{ borderColor: color }} fittingType="fill" /> : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border bg-black text-sm font-black" style={{ borderColor: color }}>{name[0]}</span>}
+          <span className="min-w-0 flex-1 text-center leading-tight"><strong className="block truncate text-base font-black tracking-wide">{name}</strong><small className="block text-[10px] font-semibold opacity-80">{n.type === 'join' ? 'odaya katıldı' : 'odadan ayrıldı'}</small></span>
+        </div>;
+      })}
     </div>
   );
 }

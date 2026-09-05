@@ -19,9 +19,9 @@ export default function VolumeSlider({ volume, muted, onChange }) {
         type="range"
         min={0}
         max={1}
-        step={0.01}
+        step={0.05}
         value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
+        onInput={(e) => onChange(parseFloat(e.currentTarget.value))}
         className="w-20 sm:w-28 cursor-pointer accent-primary"
         style={{ touchAction: 'none' }}
         aria-label="Ses seviyesi"

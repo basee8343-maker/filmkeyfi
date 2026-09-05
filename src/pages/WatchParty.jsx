@@ -606,7 +606,7 @@ export default function WatchParty() {
     <div className="fixed inset-x-0 top-0 h-screen h-[100dvh] bg-black flex flex-col overflow-hidden" style={{ touchAction: 'pan-y', overscrollBehavior: 'none' }}>
       {/* Tam ekran video + alt kontrol alanı */}
       <div ref={playerWrapRef} className="flex-1 flex min-h-0 relative" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <RoomNotifications participants={room?.participants || []} currentUserId={user?.id} />
+        <RoomNotifications participants={room?.participants || []} currentUserId={user?.id} profiles={viewerProfiles} />
         <RoleEntrance roomId={id} joinTrigger={joinCount} />
         {joinRequests.length > 0 && (
           <div className="absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] space-y-1.5 max-w-[80%]">
@@ -706,7 +706,7 @@ export default function WatchParty() {
       />
 
       <MoviePickerSheet open={moviePickerOpen} onClose={() => setMoviePickerOpen(false)} onSelect={changeMovie} currentMovieId={movie?.id} />
-      {profileTarget && <UserProfile userId={profileTarget} roomIdOverride={id} onBack={closeUserProfile} embedded />}
+      {profileTarget && <UserProfile userId={profileTarget} roomIdOverride={id} onBack={closeUserProfile} onMessage={(userId) => { closeUserProfile(); openDirectMessage(userId); }} embedded />}
     </div>
   );
 }

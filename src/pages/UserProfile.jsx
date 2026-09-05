@@ -13,7 +13,7 @@ import ProfileRoomActions from '@/components/profile/ProfileRoomActions';
 import useRoomLevels from '@/hooks/useRoomLevels';
 import RoomLevelBadge from '@/components/levels/RoomLevelBadge';
 
-export default function UserProfile({ userId, roomIdOverride, onBack, embedded = false }) {
+export default function UserProfile({ userId, roomIdOverride, onBack, onMessage, embedded = false }) {
   const { id: routeUserId } = useParams();
   const id = userId || routeUserId;
   const roomId = roomIdOverride || new URLSearchParams(window.location.search).get('room');
@@ -63,6 +63,7 @@ export default function UserProfile({ userId, roomIdOverride, onBack, embedded =
   };
 
   const startChat = async () => {
+    if (onMessage) { onMessage(id); return; }
     try {
       const res = await base44.functions.invoke('dm-service', { action: 'start', target_id: id });
       if (res?.data?.conversation) {

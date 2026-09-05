@@ -130,6 +130,14 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     return () => { document.removeEventListener('fullscreenchange', h); v?.removeEventListener('webkitendfullscreen', endFs); };
   }, []);
 
+  const changeVolume = useCallback((value) => {
+    const next = Math.min(1, Math.max(0, Number(value) || 0));
+    const v = videoRef.current;
+    if (v) { v.volume = next; v.muted = next === 0; }
+    setVolume(next);
+    setMuted(next === 0);
+  }, []);
+
   const moveBar = (e) => {
     if (!isOwner) return;
     const v = videoRef.current; if (!v || !v.duration) return;
@@ -177,7 +185,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
             <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full -ml-1.5" style={{ left: `${duration ? (current / duration) * 100 : 0}%` }} />
           </div>}
           {isOwner && <span>{fmt(duration)}</span>}
-          <VolumeSlider volume={volume} muted={muted} onChange={(val) => { const v = videoRef.current; if (!v) return; if (val === 0) { v.muted = true; setMuted(true); } else { v.volume = val; v.muted = false; setVolume(val); setMuted(false); } }} />
+          <VolumeSlider volume={volume} muted={muted} onChange={changeVolume} />
         </div>
         <div className="flex items-center gap-1 sm:gap-2 text-white">
           {isOwner && <button onClick={togglePlay} className="p-2 hover:bg-white/10 rounded-lg">{playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}</button>}
