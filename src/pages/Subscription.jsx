@@ -35,6 +35,16 @@ export default function Subscription() {
           const m = methodsRes.value;
           const arr = m?.data ?? m ?? [];
           setMethods(Array.isArray(arr) ? arr : []);
+        } else {
+          // Yedek: fonksiyon başarısız olursa doğrudan entity'den yükle
+          try {
+            const all = await base44.entities.PaymentMethod.filter({ enabled: true }, 'sort_order', 50);
+            const valid = (all || []).filter((m) => {
+              if (m.type === 'bank_transfer' && (!m.iban || !m.bank_name || !m.account_holder)) return false;
+              return true;
+            });
+            setMethods(valid);
+          } catch {}
         }
         if (subRes.status === 'fulfilled') {
           const subData = subRes.value.data || subRes.value;

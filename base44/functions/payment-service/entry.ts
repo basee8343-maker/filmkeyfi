@@ -11,7 +11,8 @@ export default async function(req) {
     // === ÖDEME YÖNTEMLERİNİ GETİR (herkes erişebilir, gizli bilgi yok) ===
     if (action === 'get_available_methods') {
       const methods = await base44.asServiceRole.entities.PaymentMethod.filter({ enabled: true }, 'sort_order', 50);
-      const configs = await base44.asServiceRole.entities.PaymentProviderConfig.list('-updated_date', 50);
+      let configs = [];
+      try { configs = await base44.asServiceRole.entities.PaymentProviderConfig.list('-updated_date', 50); } catch {}
       const result = methods.map((m) => {
         const required = m.required_fields || [];
         // Zorunlu alanlar seçilmişse, hepsi dolu olmalı; yoksa varsayılan kontrol
