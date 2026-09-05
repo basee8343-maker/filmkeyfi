@@ -20,45 +20,54 @@ export default function Subscription() {
   const [ibanCopied, setIbanCopied] = useState(false);
   const [refCopied, setRefCopied] = useState(false);
 
+  const loadMethods = async () => {
+    try {
+      const all = await base44.entities.PaymentMethod.filter({ enabled: true }, 'sort_order', 50);
+      const valid = (all || []).filter((m) => {
+        if (m.type === 'bank_transfer' && (!m.iban || !m.bank_name || !m.account_holder)) return false;
+        return true;
+      });
+      setMethods(valid);
+      return valid;
+    } catch { return []; }
+  };
+
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const [planItems, methodsRes, subRes] = await Promise.allSettled([
+        const [planItems, subRes] = await Promise.allSettled([
           base44.entities.SubscriptionPlan.filter({ active: true }, 'sort_order', 50),
-          base44.functions.invoke('payment-service', { action: 'get_available_methods' }),
           base44.functions.invoke('payment-service', { action: 'get_my_subscription' }),
         ]);
         if (cancelled) return;
         if (planItems.status === 'fulfilled') setPlans(planItems.value || []);
-        if (methodsRes.status === 'fulfilled') {
-          const m = methodsRes.value;
-          const arr = m?.data ?? m ?? [];
-          setMethods(Array.isArray(arr) ? arr : []);
-        } else {
-          // Yedek: fonksiyon başarısız olursa doğrudan entity'den yükle
-          try {
-            const all = await base44.entities.PaymentMethod.filter({ enabled: true }, 'sort_order', 50);
-            const valid = (all || []).filter((m) => {
-              if (m.type === 'bank_transfer' && (!m.iban || !m.bank_name || !m.account_holder)) return false;
-              return true;
-            });
-            setMethods(valid);
-          } catch {}
-        }
+        const validMethods = await loadMethods();
         if (subRes.status === 'fulfilled') {
           const subData = subRes.value.data || subRes.value;
           setMySub(subData.subscription);
           setPendingPayments(subData.pendingPayments || []);
         }
+        // Ödeme yöntemi yoksa ve bekleyen ödeme de yoksa onay paneline yönlendir
+        if (validMethods.length === 0 && user?.id) {
+          const subs = await base44.entities.Subscription.filter({ user_id: user.id, status: 'active' }, '-created_date', 1).catch(() => []);
+          if (!subs || subs.length === 0) {
+            const pending = await base44.entities.Payment.filter({ user_id: user.id, status: 'pending' }, '-created_date', 1).catch(() => []);
+            if (!pending || pending.length === 0) {
+              navigate('/onay-bekleniyor', { replace: true });
+              return;
+            }
+          }
+        }
       } catch {}
       if (!cancelled) setLoading(false);
     };
     load();
-    // Güvenlik: 5 saniye sonra loading'i kaldır
+    // Gerçek zamanlı: ödeme yöntemi değişince anında güncelle
+    const unsub = base44.entities.PaymentMethod.subscribe(() => loadMethods());
     const t = setTimeout(() => setLoading(false), 5000);
-    return () => { cancelled = true; clearTimeout(t); };
-  }, []);
+    return () => { cancelled = true; unsub?.(); clearTimeout(t); };
+  }, [user?.id]);
 
   // Referans numarası yoksa oluştur
   useEffect(() => {
