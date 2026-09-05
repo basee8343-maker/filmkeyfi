@@ -48,30 +48,64 @@ export default function AppLayout() {
     }
   }, [loading, user, pathname, isRoom, publicSettings?.payment_available, publicSettings?.payment_required]);
 
-  // Abonelik onayı tespiti — realtime geçiş + 3sn polling yedeği
-  // Admin onayladığında kullanıcıyı ana sayfaya (filmler) yönlendir
-  const wasPendingRef = useRef(false);
+  // Tek noktadan anlık durum kontrolü — 3sn'de bir tek me() çağrısıyla:
+  // ban/askıya alma/silme + abonelik onayı + cihaz/session + bakım modu
+  const wasInactiveRef = useRef(false);
   useEffect(() => {
     if (!user) return;
-    const isActive = membershipActive(user);
-    if (isActive) {
-      if (wasPendingRef.current && !pathname.startsWith('/admin') && pathname !== '/') {
-        wasPendingRef.current = false;
-        window.location.href = '/';
-      }
-      return;
-    }
-    wasPendingRef.current = true;
-    const id = setInterval(async () => {
+    let tick = 0;
+    const check = async () => {
       try {
-        const fresh = await base44.auth.me();
-        if (fresh && (fresh.membership_status === 'active' || fresh.role === 'admin' || fresh.role === 'moderator')) {
-          window.location.href = '/';
+        const u = await base44.auth.me();
+        // Ban / askıya alma / silme
+        if (u?.is_banned || u?.role === 'banned' || u?.is_suspended || u?.membership_status === 'suspended') {
+          triggerBanNotice('banned');
+          base44.auth.logout().catch(() => {});
+          window.location.href = '/login?banned=1';
+          return;
         }
-      } catch {}
-    }, 3000);
+        // Abonelik onayı — pending kullanıcı aktif olunca ana sayfaya
+        const isActive = membershipActive(u);
+        if (!isActive) {
+          wasInactiveRef.current = true;
+        } else if (wasInactiveRef.current) {
+          wasInactiveRef.current = false;
+          window.location.href = '/';
+          return;
+        }
+        // Cihaz/session kontrolü (adminler hariç — çoklu cihaz girişine izin)
+        if (u?.role !== 'admin') {
+          const stored = localStorage.getItem('filmkeyfi_session_' + u.id);
+          if (stored && u?.active_session_id && stored !== u.active_session_id) {
+            triggerBanNotice('kicked');
+            base44.auth.logout().catch(() => {});
+            localStorage.removeItem('filmkeyfi_session_' + u.id);
+            window.location.href = '/login?kicked=1';
+            return;
+          }
+        }
+        // Bakım modu — 6sn'de bir kontrol (her 2. tick)
+        tick++;
+        if (tick % 2 === 0 && u?.role !== 'admin') {
+          const ps = await base44.functions.invoke('public-settings', {}).catch(() => null);
+          const s = ps?.data || ps;
+          if (s?.maintenance_mode) {
+            window.location.href = '/bakim';
+            return;
+          }
+        }
+      } catch (e) {
+        if (e?.status === 401 || e?.status === 403 || e?.status === 404) {
+          triggerBanNotice('removed');
+          base44.auth.logout().catch(() => {});
+          window.location.href = '/login?removed=1';
+        }
+      }
+    };
+    check();
+    const id = setInterval(check, 3000);
     return () => clearInterval(id);
-  }, [user, pathname]);
+  }, [user?.id]);
 
   // Ban kontrolü — engellenmiş kullanıcıları giriş ekranına at
   useEffect(() => {
@@ -126,39 +160,6 @@ export default function AppLayout() {
     };
     beat();
     const id = setInterval(beat, 45000);
-    return () => clearInterval(id);
-  }, [user?.id]);
-
-  // Hızlı yedek kontrol — 3sn'de bir ban/askıya alma/silme durumu (realtime kaçırsa diye)
-  useEffect(() => {
-    if (!user) return;
-    const check = async () => {
-      try {
-        const u = await base44.auth.me();
-        if (u?.is_banned || u?.role === 'banned' || u?.is_suspended || u?.membership_status === 'suspended') {
-          triggerBanNotice('banned');
-          base44.auth.logout().catch(() => {});
-          window.location.href = '/login?banned=1';
-          return;
-        }
-        // Admin hesapları için cihaz/session kontrolü atlanır — çoklu cihaz girişine izin verilir
-        if (u?.role === 'admin') return;
-        const stored = localStorage.getItem('filmkeyfi_session_' + u.id);
-        if (stored && u?.active_session_id && stored !== u.active_session_id) {
-          triggerBanNotice('kicked');
-          base44.auth.logout().catch(() => {});
-          localStorage.removeItem('filmkeyfi_session_' + u.id);
-          window.location.href = '/login?kicked=1';
-        }
-      } catch (e) {
-        if (e?.status === 401 || e?.status === 403 || e?.status === 404) {
-          triggerBanNotice('removed');
-          base44.auth.logout().catch(() => {});
-          window.location.href = '/login?removed=1';
-        }
-      }
-    };
-    const id = setInterval(check, 3000);
     return () => clearInterval(id);
   }, [user?.id]);
 

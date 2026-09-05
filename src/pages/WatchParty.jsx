@@ -217,6 +217,10 @@ export default function WatchParty() {
           setSyncState({ is_playing: ev.data.is_playing, current_time: ev.data.current_time, last_sync: ev.data.last_sync });
         }
       }
+      if (ev.type === 'delete' && (ev.data?.id === id || ev.id === id)) {
+        toast({ title: 'Oda silindi', variant: 'destructive' });
+        navigate('/');
+      }
     });
     return unsub;
   }, [id]);
