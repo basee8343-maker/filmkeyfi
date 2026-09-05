@@ -20,10 +20,6 @@ export default function PendingApproval() {
       }
       const ps = await base44.functions.invoke('public-settings', {});
       const settings = ps.data || ps;
-      if (settings.payment_required === false && settings.payment_available !== false) {
-        window.location.href = "/";
-        return;
-      }
       setPaymentAvailable(settings.payment_available !== false);
     } catch {}
   };

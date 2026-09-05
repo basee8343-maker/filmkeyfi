@@ -21,25 +21,32 @@ export default function Subscription() {
   const [refCopied, setRefCopied] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const load = async () => {
-      const [planItems, methodsRes, subRes] = await Promise.allSettled([
-        base44.entities.SubscriptionPlan.filter({ active: true }, 'sort_order', 50),
-        base44.functions.invoke('payment-service', { action: 'get_available_methods' }),
-        base44.functions.invoke('payment-service', { action: 'get_my_subscription' }),
-      ]);
-      if (planItems.status === 'fulfilled') setPlans(planItems.value || []);
-      if (methodsRes.status === 'fulfilled') {
-        const m = methodsRes.value;
-        setMethods(m.data || m || []);
-      }
-      if (subRes.status === 'fulfilled') {
-        const subData = subRes.value.data || subRes.value;
-        setMySub(subData.subscription);
-        setPendingPayments(subData.pendingPayments || []);
-      }
-      setLoading(false);
+      try {
+        const [planItems, methodsRes, subRes] = await Promise.allSettled([
+          base44.entities.SubscriptionPlan.filter({ active: true }, 'sort_order', 50),
+          base44.functions.invoke('payment-service', { action: 'get_available_methods' }),
+          base44.functions.invoke('payment-service', { action: 'get_my_subscription' }),
+        ]);
+        if (cancelled) return;
+        if (planItems.status === 'fulfilled') setPlans(planItems.value || []);
+        if (methodsRes.status === 'fulfilled') {
+          const m = methodsRes.value;
+          setMethods(m.data || m || []);
+        }
+        if (subRes.status === 'fulfilled') {
+          const subData = subRes.value.data || subRes.value;
+          setMySub(subData.subscription);
+          setPendingPayments(subData.pendingPayments || []);
+        }
+      } catch {}
+      if (!cancelled) setLoading(false);
     };
     load();
+    // Güvenlik: 5 saniye sonra loading'i kaldır
+    const t = setTimeout(() => setLoading(false), 5000);
+    return () => { cancelled = true; clearTimeout(t); };
   }, []);
 
   // Referans numarası yoksa oluştur
@@ -88,7 +95,7 @@ export default function Subscription() {
     setPaying(false);
   };
 
-  if (ul || loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]"><div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   const isActive = membershipActive(user);
   const remainingDays = mySub?.end_date ? Math.ceil((new Date(mySub.end_date) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
