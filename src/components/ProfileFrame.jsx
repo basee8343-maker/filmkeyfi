@@ -5,6 +5,7 @@ import TransparentFrameImage from '@/components/xp/TransparentFrameImage';
 import FramedPortrait from '@/components/profile/FramedPortrait';
 
 const SIZES = {
+  xs: { avatar: 'h-7 w-7 text-[10px]', sprite: 'h-12 w-12' },
   sm: { avatar: 'h-10 w-10 text-xs', sprite: 'h-20 w-[4.25rem]' },
   md: { avatar: 'h-12 w-12 text-sm', sprite: 'h-24 w-20' },
   lg: { avatar: 'h-32 w-32 text-3xl', sprite: 'h-60 w-56' },

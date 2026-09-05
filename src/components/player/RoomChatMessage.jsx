@@ -17,7 +17,7 @@ function RoomChatMessage({ message, profile, level, ownerId, roomModerators, cur
   const emojiMotion = ['😂','👏','😢','👍'].includes(trimmed) ? 'anim-emoji-bounce' : ['❤️','🎉','😍','🍿'].includes(trimmed) ? 'anim-emoji-pulse' : 'anim-emoji-shake';
   return <article className="group flex w-full min-w-0 shrink-0 items-start gap-2">
     <button type="button" onClick={() => onOpenProfile?.(message.user_id)} className="mt-1 shrink-0" aria-label={`${message.user_name} profilini aç`}>
-      {profile?.profile_frame ? <ProfileFrame frame={profile.profile_frame} size="sm" avatar={avatar} name={message.user_name} /> : <XpAvatar avatar={avatar} name={message.user_name} userId={message.user_id} size="xs" />}
+      {profile?.profile_frame ? <ProfileFrame frame={profile.profile_frame} size="sm" avatar={avatar} name={message.user_name} frameScale={profile.profile_frame_scale} /> : <XpAvatar avatar={avatar} name={message.user_name} userId={message.user_id} size="xs" />}
     </button>
     <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
       <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5">

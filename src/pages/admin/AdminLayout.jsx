@@ -35,7 +35,7 @@ const navGroups = [
     title: 'Sistem',
     items: [
       { to: '/admin/kullanicilar', label: 'Kullanıcılar', icon: Users },
-       { to: '/admin/roller', label: 'Roller', icon: Sparkles },
+      { to: '/admin/roller', label: 'Roller', icon: Sparkles },
 
       { to: '/admin/guvenlik', label: 'Güvenlik', icon: ShieldAlert },
       { to: '/admin/oturumlar', label: 'Oturumlar / Cihazlar', icon: Smartphone },

@@ -91,7 +91,7 @@ export default function UserProfile({ userId, roomIdOverride, onBack, onMessage,
         <div className="bg-card border border-border rounded-2xl p-6 flex flex-col items-center text-center">
           <div className="relative mb-8">
             {profile.profile_frame ? (
-              <ProfileFrame frame={profile.profile_frame} size="lg" avatar={profile.avatar} name={profile.username || profile.full_name}>
+              <ProfileFrame frame={profile.profile_frame} size="lg" avatar={profile.avatar} name={profile.username || profile.full_name} frameScale={profile.profile_frame_scale}>
                 {profile.avatar ? <Image src={profile.avatar} className="w-28 h-28 rounded-full object-cover" fittingType="fill" /> :
                   <div className="w-28 h-28 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-4xl font-bold">{(profile.username || profile.full_name || '?')[0]}</div>}
               </ProfileFrame>

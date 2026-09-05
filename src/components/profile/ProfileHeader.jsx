@@ -20,7 +20,7 @@ export default function ProfileHeader({ user, pkg, expired, editing, avatar, onA
   return <header className="flex flex-col items-center text-center mb-7">
     <div className="relative mb-8">
       {user.profile_frame ? (
-        <ProfileFrame frame={user.profile_frame} size="lg" avatar={avatar || user.avatar} name={name} />
+        <ProfileFrame frame={user.profile_frame} size="lg" avatar={avatar || user.avatar} name={name} frameScale={user.profile_frame_scale} />
       ) : (
         <XpAvatar avatar={avatar || user.avatar} name={name} frame={xpStats?.frame} size="lg" />
       )}

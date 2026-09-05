@@ -1,6 +1,6 @@
 import { Image } from '@/components/ui/image';
 
-const SIZES = { sm: 'h-[4.25rem] w-[4.25rem] text-xs', md: 'h-20 w-20 text-sm', lg: 'h-56 w-56 text-3xl' };
+const SIZES = { xs: 'h-12 w-12 text-[10px]', sm: 'h-[4.25rem] w-[4.25rem] text-xs', md: 'h-20 w-20 text-sm', lg: 'h-56 w-56 text-3xl' };
 
 export default function FramedPortrait({ info, avatar, name, size = 'md', className = '', scale = 100 }) {
   const [x, y, width, height] = info.opening;

@@ -8,7 +8,9 @@ async function applyAutomaticLevelFrame(base44, user, level) {
   const frame = levelFrameFor(level);
   if (!frame) return;
   const unlocked = [...new Set([...(user.unlocked_profile_frames || []), frame])];
-  await base44.asServiceRole.entities.User.update(user.id, { profile_frame: frame, unlocked_profile_frames: unlocked });
+  const updates: any = { unlocked_profile_frames: unlocked };
+  if (!user.profile_frame || user.profile_frame.startsWith('lvl_')) updates.profile_frame = frame;
+  await base44.asServiceRole.entities.User.update(user.id, updates);
 }
 
 // Legacy owner-specific records are not global levels. The newest self-owned record

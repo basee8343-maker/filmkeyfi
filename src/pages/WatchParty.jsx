@@ -680,7 +680,7 @@ export default function WatchParty() {
                 return (
                   <button key={p.user_id} onClick={() => openUserProfile(p.user_id)} className="flex items-center gap-1.5 text-xs py-0.5 w-full text-left hover:bg-secondary/50 rounded px-1">
                     <div className="shrink-0 relative">
-                      <XpAvatar avatar={avatar} name={p.name} userId={p.user_id} size="xs" />
+                      {prof?.profile_frame ? <ProfileFrame frame={prof.profile_frame} avatar={avatar} name={p.name} size="xs" frameScale={prof.profile_frame_scale} /> : <XpAvatar avatar={avatar} name={p.name} userId={p.user_id} size="xs" />}
                       <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-card ${isOnline ? 'bg-green-400' : 'bg-red-400'}`} />
                     </div>
                     <span className="flex-1 truncate min-w-0">{p.name}{p.user_id === room.owner_id && <Crown className="w-3 h-3 text-amber-400 inline ml-0.5 shrink-0" />}</span>
