@@ -84,6 +84,9 @@ export default function WatchParty() {
   const [roomNameEdit, setRoomNameEdit] = useState('');
   const [profileCard, setProfileCard] = useState(null);
   const [presenceMap, setPresenceMap] = useState({});
+  const isOwner = user?.id === room?.owner_id;
+  const isMod = user?.role === 'admin' || user?.role === 'moderator';
+  const canMod = isOwner || isMod || (room?.room_moderators || []).includes(user?.id);
 
   useEffect(() => {
     base44.functions.invoke('room-presence', { action: 'get', room_id: id })
@@ -379,10 +382,6 @@ export default function WatchParty() {
     document.addEventListener('visibilitychange', onVisibilityChange);
     return () => document.removeEventListener('visibilitychange', onVisibilityChange);
   }, [user?.id, id, navigate]);
-
-  const isOwner = user?.id === room?.owner_id;
-  const isMod = user?.role === 'admin' || user?.role === 'moderator';
-  const canMod = isOwner || isMod || (room?.room_moderators || []).includes(user?.id);
 
   const presenceMapRef = useRef({});
   const participantsRef = useRef([]);
