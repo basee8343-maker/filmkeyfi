@@ -10,7 +10,7 @@ export default function ContentRow({ title, movies, to }) {
         {to && <Link to={to} className="text-sm text-gray-400 hover:text-purple-400">Tümü →</Link>}
       </div>
       <div className="flex gap-3 overflow-x-auto no-scrollbar px-4 sm:px-6 pb-2">
-        {movies.map((m) => <MovieCard key={m.id} movie={m} className="w-[150px] sm:w-[180px] shrink-0" />)}
+        {movies.map((m) => <MovieCard key={m.id} movie={m} className="w-[125px] sm:w-[155px] shrink-0" />)}
       </div>
     </section>
   );
