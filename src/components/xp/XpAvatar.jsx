@@ -2,6 +2,7 @@ import { Image } from '@/components/ui/image';
 import { frameStyle } from '@/lib/xp';
 import useXp from '@/hooks/useXp';
 import XpFrameArtwork from '@/components/xp/XpFrameArtwork';
+import TransparentFrameImage from '@/components/xp/TransparentFrameImage';
 
 // Katman 1: profil fotoğrafı — Katman 2: şeffaf dekoratif çerçeve asset'i (avatarın dışına taşar).
 const SIZES = {
@@ -17,7 +18,8 @@ export default function XpAvatar({ avatar, name, frame, userId, size = 'sm', cla
   const style = frameStyle(resolved);
   const dims = SIZES[size] || SIZES.sm;
   const animated = resolved?.animated !== false;
-  const hasTrustedAsset = resolved?.image_url && !resolved.image_url.includes('generated_image');
+  const hasFrameAsset = Boolean(resolved?.image_url);
+  const needsAlphaCleanup = resolved?.image_url?.includes('generated_image');
 
   return (
     <div className={`relative shrink-0 ${dims.box} ${className}`} title={resolved?.name || ''}>
@@ -29,7 +31,9 @@ export default function XpAvatar({ avatar, name, frame, userId, size = 'sm', cla
       </div>
       {/* Katman 2 — merkezi ve dışı gerçek alpha şeffaf SVG frame */}
       <div className="pointer-events-none absolute -inset-[26%] w-[152%] h-[152%] z-[2] overflow-visible">
-        {hasTrustedAsset ? (
+        {needsAlphaCleanup ? (
+          <TransparentFrameImage src={resolved.image_url} animated={animated} />
+        ) : hasFrameAsset ? (
           <Image src={resolved.image_url} alt="" aria-hidden="true" fittingType="fit" className={`w-full h-full overflow-visible ${animated ? 'xp-frame-asset' : ''}`} />
         ) : (
           <XpFrameArtwork type={resolved?.style} colors={style.colors} glow={style.glow} animated={animated} />
