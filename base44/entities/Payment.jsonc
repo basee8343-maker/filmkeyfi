@@ -11,6 +11,9 @@
     "user_email": {
       "type": "string"
     },
+    "payment_reference": {
+      "type": "string"
+    },
     "plan_id": {
       "type": "string"
     },

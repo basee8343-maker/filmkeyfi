@@ -1,6 +1,15 @@
-import { CalendarDays, Mail, Package, Phone, Settings, User, Users } from 'lucide-react';
+import { useState } from 'react';
+import { CalendarDays, Mail, Package, Phone, Settings, User, Users, Hash, Copy, Check } from 'lucide-react';
 
 export default function ProfileInfoCard({ user, pkg, editing, form, setForm, onSave, onEdit, onCancel }) {
+  const [copied, setCopied] = useState(false);
+  const copyRef = () => {
+    if (user?.payment_reference) {
+      navigator.clipboard?.writeText(user.payment_reference);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
   if (editing) return <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
     <Field label="Kullanıcı Adı" value={form.username} onChange={(username) => setForm({ ...form, username })} />
     <Field label="Ad Soyad" value={form.full_name} onChange={(full_name) => setForm({ ...form, full_name })} disabled={user.role === 'moderator'} />
@@ -13,7 +22,22 @@ export default function ProfileInfoCard({ user, pkg, editing, form, setForm, onS
     [CalendarDays, 'Başlangıç', user.membership_start ? new Date(user.membership_start).toLocaleDateString('tr-TR') : '-'],
     [CalendarDays, 'Bitiş', user.role === 'admin' ? 'Süresiz' : user.membership_end ? new Date(user.membership_end).toLocaleDateString('tr-TR') : '-'],
   ];
-  return <section className="rounded-2xl border border-border bg-card px-4 overflow-hidden">{rows.map(([Icon, label, value]) => <div key={label} className="flex items-center gap-3 border-b border-border py-3 last:border-0"><Icon className="w-5 h-5 text-muted-foreground shrink-0" /><span className="text-sm text-muted-foreground">{label}</span><span className="ml-auto max-w-[55%] truncate text-sm font-semibold text-right">{value}</span></div>)}<button onClick={onEdit} className="mb-4 mt-1 flex items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold"><Settings className="w-4 h-4" />Düzenle</button></section>;
+  return <section className="rounded-2xl border border-border bg-card px-4 overflow-hidden">
+    {rows.map(([Icon, label, value]) => <div key={label} className="flex items-center gap-3 border-b border-border py-3 last:border-0"><Icon className="w-5 h-5 text-muted-foreground shrink-0" /><span className="text-sm text-muted-foreground">{label}</span><span className="ml-auto max-w-[55%] truncate text-sm font-semibold text-right">{value}</span></div>)}
+    {user?.payment_reference && (
+      <div className="flex items-center gap-3 border-b border-border py-3">
+        <Hash className="w-5 h-5 text-purple-500 shrink-0" />
+        <span className="text-sm text-muted-foreground">Ödeme Referans No</span>
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-sm font-bold font-mono tracking-wider text-purple-500">{user.payment_reference}</span>
+          <button onClick={copyRef} className="text-purple-500 p-1 rounded hover:bg-purple-500/10 shrink-0">
+            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+    )}
+    <button onClick={onEdit} className="mb-4 mt-1 flex items-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-semibold"><Settings className="w-4 h-4" />Düzenle</button>
+  </section>;
 }
 
 function Field({ label, value, onChange, disabled }) { return <label className="block text-sm text-muted-foreground">{label}<input value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2.5 text-foreground outline-none focus:ring-2 focus:ring-ring disabled:opacity-60" /></label>; }

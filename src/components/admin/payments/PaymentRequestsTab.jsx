@@ -62,6 +62,7 @@ export default function PaymentRequestsTab() {
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-white text-sm truncate">{p.user_name}</p>
                   <p className="text-xs text-gray-400">{p.plan_name} • {p.amount} ₺ • {p.payment_method_name}</p>
+                  {p.payment_reference && <p className="text-xs text-purple-400 font-mono mt-0.5">Ref: {p.payment_reference}</p>}
                 </div>
                 <span className="flex items-center gap-1 text-xs font-semibold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full">
                   <Clock className="w-3.5 h-3.5" /> Bekliyor
@@ -73,6 +74,7 @@ export default function PaymentRequestsTab() {
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-2">İşlem No: {p.transaction_id} • {new Date(p.created_date).toLocaleString('tr-TR')}</p>
+              {p.payment_reference && <p className="text-xs text-purple-400 mt-1">⚠️ Banka açıklamasında <b className="font-mono">{p.payment_reference}</b> referans numarasını arayın.</p>}
             </div>
           ))}
         </div>
@@ -105,6 +107,7 @@ export default function PaymentRequestsTab() {
               <Row label="Paket" value={detail.plan_name} />
               <Row label="Tutar" value={`${detail.amount} ₺`} />
               <Row label="Yöntem" value={detail.payment_method_name} />
+              {detail.payment_reference && <Row label="Ödeme Ref. No" value={detail.payment_reference} />}
               <Row label="İşlem No" value={detail.transaction_id} />
               <Row label="Tarih" value={new Date(detail.created_date).toLocaleString('tr-TR')} />
               {detail.bank_name && <Row label="Banka" value={detail.bank_name} />}

@@ -7,16 +7,37 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const me = await base44.asServiceRole.entities.User.get(user.id);
-    if (me.member_id) return Response.json({ member_id: me.member_id });
-    let id = null;
-    for (let i = 0; i < 12; i++) {
-      const candidate = String(Math.floor(10000000 + Math.random() * 90000000));
-      const existing = await base44.asServiceRole.entities.User.filter({ member_id: candidate }, null, 1);
-      if (!existing || existing.length === 0) { id = candidate; break; }
+
+    let memberId = me.member_id;
+    if (!memberId) {
+      for (let i = 0; i < 12; i++) {
+        const candidate = String(Math.floor(10000000 + Math.random() * 90000000));
+        const existing = await base44.asServiceRole.entities.User.filter({ member_id: candidate }, null, 1);
+        if (!existing || existing.length === 0) { memberId = candidate; break; }
+      }
     }
-    if (!id) return Response.json({ error: 'üye no oluşturulamadı' }, { status: 500 });
-    await base44.asServiceRole.entities.User.update(user.id, { member_id: id });
-    return Response.json({ member_id: id });
+
+    let paymentRef = me.payment_reference;
+    if (!paymentRef) {
+      for (let i = 0; i < 12; i++) {
+        const candidate = String(Math.floor(10000000 + Math.random() * 90000000));
+        const existing = await base44.asServiceRole.entities.User.filter({ payment_reference: candidate }, null, 1);
+        if (!existing || existing.length === 0) { paymentRef = candidate; break; }
+      }
+    }
+
+    if (!memberId || !paymentRef) {
+      return Response.json({ error: 'Numara oluşturulamadı' }, { status: 500 });
+    }
+
+    const updates = {};
+    if (!me.member_id) updates.member_id = memberId;
+    if (!me.payment_reference) updates.payment_reference = paymentRef;
+    if (Object.keys(updates).length > 0) {
+      await base44.asServiceRole.entities.User.update(user.id, updates);
+    }
+
+    return Response.json({ member_id: memberId, payment_reference: paymentRef });
   } catch (e) {
     return safeErrorResponse(e);
   }

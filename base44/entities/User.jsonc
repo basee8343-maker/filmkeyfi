@@ -14,6 +14,10 @@
     "member_id": {
       "type": "string"
     },
+    "payment_reference": {
+      "type": "string",
+      "default": ""
+    },
     "personal_room_code": {
       "type": "string",
       "default": ""

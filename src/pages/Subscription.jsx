@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
-import { Check, Calendar, Copy, Landmark, CreditCard, Loader2, Clock, ArrowLeft, Shield } from 'lucide-react';
+import { Check, Calendar, Copy, Landmark, CreditCard, Loader2, Clock, ArrowLeft, Shield, Hash } from 'lucide-react';
 
 export default function Subscription() {
-  const { user, loading: ul } = useCurrentUser();
+  const { user, loading: ul, reload } = useCurrentUser();
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [methods, setMethods] = useState([]);
@@ -18,6 +18,7 @@ export default function Subscription() {
   const [confirmModal, setConfirmModal] = useState(null);
   const [error, setError] = useState('');
   const [ibanCopied, setIbanCopied] = useState(false);
+  const [refCopied, setRefCopied] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -38,6 +39,15 @@ export default function Subscription() {
     load();
   }, []);
 
+  // Referans numarası yoksa oluştur
+  useEffect(() => {
+    if (user && !user.payment_reference && !ul) {
+      base44.functions.invoke('ensure-member-id').then(() => {
+        if (typeof reload === 'function') reload();
+      }).catch(() => {});
+    }
+  }, [user?.id, ul]);
+
   const bankMethod = methods.find((m) => m.provider_key === 'bank_transfer');
 
   const copyIban = () => {
@@ -45,6 +55,14 @@ export default function Subscription() {
       navigator.clipboard?.writeText(bankMethod.iban);
       setIbanCopied(true);
       setTimeout(() => setIbanCopied(false), 2000);
+    }
+  };
+
+  const copyRef = () => {
+    if (user?.payment_reference) {
+      navigator.clipboard?.writeText(user.payment_reference);
+      setRefCopied(true);
+      setTimeout(() => setRefCopied(false), 2000);
     }
   };
 
@@ -195,6 +213,22 @@ export default function Subscription() {
                     </div>
                   </div>
                   {bankMethod.branch && <div><p className="text-xs text-gray-400">Şube</p><p className="text-white">{bankMethod.branch}</p></div>}
+                  {user?.payment_reference && (
+                    <div className="mt-2 p-3 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Hash className="w-4 h-4 text-purple-400 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-purple-300">Ödeme Referans Numaranız (Açıklamaya yazın)</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-white font-bold text-lg font-mono tracking-wider">{user.payment_reference}</p>
+                            <button onClick={copyRef} className="text-purple-400 p-1.5 rounded-lg hover:bg-purple-500/10 shrink-0">
+                              {refCopied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {bankMethod.payment_instructions && <div className="mt-2 p-2 bg-white/5 rounded-lg"><p className="text-xs text-amber-400">{bankMethod.payment_instructions}</p></div>}
                 </div>
                 <p className="text-xs text-gray-400 mt-3">Parayı banka transferi ile gönderdikten sonra "Ödemeyi Yaptım" butonuna basın.</p>

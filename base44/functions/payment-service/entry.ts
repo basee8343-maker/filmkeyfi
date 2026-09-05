@@ -69,6 +69,23 @@ export default async function(req) {
       }
       const bank = bankMethods[0];
 
+      // Kullanıcının ödeme referans numarasını al veya oluştur
+      let paymentRef = user.payment_reference;
+      if (!paymentRef) {
+        const freshUser = await base44.asServiceRole.entities.User.get(user.id).catch(() => null);
+        paymentRef = freshUser?.payment_reference || '';
+      }
+      if (!paymentRef) {
+        for (let i = 0; i < 12; i++) {
+          const candidate = String(Math.floor(10000000 + Math.random() * 90000000));
+          const existing = await base44.asServiceRole.entities.User.filter({ payment_reference: candidate }, null, 1);
+          if (!existing || existing.length === 0) { paymentRef = candidate; break; }
+        }
+        if (paymentRef) {
+          await base44.asServiceRole.entities.User.update(user.id, { payment_reference: paymentRef }).catch(() => {});
+        }
+      }
+
       // İşlem numarası oluştur
       const transactionId = `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
@@ -76,6 +93,7 @@ export default async function(req) {
         user_id: user.id,
         user_name: user.username || user.full_name || user.email,
         user_email: user.email,
+        payment_reference: paymentRef || '',
         plan_id: plan.id, plan_name: plan.name,
         amount: plan.price,
         payment_method: 'bank_transfer', payment_method_name: 'Banka Transferi',
@@ -84,7 +102,7 @@ export default async function(req) {
         currency: 'TRY',
       });
 
-      return Response.json({ data: { payment, message: 'Ödeme bildiriminiz başarıyla oluşturuldu. Admin onayından sonra hesabınız ve seçtiğiniz abonelik aktifleşecektir.' } });
+      return Response.json({ data: { payment, payment_reference: paymentRef, message: 'Ödeme bildiriminiz başarıyla oluşturuldu. Admin onayından sonra hesabınız ve seçtiğiniz abonelik aktifleşecektir.' } });
     }
 
     // === ÖDEME ONAYLA (admin) ===
