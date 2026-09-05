@@ -13,7 +13,7 @@ import { upsertMessage, sortMessages } from '@/lib/realtimeMessages';
  * 3. temp mesaj eşleştirme: optimistic mesaj realtime geldiğinde değiştirilir
  * 4. cleanup: conversationId değişince eski subscription kapatılır
  * 5. deleted_for: kullanıcı bazlı silme — sadece silen kullanıcıdan gizlenir
- * 6. Conversation subscription: last_message_at değişince mesajları yeniden yükler
+ * 6. Global listener: sayfa geçişlerinde tek bağlantı üzerinden anlık günceller
  */
 export default function useChatMessages(conversationId) {
   const { user } = useCurrentUser();
@@ -62,36 +62,25 @@ export default function useChatMessages(conversationId) {
     seenRef.current = new Set();
     loadRef.current();
 
-    // ChatMessage subscription — yeni mesajları anlık ekle/güncelle
-    const unsub = base44.entities.ChatMessage.subscribe((event) => {
+    const onRealtimeMessage = ({ detail: event }) => {
       if (event.data?.conversation_id !== conversationId) return;
-      if (event.type === 'delete') {
-        setMessages((prev) => prev.filter((m) => m.id !== event.id));
-        return;
-      }
+      if (event.type === 'delete') { setMessages((prev) => prev.filter((m) => m.id !== event.id)); return; }
       const msg = event.data;
       if (!msg || !userId) return;
-      if ((msg.deleted_for || []).includes(userId)) {
-        setMessages((prev) => prev.filter((m) => m.id !== msg.id));
-        return;
-      }
-      if (seenRef.current.has(msg.id)) {
-        setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, ...msg } : m));
-        return;
-      }
+      if ((msg.deleted_for || []).includes(userId)) { setMessages((prev) => prev.filter((m) => m.id !== msg.id)); return; }
+      if (seenRef.current.has(msg.id)) { setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, ...msg } : m)); return; }
       seenRef.current.add(msg.id);
       setMessages((prev) => {
         const tempMatch = prev.find((m) => m.id?.startsWith('temp-') && m.sender_id === msg.sender_id && m.content === msg.content);
-        const clean = tempMatch ? prev.filter((m) => m.id !== tempMatch.id) : prev;
-        return upsertMessage(clean, msg);
+        return upsertMessage(tempMatch ? prev.filter((m) => m.id !== tempMatch.id) : prev, msg);
       });
-    });
-
+    };
+    window.addEventListener('filmkeyfi-message-realtime', onRealtimeMessage);
     const onVisible = () => { if (document.visibilityState === 'visible') loadRef.current(); };
     const onOnline = () => loadRef.current();
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('online', onOnline);
-    return () => { unsub(); document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('online', onOnline); };
+    return () => { window.removeEventListener('filmkeyfi-message-realtime', onRealtimeMessage); document.removeEventListener('visibilitychange', onVisible); window.removeEventListener('online', onOnline); };
   }, [conversationId, userId]);
 
   const send = useCallback(async (content) => {
