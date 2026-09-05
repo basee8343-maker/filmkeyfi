@@ -248,7 +248,7 @@ export default function Subscription() {
                       <div className="flex items-center gap-2">
                         <Hash className="w-4 h-4 text-purple-400 shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs text-purple-300">Ödeme Referans Numaranız (Açıklamaya yazın)</p>
+                          <p className="text-xs text-purple-300">Açıklamaya Referans Numaranızı Ve Kullanıcı Adınızı Yazın</p>
                           <div className="flex items-center gap-2 mt-1">
                             <p className="text-white font-bold text-lg font-mono tracking-wider">{user.payment_reference}</p>
                             <button onClick={copyRef} className="text-purple-400 p-1.5 rounded-lg hover:bg-purple-500/10 shrink-0">
