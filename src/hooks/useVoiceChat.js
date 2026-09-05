@@ -137,19 +137,16 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       }
     })();
 
-    // Mikrofon izninden bağımsız olarak ilk geçerli kullanıcı etkileşiminde uzak sesleri aç.
-    const startAudioOnInteraction = () => {
-      const activeRoom = roomRef.current;
-      if (!activeRoom) return;
-      activeRoom.startAudio().then(() => Promise.all([...audioElementsRef.current].map((element) => element.play().catch(() => {})))).then(() => {
-        setAudioBlocked(false);
-        setError('');
-        document.removeEventListener('pointerdown', startAudioOnInteraction);
-        document.removeEventListener('keydown', startAudioOnInteraction);
-      }).catch(() => {});
+    // Mikrofon izninden bağımsız olarak her kullanıcı etkileşiminde uzak sesi hazır tut.
+    // Dinleyici kalıcıdır; sonradan yayınlanan sesler de sayfa değiştirmeden başlar.
+    const startAudioOnInteraction = () => { retryAudio(); };
+    const startAudioWhenVisible = () => {
+      if (document.visibilityState === 'visible') retryAudio();
     };
-    document.addEventListener('pointerdown', startAudioOnInteraction);
+    document.addEventListener('pointerdown', startAudioOnInteraction, { passive: true });
+    document.addEventListener('touchend', startAudioOnInteraction, { passive: true });
     document.addEventListener('keydown', startAudioOnInteraction);
+    document.addEventListener('visibilitychange', startAudioWhenVisible);
 
     return () => {
       cancelled = true;
@@ -160,14 +157,16 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       room.disconnect();
       if (roomRef.current === room) roomRef.current = null;
       document.removeEventListener('pointerdown', startAudioOnInteraction);
+      document.removeEventListener('touchend', startAudioOnInteraction);
       document.removeEventListener('keydown', startAudioOnInteraction);
+      document.removeEventListener('visibilitychange', startAudioWhenVisible);
       setActive(false);
       setSpeakingIds([]);
       setParticipantMicStates({});
       setConnectionState('disconnected');
       setDebug(initialDebug);
     };
-  }, [attachRemoteAudio, refreshState, roomId, user?.id, everVoiceEnabled]);
+  }, [attachRemoteAudio, refreshState, retryAudio, roomId, user?.id, everVoiceEnabled]);
 
   // Odaya ilk bağlantıda izin kabul edilirse mikrofonu otomatik aç; reddedilse bile uzak sesleri dinlet.
   useEffect(() => {
