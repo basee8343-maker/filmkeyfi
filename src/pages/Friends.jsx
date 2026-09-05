@@ -14,7 +14,7 @@ import { isModerator } from '@/lib/roles';
 export default function Friends() {
   const { user, relations, loading: friendsLoading, invoke, reload: reloadFriends } = useFriends();
   const { conversations, loading: convosLoading, optimisticHide } = useConversations();
-  const { isOnline, getRoomId } = useFriendPresence(user);
+  const { isOnline, getRoomId, getLastSeen } = useFriendPresence(user);
   const { toast } = useToast();
   const [adminLoading, setAdminLoading] = useState(false);
   const [rooms, setRooms] = useState([]);
@@ -80,7 +80,7 @@ export default function Friends() {
 
   if (view === 'chat') {
     const friendId = selected?.user1_id === user.id ? selected?.user2_id : selected?.user1_id;
-    return <div className="max-w-3xl mx-auto sm:p-4"><ChatPanel key={selected?.id} conversation={selected} userId={user.id} onBack={() => switchView('chats')} online={isOnline(friendId)} /></div>;
+    return <div className="max-w-3xl mx-auto sm:p-4"><ChatPanel key={selected?.id} conversation={selected} userId={user.id} onBack={() => switchView('chats')} online={isOnline(friendId)} getLastSeen={getLastSeen} /></div>;
   }
 
   return (
@@ -119,7 +119,7 @@ export default function Friends() {
             <SlidersHorizontal className="absolute right-7 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
           </div>
           {conversations.length > 0 ? (
-            <ConversationList conversations={conversations.filter((c) => { const name = c.user1_id === user.id ? c.user2_name : c.user1_name; return !search.trim() || name?.toLowerCase().includes(search.toLowerCase()); })} userId={user.id} onOpen={openConversation} onHide={hide} isOnline={isOnline} />
+            <ConversationList conversations={conversations.filter((c) => { const name = c.user1_id === user.id ? c.user2_name : c.user1_name; return !search.trim() || name?.toLowerCase().includes(search.toLowerCase()); })} userId={user.id} onOpen={openConversation} onHide={hide} isOnline={isOnline} getLastSeen={getLastSeen} />
           ) : (
             <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
               <div className="relative w-20 h-20 rounded-full bg-[#16161e] flex items-center justify-center mb-5">

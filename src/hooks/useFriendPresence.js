@@ -72,5 +72,6 @@ export default function useFriendPresence(user, maintain = false) {
     return Boolean(record?.online && now - new Date(record.last_seen).getTime() < 30000);
   };
   const getRoomId = (userId) => presence.find((item) => item.user_id === userId)?.current_room_id || '';
-  return { isOnline, getRoomId };
+  const getLastSeen = (userId) => presence.find((item) => item.user_id === userId)?.last_seen || null;
+  return { isOnline, getRoomId, getLastSeen };
 }
