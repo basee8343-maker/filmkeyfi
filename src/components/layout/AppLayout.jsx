@@ -38,13 +38,16 @@ export default function AppLayout() {
   // Abonelik kontrolü: ödemesi olmayan kullanıcılar içerik sayfalarına gidemez
   useEffect(() => {
     if (loading || !user || isRoom) return;
-    if (publicSettings?.payment_required === false) return;
+    if (publicSettings?.payment_required === false && publicSettings?.payment_available !== false) return;
     if (membershipActive(user)) return;
-    const isExempt = EXEMPT_PATHS.some((p) => pathname.startsWith(p)) || pathname.startsWith('/admin') || pathname.startsWith('/kullanici');
-    if (!isExempt && pathname !== '/abonelik') {
-      navigate('/abonelik', { replace: true });
+    const paymentAvailable = publicSettings?.payment_available !== false;
+    const target = paymentAvailable ? '/abonelik' : '/onay-bekleniyor';
+    const exemptPaths = paymentAvailable ? EXEMPT_PATHS : [...EXEMPT_PATHS, '/onay-bekleniyor'];
+    const isExempt = exemptPaths.some((p) => pathname.startsWith(p)) || pathname.startsWith('/admin') || pathname.startsWith('/kullanici');
+    if (!isExempt && pathname !== target) {
+      navigate(target, { replace: true });
     }
-  }, [loading, user, pathname, isRoom]);
+  }, [loading, user, pathname, isRoom, publicSettings?.payment_available, publicSettings?.payment_required]);
 
   // Ban kontrolü — engellenmiş kullanıcıları giriş ekranına at
   useEffect(() => {

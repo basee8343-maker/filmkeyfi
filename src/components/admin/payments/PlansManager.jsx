@@ -72,8 +72,8 @@ export default function PlansManager() {
                   <p className="text-2xl font-bold text-purple-400 mt-1">{p.price} ₺</p>
                   <p className="text-xs text-gray-400">{p.duration_days || 30} gün</p>
                 </div>
-                <button onClick={() => toggleActive(p)} className={`w-11 h-6 rounded-full relative transition-colors shrink-0 mt-0.5 ${p.active ? 'bg-green-500' : 'bg-red-500'}`}>
-                  <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${p.active ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+                <button onClick={() => toggleActive(p)} className="w-11 h-6 rounded-full relative transition-colors shrink-0 mt-0.5" style={{ background: p.active ? '#22c55e' : '#ef4444' }}>
+                  <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform" style={{ transform: `translateX(${p.active ? 22 : 2}px)` }} />
                 </button>
               </div>
               {p.description && <p className="text-xs text-gray-400 mb-2">{p.description}</p>}

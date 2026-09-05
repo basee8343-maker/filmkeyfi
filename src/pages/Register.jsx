@@ -30,11 +30,13 @@ export default function Register() {
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [paymentRequired, setPaymentRequired] = useState(true);
+  const [paymentAvailable, setPaymentAvailable] = useState(true);
 
   useEffect(() => {
     base44.functions.invoke('public-settings', {}).then((ps) => {
       const settings = ps.data || ps;
       setPaymentRequired(settings.payment_required !== false);
+      setPaymentAvailable(settings.payment_available !== false);
     }).catch(() => {});
   }, []);
 
@@ -68,7 +70,7 @@ export default function Register() {
         try {
           await base44.auth.updateMe({
             full_name: fullName, username, avatar,
-            membership_status: paymentRequired ? "pending" : "active",
+            membership_status: (paymentRequired || !paymentAvailable) ? "pending" : "active",
           });
           await base44.functions.invoke('ensure-member-id').catch(() => {});
         } catch {}
@@ -80,7 +82,10 @@ export default function Register() {
           link: '/admin/kullanicilar',
           telegram_data: { username: fullName || username || email, email, date: new Date().toLocaleString('tr-TR') }
         }).catch(() => {});
-        if (paymentRequired) {
+        if (!paymentAvailable) {
+          toast({ title: "Kayıt tamamlandı", description: "Hesabınız admin onayı bekliyor." });
+          window.location.href = "/onay-bekleniyor";
+        } else if (paymentRequired) {
           toast({ title: "Kayıt tamamlandı", description: "Aboneliğinizi aktif etmek için ödeme yapın." });
           window.location.href = "/abonelik";
         } else {
@@ -108,7 +113,7 @@ export default function Register() {
         try {
           await base44.auth.updateMe({
             full_name: fullName, username, avatar,
-            membership_status: paymentRequired ? "pending" : "active",
+            membership_status: (paymentRequired || !paymentAvailable) ? "pending" : "active",
           });
           await base44.functions.invoke('ensure-member-id').catch(() => {});
         } catch {}
@@ -122,7 +127,10 @@ export default function Register() {
         link: '/admin/kullanicilar',
         telegram_data: { username: fullName || username || email, email, date: new Date().toLocaleString('tr-TR') }
       }).catch(() => {});
-      if (paymentRequired) {
+      if (!paymentAvailable) {
+        toast({ title: "Kayıt tamamlandı", description: "Hesabınız admin onayı bekliyor." });
+        window.location.href = "/onay-bekleniyor";
+      } else if (paymentRequired) {
         toast({ title: "Kayıt tamamlandı", description: "Aboneliğinizi aktif etmek için ödeme yapın." });
         window.location.href = "/abonelik";
       } else {
@@ -149,7 +157,7 @@ export default function Register() {
   const handleProvider = async (provider) => {
     if (!acceptTerms) { setError('Kullanım koşullarını kabul etmelisiniz'); return; }
     setError(''); setSocialLoading(provider);
-    try { await base44.auth.loginWithProvider(provider, paymentRequired ? '/abonelik' : '/'); }
+    try { const dest = !paymentAvailable ? '/onay-bekleniyor' : (paymentRequired ? '/abonelik' : '/'); await base44.auth.loginWithProvider(provider, dest); }
     catch (err) { setError(err.message || 'Sosyal kayıt başlatılamadı'); setSocialLoading(''); }
   };
 
@@ -206,7 +214,8 @@ export default function Register() {
         <div className="max-w-md mx-auto">
           <div className="bg-[#141414]/95 backdrop-blur-sm rounded-2xl border border-[#2a2a2a] p-6 shadow-2xl">
             <h2 className="text-xl font-bold text-white mb-1">Hesap Oluştur</h2>
-            <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">⚠️ Hesabınız admin onayından sonra aktif olacaktır.</div>
+            {!paymentAvailable && <div className="mb-4 p-3 rounded-lg bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs">⚠️ Hesabınız admin onayı ile aktif edilecektir. Onay sonrası ana sayfaya yönlendirileceksiniz.</div>}
+            {paymentAvailable && paymentRequired && <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs">ℹ️ Kayıt sonrası abonelik seçerek ödeme yapmanız gerekir.</div>}
             <p className="text-sm text-[#a0a0a0] mb-6">Lütfen bilgilerinizi eksiksiz doldurun.</p>
 
             {error && <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm">{error}</div>}
