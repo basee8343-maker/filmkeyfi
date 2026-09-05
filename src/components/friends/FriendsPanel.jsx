@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MoreVertical, MessageCircle, UserMinus, Ban, DoorOpen } from 'lucide-react';
 import { Image } from '@/components/ui/image';
+import ProfileFrame from '@/components/ProfileFrame';
+import XpAvatar from '@/components/xp/XpAvatar';
+import useMessageProfiles from '@/hooks/useMessageProfiles';
 import FriendSearch from '@/components/friends/FriendSearch';
 import FriendRequests from '@/components/friends/FriendRequests';
 import FriendshipLevelBadge from '@/components/friends/FriendshipLevelBadge';
@@ -12,6 +15,8 @@ export default function FriendsPanel({ relations, userId, invoke, onChat, isOnli
   const navigate = useNavigate();
   const { getProgression } = useMessageRealtime();
   const friends = relations.filter((r) => r.status === 'accepted');
+  const friendIds = friends.map((r) => r.requester_id === userId ? r.recipient_id : r.requester_id);
+  const profiles = useMessageProfiles(friendIds);
   const action = async (type, relation) => { await invoke({ action: type, friendship_id: relation.id }); setMenuFor(null); };
 
   const getFriendRoom = (friendId) => {
@@ -31,10 +36,11 @@ export default function FriendsPanel({ relations, userId, invoke, onChat, isOnli
       const member = r.requester_id === userId ? r.recipient_member_id : r.requester_member_id;
       const online = isOnline(friendId);
       const friendRoom = getFriendRoom(friendId);
+      const profile = profiles[friendId];
       return <div key={r.id} className="border-b last:border-0 border-border p-3">
         <div className="flex items-center gap-3">
           <button onClick={() => navigate(`/kullanici/${friendId}`)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-            <div className="relative shrink-0">{avatar ? <Image src={avatar} className="w-11 h-11 rounded-full" fittingType="fill" /> : <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center font-bold">{name?.[0]}</div>}<span className={`absolute right-0 bottom-0 w-3 h-3 rounded-full border-2 border-card ${online ? 'bg-green-500' : 'bg-muted-foreground'}`} /></div>
+            <div className="relative shrink-0">{profile?.profile_frame ? <ProfileFrame frame={profile.profile_frame} avatar={profile.avatar || avatar} name={name} size="sm" /> : <XpAvatar avatar={profile?.avatar || avatar} name={name} userId={friendId} size="sm" />}<span className={`absolute right-0 bottom-0 w-3 h-3 rounded-full border-2 border-card ${online ? 'bg-green-500' : 'bg-muted-foreground'}`} /></div>
             <div className="flex-1 min-w-0"><p className="font-semibold truncate">{name}</p><p className="text-xs text-muted-foreground truncate">{friendRoom?.isPublic ? <span className="text-red-500 font-semibold">{friendRoom.room.owner_name}'in odasında</span> : online ? <span className="text-green-500">Çevrim içi</span> : 'Çevrim dışı'}{member ? ` · ${member}` : ''}</p></div>
           </button>
           <FriendshipLevelBadge level={getProgression(friendId)?.level || 1} variant="list" />

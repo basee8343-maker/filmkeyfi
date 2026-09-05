@@ -1,5 +1,16 @@
 const cache = new Map();
-const colorDistance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+const rgbAt = (data, pixel) => [data[pixel * 4], data[pixel * 4 + 1], data[pixel * 4 + 2]];
+
+function palette(data, width, height, accepts) {
+  const counts = new Map();
+  for (let y = 0; y < height; y += 2) for (let x = 0; x < width; x += 2) {
+    if (!accepts(x, y)) continue;
+    const key = rgbAt(data, y * width + x).map((v) => Math.round(v / 16) * 16).join(',');
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+  return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([key]) => key.split(',').map(Number));
+}
 
 export function makeTransparentFrame(src) {
   if (cache.has(src)) return cache.get(src);
@@ -8,32 +19,19 @@ export function makeTransparentFrame(src) {
     image.crossOrigin = 'anonymous';
     image.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
+      canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       ctx.drawImage(image, 0, 0);
       const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const { data, width, height } = pixels;
-      const paletteCounts = new Map();
-      const cx = width / 2, cy = height / 2, radius = Math.min(width, height) * .22;
-      for (let y = 0; y < height; y += 2) for (let x = 0; x < width; x += 2) {
-        const edge = x < width * .08 || x > width * .92 || y < height * .08 || y > height * .92;
-        const center = Math.hypot(x - cx, y - cy) < radius;
-        if (!edge && !center) continue;
-        const i = (y * width + x) * 4, rgb = [data[i], data[i + 1], data[i + 2]];
-        if (Math.max(...rgb) - Math.min(...rgb) > 20) continue;
-        const key = rgb.map((v) => Math.round(v / 12) * 12).join(',');
-        paletteCounts.set(key, (paletteCounts.get(key) || 0) + 1);
-      }
-      const palette = [...paletteCounts].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([k]) => k.split(',').map(Number));
-      const removable = (i) => {
-        const rgb = [data[i], data[i + 1], data[i + 2]];
-        return Math.max(...rgb) - Math.min(...rgb) < 36 && palette.some((p) => colorDistance(rgb, p) < 58);
-      };
-      // Dama deseni JPEG içinde birbirinden kopuk karelere bölündüğü için tüm eşleşen
-      // arka plan piksellerini doğrudan gerçek alpha şeffaflığına dönüştür.
-      for (let i = 0; i < data.length; i += 4) {
-        if (removable(i)) data[i + 3] = 0;
+      const cx = width / 2, cy = height / 2, unit = Math.min(width, height);
+      const edge = palette(data, width, height, (x, y) => x < width * .06 || x > width * .94 || y < height * .06 || y > height * .94);
+      const center = palette(data, width, height, (x, y) => Math.hypot(x - cx, y - cy) < unit * .25);
+      for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+        const pixel = y * width + x, rgb = rgbAt(data, pixel), radius = Math.hypot(x - cx, y - cy) / unit;
+        const centerBg = radius < .235 && center.some((color) => distance(rgb, color) < 70);
+        const edgeBg = radius > .34 && edge.some((color) => distance(rgb, color) < 48);
+        if (radius < .185 || centerBg || edgeBg) data[pixel * 4 + 3] = 0;
       }
       ctx.putImageData(pixels, 0, 0);
       resolve(canvas.toDataURL('image/png'));

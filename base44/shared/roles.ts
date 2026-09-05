@@ -91,30 +91,10 @@ export const ROLE_DEFINITIONS: Record<string, any> = {
 
 export const FRAME_DEFINITIONS: Record<string, any> = {
   '': { label: 'Yok', color: '', gradient: '' },
-  'galatasaray': {
-    label: 'Galatasaray', color: '#ED1C24',
-    gradient: 'linear-gradient(135deg, #a8180f, #fbbf24)',
-    animation: 'frame-gs',
-    colors: ['#ED1C24', '#fbbf24'],
-  },
-  'fenerbahce': {
-    label: 'Fenerbahçe', color: '#002244',
-    gradient: 'linear-gradient(135deg, #1e3a8a, #facc15)',
-    animation: 'frame-fb',
-    colors: ['#002244', '#facc15'],
-  },
-  'besiktas': {
-    label: 'Beşiktaş', color: '#000000',
-    gradient: 'linear-gradient(135deg, #1a1a1a, #e5e7eb)',
-    animation: 'frame-bjk',
-    colors: ['#000000', '#e5e7eb'],
-  },
-  'trabzonspor': {
-    label: 'Trabzonspor', color: '#6B0C72',
-    gradient: 'linear-gradient(135deg, #6B0C72, #4A90D9)',
-    animation: 'frame-ts',
-    colors: ['#6B0C72', '#4A90D9'],
-  },
+  'galatasaray': { label: 'Galatasaray', color: '#ED1C24', colors: ['#ED1C24', '#fbbf24'] },
+  'fenerbahce': { label: 'Fenerbahçe', color: '#002244', colors: ['#002244', '#facc15'] },
+  'besiktas': { label: 'Beşiktaş', color: '#000000', colors: ['#000000', '#e5e7eb'] },
+  'trabzonspor': { label: 'Trabzonspor', color: '#6B0C72', colors: ['#6B0C72', '#4A90D9'] },
 };
 
 export const ANIMATION_DEFINITIONS: { key: string; label: string }[] = [

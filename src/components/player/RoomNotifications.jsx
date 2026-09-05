@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Image } from '@/components/ui/image';
 import { FRAME_DEFINITIONS, getRoleInfo } from '@/lib/roles';
+import ProfileFrame from '@/components/ProfileFrame';
 
 export default function RoomNotifications({ participants, currentUserId, profiles = {} }) {
   const [notifications, setNotifications] = useState([]);
@@ -41,7 +42,7 @@ export default function RoomNotifications({ participants, currentUserId, profile
         const avatar = n.participant.avatar || profile.avatar;
         const name = profile.title || n.participant.name || 'Kullanıcı';
         return <div key={n.id} className={`flex min-w-52 items-center gap-2 rounded-2xl border bg-black/90 px-3 py-2 shadow-2xl backdrop-blur-xl ${n.exiting ? (n.type === 'join' ? 'room-notif-out-left' : 'room-notif-out-right') : 'room-notif-in'}`} style={{ borderColor: `${color}99`, color, boxShadow: `0 0 18px ${color}55, inset 0 0 14px ${color}18` }}>
-          {avatar ? <Image src={avatar} className="h-9 w-9 shrink-0 rounded-full border" style={{ borderColor: color }} fittingType="fill" /> : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border bg-black text-sm font-black" style={{ borderColor: color }}>{name[0]}</span>}
+          {profile.profile_frame ? <ProfileFrame frame={profile.profile_frame} avatar={avatar} name={name} size="sm" /> : avatar ? <Image src={avatar} className="h-9 w-9 shrink-0 rounded-full border" style={{ borderColor: color }} fittingType="fill" /> : <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border bg-black text-sm font-black" style={{ borderColor: color }}>{name[0]}</span>}
           <span className="min-w-0 flex-1 text-center leading-tight"><strong className="block truncate text-base font-black tracking-wide">{name}</strong><small className="block text-[10px] font-semibold opacity-80">{n.type === 'join' ? 'odaya katıldı' : 'odadan ayrıldı'}</small></span>
         </div>;
       })}

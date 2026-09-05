@@ -1,34 +1,24 @@
 import { FRAME_DEFINITIONS } from '@/lib/roles';
 import { Image } from '@/components/ui/image';
+import TransparentFrameImage from '@/components/xp/TransparentFrameImage';
+
+const SIZES = { sm: 'w-10 h-10 text-xs', md: 'w-12 h-12 text-sm', lg: 'w-32 h-32 text-3xl' };
 
 export default function ProfileFrame({ frame, children, size = 'md', className = '', avatar, name }) {
   const frameInfo = FRAME_DEFINITIONS[frame];
-  if (!frame || !frameInfo || !frameInfo.colors) return children;
-
-  const sizeMap = { sm: 'w-10 h-10', md: 'w-12 h-12', lg: 'w-32 h-32' };
-  const containerClass = sizeMap[size] || sizeMap.md;
-  const padding = { sm: 'p-[3px]', md: 'p-1', lg: 'p-1.5' };
-
-  const innerEl = avatar
-    ? <Image src={avatar} className="w-full h-full object-cover" fittingType="fill" />
-    : <span className="w-full h-full rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white">{(name || '?')[0]}</span>;
+  if (!frame || !frameInfo?.image_url) return children;
+  const dims = SIZES[size] || SIZES.md;
 
   return (
-    <div className={`relative ${containerClass} ${className} shrink-0`}>
-      <div className="frame-glow-bg" style={{ background: `conic-gradient(${frameInfo.colors[0]}, ${frameInfo.colors[1]}, ${frameInfo.colors[0]})` }} />
-      <div className="frame-rotating-bg" style={{ background: `conic-gradient(${frameInfo.colors[0]}, ${frameInfo.colors[1]}, ${frameInfo.colors[0]})` }} />
-      <div className={`relative ${padding[size] || padding.md} w-full h-full z-[1]`}>
-        <div className="frame-animated-inner w-full h-full bg-background">
-          {innerEl}
-        </div>
+    <div className={`relative shrink-0 overflow-visible ${dims} ${className}`} title={frameInfo.label}>
+      <div className="absolute inset-[16%] overflow-hidden rounded-full bg-background">
+        {avatar
+          ? <Image src={avatar} className="h-full w-full" fittingType="fill" />
+          : <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-white">{(name || '?')[0]}</span>}
       </div>
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="frame-sparkle" style={{
-          background: frameInfo.colors[i % 2],
-          animationDelay: `${i * 1}s`,
-          boxShadow: `0 0 4px ${frameInfo.colors[i % 2]}`,
-        }} />
-      ))}
+      <div className="pointer-events-none absolute -inset-[34%] z-[2] h-[168%] w-[168%] overflow-visible">
+        <TransparentFrameImage src={frameInfo.image_url} animated />
+      </div>
     </div>
   );
 }

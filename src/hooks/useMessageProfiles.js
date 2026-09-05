@@ -8,11 +8,15 @@ export default function useMessageProfiles(userIds) {
     if (!key) { setProfiles({}); return; }
     let active = true;
     const ids = key.split(',');
-    Promise.all(ids.map((id) => base44.functions.invoke('user-profile', { user_id: id }).then((response) => response.data).catch(() => null))).then((items) => {
+    const load = () => Promise.all(ids.map((id) => base44.functions.invoke('user-profile', { user_id: id }).then((response) => response.data).catch(() => null))).then((items) => {
       if (!active) return;
       setProfiles(Object.fromEntries(ids.map((id, index) => [id, items[index]]).filter(([, profile]) => profile)));
     });
-    return () => { active = false; };
+    load();
+    const unsubscribe = base44.entities.User.subscribe((event) => {
+      if (ids.includes(event.data?.id || event.id)) load();
+    });
+    return () => { active = false; unsubscribe(); };
   }, [key]);
   return profiles;
 }

@@ -4,6 +4,7 @@ import { X, Copy, UserPlus, MessageSquare, Mic, MicOff, UserMinus, Flag, Ban } f
 import { Image } from '@/components/ui/image';
 import { useToast } from '@/components/ui/use-toast';
 import { useCurrentUser } from '@/lib/useCurrentUser';
+import ProfileFrame from '@/components/ProfileFrame';
 
 export default function UserProfileCard({ userId, roomId, canMod, voiceEnabled, onClose, onKick, onToggleMute, onMessage, muted }) {
   const { user } = useCurrentUser();
@@ -61,7 +62,7 @@ export default function UserProfileCard({ userId, roomId, canMod, voiceEnabled, 
     <div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-card border border-border rounded-xl p-3 w-full max-w-[220px] shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-2">
-          <div>{profile.avatar ? <Image src={profile.avatar} className="w-10 h-10 rounded-full" fittingType="fill" /> : <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-sm">{(profile.username || '?')[0]}</div>}</div>
+          <div>{profile.profile_frame ? <ProfileFrame frame={profile.profile_frame} avatar={profile.avatar} name={profile.username || profile.full_name} size="sm" /> : profile.avatar ? <Image src={profile.avatar} className="w-10 h-10 rounded-full" fittingType="fill" /> : <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-sm">{(profile.username || '?')[0]}</div>}</div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary"><X className="w-4 h-4" /></button>
         </div>
         <p className="font-semibold text-sm mb-1 truncate">{profile.username || profile.full_name || 'Kullanıcı'}</p>

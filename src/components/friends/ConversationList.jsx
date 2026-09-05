@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, Trash2 } from 'lucide-react';
 import { Image } from '@/components/ui/image';
+import ProfileFrame from '@/components/ProfileFrame';
+import XpAvatar from '@/components/xp/XpAvatar';
+import useMessageProfiles from '@/hooks/useMessageProfiles';
 import FriendshipLevelBadge from '@/components/friends/FriendshipLevelBadge';
 import { useMessageRealtime } from '@/components/messages/MessageRealtimeProvider';
 
 export default function ConversationList({ conversations, userId, onOpen, onHide, isOnline, getLastSeen }) {
   const [swiped, setSwiped] = useState(null);
   const { getProgression, isTyping } = useMessageRealtime();
+  const otherIds = conversations.map((c) => c.user1_id === userId ? c.user2_id : c.user1_id);
+  const profiles = useMessageProfiles(otherIds);
   useEffect(() => { setSwiped(null); }, [conversations]);
   const touchStart = useRef({ x: 0, y: 0 });
   const swipingRef = useRef(false);
@@ -21,6 +26,7 @@ export default function ConversationList({ conversations, userId, onOpen, onHide
   if (!chats.length) return <p className="py-16 text-center text-sm text-muted-foreground">Henüz sohbetiniz yok.</p>;
   return <div>{chats.map(({ conversation, name, avatar, otherId, unread }) => {
     // Çevrim dışı mod: arkadaş bu sohbette offline görünüyorsa
+    const profile = profiles[otherId];
     const friendOffline = (conversation.offline_for || []).includes(otherId);
     const online = !friendOffline && isOnline ? isOnline(otherId) : false;
     const typing = isTyping(conversation.id, otherId);
@@ -54,7 +60,7 @@ export default function ConversationList({ conversations, userId, onOpen, onHide
         }}
         className={`relative z-10 w-full flex items-center gap-3 px-4 py-4 cursor-pointer transition-transform bg-background ${swiped === conversation.id ? '-translate-x-20' : 'translate-x-0'} ${unread > 0 ? 'bg-primary/5' : ''}`}
       >
-        <div className="relative w-14 h-14 rounded-full bg-secondary shrink-0"><div className="w-full h-full rounded-full overflow-hidden">{avatar ? <Image src={avatar} alt={name} className="w-full h-full" /> : <span className="w-full h-full flex items-center justify-center text-xl font-bold">{name?.[0]}</span>}</div>{unread > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background">{unread}</span>}<span className={`absolute right-0 bottom-0 w-3.5 h-3.5 rounded-full border-2 border-background ${online ? 'bg-green-500' : 'bg-muted-foreground'}`} /></div><div className="min-w-0 flex-1"><p className={`truncate ${unread > 0 ? 'font-bold text-foreground' : 'font-semibold text-muted-foreground'}`}>{name}</p><p className={`text-xs ${typing ? 'font-semibold text-green-400' : 'text-muted-foreground'}`}>{typing ? `${name} yazıyor...` : online ? 'Çevrim içi' : lastSeen ? `Son görülme: ${new Date(lastSeen).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}` : 'Çevrim dışı'}</p><p className={`text-sm truncate ${unread > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{unread > 0 ? <span className="text-primary">● </span> : ''}{conversation.last_message_text || 'Sohbeti başlatın.'}</p></div><div className="text-right shrink-0 flex flex-col items-end gap-1"><p className="text-xs text-muted-foreground">{conversation.last_message_at ? new Date(conversation.last_message_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}</p><FriendshipLevelBadge level={getProgression(otherId)?.level || 1} variant="list" /><ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" /></div>
+        <div className="relative w-14 h-14 shrink-0">{profile?.profile_frame ? <ProfileFrame frame={profile.profile_frame} avatar={profile.avatar || avatar} name={name} size="md" className="m-1" /> : <XpAvatar avatar={profile?.avatar || avatar} name={name} userId={otherId} size="md" />}{unread > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-5 h-5 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background">{unread}</span>}<span className={`absolute right-0 bottom-0 w-3.5 h-3.5 rounded-full border-2 border-background ${online ? 'bg-green-500' : 'bg-muted-foreground'}`} /></div><div className="min-w-0 flex-1"><p className={`truncate ${unread > 0 ? 'font-bold text-foreground' : 'font-semibold text-muted-foreground'}`}>{name}</p><p className={`text-xs ${typing ? 'font-semibold text-green-400' : 'text-muted-foreground'}`}>{typing ? `${name} yazıyor...` : online ? 'Çevrim içi' : lastSeen ? `Son görülme: ${new Date(lastSeen).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}` : 'Çevrim dışı'}</p><p className={`text-sm truncate ${unread > 0 ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>{unread > 0 ? <span className="text-primary">● </span> : ''}{conversation.last_message_text || 'Sohbeti başlatın.'}</p></div><div className="text-right shrink-0 flex flex-col items-end gap-1"><p className="text-xs text-muted-foreground">{conversation.last_message_at ? new Date(conversation.last_message_at).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : ''}</p><FriendshipLevelBadge level={getProgression(otherId)?.level || 1} variant="list" /><ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" /></div>
       </div>
     </div>;
   })}</div>;
