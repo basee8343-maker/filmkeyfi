@@ -29,11 +29,16 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
   const [reportOpen, setReportOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [lightbox, setLightbox] = useState(null);
-  const [viewport, setViewport] = useState({ height: window.innerHeight, top: 0 });
+  const [keyboard, setKeyboard] = useState({ open: false, composerTop: 0, composerHeight: 0 });
   const [friendTyping, setFriendTyping] = useState(false);
   const [readReceiptsEnabled, setReadReceiptsEnabled] = useState(() => localStorage.getItem('dm_read_receipts') !== 'false');
   const [profilePopup, setProfilePopup] = useState(false);
   const messagesRef = useRef(null);
+  const composerRef = useRef(null);
+  const layoutHeightRef = useRef(window.innerHeight);
+  const messageScrollRef = useRef(0);
+  const pageScrollRef = useRef(0);
+  const keyboardOpenRef = useRef(false);
   const typingTimer = useRef(null);
   const typingActive = useRef(false);
   const touchStart = useRef({ x: 0, y: 0 });
@@ -42,19 +47,57 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
 
   useEffect(() => {
     const visualViewport = window.visualViewport;
-    const updateViewport = () => setViewport({ height: visualViewport?.height || window.innerHeight, top: visualViewport?.offsetTop || 0 });
-    updateViewport();
-    visualViewport?.addEventListener('resize', updateViewport);
-    window.addEventListener('resize', updateViewport);
-    return () => {
-      visualViewport?.removeEventListener('resize', updateViewport);
-      window.removeEventListener('resize', updateViewport);
+    if (!visualViewport || embedded) return;
+    const body = document.body;
+    const previousBody = { position: body.style.position, top: body.style.top, left: body.style.left, right: body.style.right, width: body.style.width, overflow: body.style.overflow };
+
+    const lockPage = () => {
+      pageScrollRef.current = window.scrollY;
+      body.style.position = 'fixed';
+      body.style.top = `-${pageScrollRef.current}px`;
+      body.style.left = '0';
+      body.style.right = '0';
+      body.style.width = '100%';
+      body.style.overflow = 'hidden';
     };
-  }, []);
+    const unlockPage = () => {
+      Object.assign(body.style, previousBody);
+      window.scrollTo(0, pageScrollRef.current);
+    };
+    const updateKeyboard = () => {
+      const layoutHeight = layoutHeightRef.current;
+      const keyboardTop = visualViewport.offsetTop + visualViewport.height;
+      const keyboardHeight = Math.max(0, layoutHeight - keyboardTop);
+      const isOpen = keyboardHeight > 120 && document.activeElement?.tagName === 'INPUT';
+      const composerHeight = composerRef.current?.offsetHeight || 0;
+
+      if (isOpen && !keyboardOpenRef.current) {
+        messageScrollRef.current = messagesRef.current?.scrollTop || 0;
+        lockPage();
+      } else if (!isOpen && keyboardOpenRef.current) {
+        unlockPage();
+        requestAnimationFrame(() => messagesRef.current?.scrollTo({ top: messageScrollRef.current }));
+      }
+      keyboardOpenRef.current = isOpen;
+      setKeyboard({ open: isOpen, composerTop: keyboardTop - composerHeight, composerHeight });
+      if (isOpen) requestAnimationFrame(() => messagesRef.current?.scrollTo({ top: messageScrollRef.current }));
+      if (!isOpen) layoutHeightRef.current = window.innerHeight;
+    };
+
+    updateKeyboard();
+    visualViewport.addEventListener('resize', updateKeyboard);
+    visualViewport.addEventListener('scroll', updateKeyboard);
+    return () => {
+      visualViewport.removeEventListener('resize', updateKeyboard);
+      visualViewport.removeEventListener('scroll', updateKeyboard);
+      if (keyboardOpenRef.current) unlockPage();
+      keyboardOpenRef.current = false;
+    };
+  }, [embedded]);
 
   useEffect(() => {
     messagesRef.current?.scrollTo({ top: messagesRef.current.scrollHeight });
-  }, [allMessages, viewport.height]);
+  }, [allMessages]);
 
   useEffect(() => {
     return () => { clearTimeout(typingTimer.current); };
@@ -214,14 +257,15 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
     } finally { setUploading(false); e.target.value = ''; }
   };
 
-  return <section className={embedded ? "relative inset-auto z-auto h-full min-h-0 flex flex-col bg-card" : "fixed top-0 left-0 right-0 z-[60] h-[100dvh] min-h-0 flex flex-col overflow-hidden border-y border-border bg-card sm:relative sm:inset-auto sm:z-auto sm:h-[72vh] sm:min-h-[72vh] sm:rounded-xl sm:border sm:pt-0"} onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }} onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) onBack(); }}>
+  return <section style={embedded ? undefined : { '--chat-layout-height': `${layoutHeightRef.current}px` }} className={embedded ? "relative inset-auto z-auto h-full min-h-0 flex flex-col bg-card" : "fixed top-0 left-0 right-0 z-[60] h-[var(--chat-layout-height)] min-h-0 flex flex-col overflow-hidden border-y border-border bg-card sm:relative sm:inset-auto sm:z-auto sm:h-[72vh] sm:min-h-[72vh] sm:rounded-xl sm:border sm:pt-0"} onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }} onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) onBack(); }}>
     <header className="relative h-16 shrink-0 px-3 border-b border-border flex items-center justify-between bg-card/95 backdrop-blur"><button onClick={onBack} className="p-2 rounded-full hover:bg-secondary" aria-label="Geri dön"><ArrowLeft className="w-6 h-6" /></button><div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 max-w-[60%] cursor-pointer active:opacity-70" onClick={() => setProfilePopup(true)}>{avatar ? <Image src={avatar} className="w-9 h-9 rounded-full" fittingType="fill" /> : <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">{name?.[0]}</div>}<div className="min-w-0"><h2 className="font-bold truncate">{name}</h2><p className={`text-[11px] ${friendTyping || (online && !(conversation?.offline_for || []).includes(friendId)) ? 'text-green-500' : 'text-muted-foreground'}`}>{friendTyping ? 'Yazıyor...' : (online && !(conversation?.offline_for || []).includes(friendId)) ? 'Çevrim içi' : 'Çevrim dışı'}</p></div></div><button onClick={() => setSettingsOpen(true)} className="p-2 rounded-full hover:bg-secondary" aria-label="Sohbet ayarları"><Settings className="w-5 h-5" /></button>
     </header>
     {!isAdmin && friendProfile?.role !== 'admin' && <FriendshipLevelCard progression={getProgression(friendId)} />}
     {settingsOpen && <ChatSettingsPanel name={name} avatar={avatar} friendProfile={friendProfile} isBlocked={(friendship?.status === 'blocked' && (friendship?.blocked_by || []).includes(userId))} isFriend={friendship?.status === 'accepted'} requestSent={friendship?.status === 'pending' && friendship?.requester_id === userId} showFriendButton={!!friendship} onlineEnabled={onlineEnabled} readReceiptsEnabled={readReceiptsEnabled} onToggleReadReceipts={() => { const v = !readReceiptsEnabled; localStorage.setItem('dm_read_receipts', String(v)); setReadReceiptsEnabled(v); }} onToggleOnline={toggleOnline} onBlock={(friendship?.status === 'blocked' && (friendship?.blocked_by || []).includes(userId)) ? unblock : block} onUnfriend={unfriend} onRefriend={refriend} onClearChat={clearChat} onReport={() => { setSettingsOpen(false); setReportOpen(true); }} onClose={() => setSettingsOpen(false)} blocking={blocking || unblocking} unfriending={unfriending} clearing={clearing} />}
     <div ref={messagesRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-4" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}><div className="rounded-xl bg-secondary/70 px-4 py-3 text-center text-xs text-muted-foreground">{name} ile sohbet</div>{loading && <p className="text-center text-sm text-muted-foreground py-12">Mesajlar yükleniyor...</p>}{!loading && !items.length && <p className="text-center text-sm text-muted-foreground py-12">İlk mesajı siz gönderin.</p>}{items.map((message) => { const sent = message.sender_id === userId; const senderRoleKey = sent ? (currentUser?.display_role || '') : (friendProfile?.display_role || ''); return <div key={message.id} className={`group flex items-end gap-1.5 ${sent ? 'justify-end' : 'justify-start'}`}><RoleMessageEffect roleKey={senderRoleKey} className="max-w-[80%]"><div className={`rounded-2xl px-3.5 py-2 text-sm shadow-md ${sent ? 'rounded-br-md bg-[#2c1e55] text-white' : 'rounded-bl-md bg-[#1e1e24] text-white'}`}>{message.file_url && <Image src={message.file_url} alt="foto" className="rounded-lg max-w-[200px] max-h-56 object-cover mb-1 cursor-pointer" fittingType="fit" onClick={() => setLightbox(message.file_url)} />}{message.content && <p className="whitespace-pre-wrap break-words">{message.content}</p>}<p className="text-[10px] opacity-50 mt-1 text-right flex items-center justify-end gap-1">{new Date(message.created_date).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}{sent && readReceiptsEnabled && ((message.read_by || []).includes(message.receiver_id) ? <CheckCheck className="w-3.5 h-3.5 text-violet-300" /> : <Check className="w-3.5 h-3.5" />)}</p></div></RoleMessageEffect>{(sent || isAdmin) && <button onClick={() => deleteMessage(message.id)} className="p-1 text-muted-foreground/50 hover:text-destructive shrink-0 opacity-0 group-hover:opacity-100" title="Sil"><Trash2 className="w-3.5 h-3.5" /></button>}</div>; })}{friendship?.status === 'blocked' && (friendship?.blocked_by || []).includes(friendId) && <div className="rounded-xl bg-destructive/10 px-4 py-3 text-center text-xs text-destructive">Engellendiniz — bu kullanıcı sizi engelledi</div>}{friendship?.status === 'blocked' && (friendship?.blocked_by || []).includes(userId) && <div className="rounded-xl bg-destructive/10 px-4 py-3 text-center text-xs text-destructive">Bu kullanıcıyı engellediniz — engeli kaldırın</div>}{friendship?.status === 'pending' && friendship?.recipient_id === userId && <div className="rounded-xl bg-primary/10 border border-primary/30 px-4 py-3 flex items-center justify-between gap-3"><span className="text-sm text-foreground">{name} sizi arkadaş olarak eklemek istiyor</span><div className="flex gap-2 shrink-0"><button onClick={acceptRequest} className="bg-primary text-primary-foreground px-3 py-1.5 rounded-lg text-xs font-semibold">Onayla</button><button onClick={rejectRequest} className="bg-secondary text-foreground px-3 py-1.5 rounded-lg text-xs font-semibold">Red</button></div></div>}{friendship?.status === 'pending' && friendship?.requester_id === userId && <div className="rounded-xl bg-secondary/70 px-4 py-3 text-center text-xs text-muted-foreground">Arkadaşlık isteği gönderildi — onay bekleniyor</div>}{acceptedNotice && <div className="rounded-xl bg-green-500/10 border border-green-500/30 px-4 py-3 text-center text-xs text-green-400">✓ Arkadaşlık isteğiniz onaylandı</div>}
 {friendship?.status === 'rejected' && <div className="rounded-xl bg-destructive/10 px-4 py-3 text-center text-xs text-destructive">Arkadaşlık isteğiniz reddedildi</div>}{friendship?.status === 'removed' && <div className="rounded-xl bg-secondary/70 px-4 py-3 text-center text-xs text-muted-foreground">Arkadaşlık kaldırıldı — tekrar eklemek için ayarlardan istek gönderin</div>}</div>
-    <form onSubmit={handleSubmit} className="shrink-0 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-border flex items-center gap-2 bg-card"><label className="p-2 rounded-lg hover:bg-secondary cursor-pointer shrink-0"><ImageIcon className="w-5 h-5" /><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhoto} disabled={uploading} /></label><input value={text} onChange={(event) => changeText(event.target.value)} disabled={!canMessage} maxLength={2000} placeholder={canMessage ? 'Mesaj yazın...' : 'Yalnızca arkadaşlar mesajlaşabilir'} className="flex-1 min-w-0 bg-secondary rounded-full px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-60" /><button type="submit" disabled={!canMessage || sending || uploading || !text.trim()} className="w-11 h-11 shrink-0 flex items-center justify-center bg-primary text-primary-foreground rounded-full disabled:opacity-50" aria-label="Mesaj gönder"><Send className="w-5 h-5" /></button>{uploading && <span className="text-xs text-muted-foreground animate-pulse shrink-0">...</span>}</form>
+    {keyboard.open && <div aria-hidden="true" className="shrink-0" style={{ height: keyboard.composerHeight }} />}
+    <form ref={composerRef} onSubmit={handleSubmit} style={keyboard.open ? { position: 'fixed', top: `${keyboard.composerTop}px`, left: 0, right: 0, zIndex: 70 } : undefined} className="shrink-0 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-border flex items-center gap-2 bg-card"><label className="p-2 rounded-lg hover:bg-secondary cursor-pointer shrink-0"><ImageIcon className="w-5 h-5" /><input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={onPhoto} disabled={uploading} /></label><input value={text} onChange={(event) => changeText(event.target.value)} disabled={!canMessage} maxLength={2000} placeholder={canMessage ? 'Mesaj yazın...' : 'Yalnızca arkadaşlar mesajlaşabilir'} className="flex-1 min-w-0 bg-secondary rounded-full px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:opacity-60" /><button type="submit" disabled={!canMessage || sending || uploading || !text.trim()} className="w-11 h-11 shrink-0 flex items-center justify-center bg-primary text-primary-foreground rounded-full disabled:opacity-50" aria-label="Mesaj gönder"><Send className="w-5 h-5" /></button>{uploading && <span className="text-xs text-muted-foreground animate-pulse shrink-0">...</span>}</form>
     {profilePopup && <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/60" onClick={() => setProfilePopup(false)}><div className="bg-card border border-border rounded-xl p-5 w-64 max-w-[90%]" onClick={(e) => e.stopPropagation()}><div className="flex flex-col items-center gap-3">{avatar ? <Image src={avatar} className="w-16 h-16 rounded-full" fittingType="fill" /> : <div className="w-16 h-16 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">{name?.[0]}</div>}<h3 className="font-bold text-lg">{name}</h3>{friendProfile?.member_id && <div className="w-full flex items-center gap-2 bg-secondary rounded-lg px-3 py-2"><span className="text-xs text-muted-foreground shrink-0">Kimlik:</span><span className="text-sm font-mono flex-1 truncate">{friendProfile.member_id}</span><button onClick={() => { navigator.clipboard?.writeText(friendProfile.member_id); toast({ title: 'Kimlik kopyalandı' }); }} className="p-1.5 hover:bg-primary/10 rounded-lg shrink-0"><Copy className="w-4 h-4 text-primary" /></button></div>}<button onClick={() => setProfilePopup(false)} className="w-full bg-secondary rounded-lg py-2 text-sm font-semibold">Kapat</button></div></div></div>}
     {reportOpen && <ReportDialog targetId={friendId} targetName={name} context="dm" contextId={conversation.id} onClose={() => setReportOpen(false)} />}
     {lightbox && <div onClick={() => setLightbox(null)} className="fixed inset-0 z-[110] bg-black/90 flex items-center justify-center p-4"><button className="absolute top-4 right-4 text-white p-2"><X className="w-6 h-6" /></button><Image src={lightbox} className="max-w-full max-h-full rounded-lg" fittingType="fit" /></div>}
