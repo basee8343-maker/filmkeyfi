@@ -113,7 +113,6 @@ const AuthenticatedApp = () => {
         </Route>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
-          <Route path="kayit" element={<AdminUsers pendingOnly />} />
           <Route path="kullanicilar" element={<AdminUsers />} />
           <Route path="filmler" element={<AdminMovies />} />
           <Route path="film-ekle" element={<AdminMovies />} />

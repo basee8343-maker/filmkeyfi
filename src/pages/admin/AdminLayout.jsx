@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, UserCheck, Users, Film, FolderTree, LifeBuoy, CreditCard, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, ChevronDown, ChevronRight, Package as PackageIcon, Home, Flag, MessageCircle, Video, Smartphone, Moon, Target, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Users, Film, FolderTree, LifeBuoy, CreditCard, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, ChevronDown, ChevronRight, Package as PackageIcon, Home, Flag, MessageCircle, Video, Smartphone, Moon, Target, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useAdminNotifications, requestNotificationPermission } from '@/hooks/useAdminNotifications';
 import { useCurrentUser } from '@/lib/useCurrentUser';
@@ -34,7 +34,6 @@ const navGroups = [
   {
     title: 'Sistem',
     items: [
-      { to: '/admin/kayit', label: 'Kayıt Kontrol', icon: UserCheck },
       { to: '/admin/kullanicilar', label: 'Kullanıcılar', icon: Users },
       { to: '/admin/guvenlik', label: 'Güvenlik', icon: ShieldAlert },
       { to: '/admin/oturumlar', label: 'Oturumlar / Cihazlar', icon: Smartphone },
