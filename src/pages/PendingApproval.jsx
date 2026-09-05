@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Loader2, Clock, LogOut, ShieldCheck, CreditCard, Sparkles, Headphones, ArrowRight } from "lucide-react";
@@ -14,6 +14,7 @@ export default function PendingApproval() {
     try {
       const me = await base44.auth.me();
       setUser(me);
+      userIdRef.current = me.id;
       if (me.membership_status === "active") {
         window.location.href = "/";
         return;
@@ -24,13 +25,21 @@ export default function PendingApproval() {
     } catch {}
   };
 
+  const userIdRef = useRef(null);
+
   useEffect(() => {
     check();
     const interval = setInterval(() => {
       setChecking(true);
       check().finally(() => setChecking(false));
     }, 5000);
-    return () => clearInterval(interval);
+    // Gerçek zamanlı: admin üyeliği onayladığında veritabanından anında olay gelir
+    const unsub = base44.entities.User.subscribe((event) => {
+      if (event.type === 'update' && event.data?.id === userIdRef.current && event.data?.membership_status === 'active') {
+        window.location.href = '/';
+      }
+    });
+    return () => { clearInterval(interval); unsub?.(); };
   }, []);
 
   const logout = () => {
