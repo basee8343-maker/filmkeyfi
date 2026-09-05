@@ -19,7 +19,6 @@ const navGroups = [
     title: null,
     items: [
       { to: '/', label: 'Ana Sayfa', icon: Home, end: true, external: true },
-      { to: '/filmler', label: 'Site Filmler', icon: Film, external: true },
       { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
     ],
   },
