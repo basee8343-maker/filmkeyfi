@@ -32,12 +32,20 @@ export default function Register() {
   const [paymentRequired, setPaymentRequired] = useState(true);
   const [paymentAvailable, setPaymentAvailable] = useState(true);
 
-  useEffect(() => {
+  const fetchSettings = () => {
     base44.functions.invoke('public-settings', {}).then((ps) => {
       const settings = ps.data || ps;
       setPaymentRequired(settings.payment_required !== false);
       setPaymentAvailable(settings.payment_available !== false);
     }).catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchSettings();
+    // Admin ödeme yöntemi veya paket değişikliğini gerçek zamanlı yansıt
+    const unsubMethods = base44.entities.PaymentMethod.subscribe(fetchSettings);
+    const unsubPlans = base44.entities.SubscriptionPlan.subscribe(fetchSettings);
+    return () => { unsubMethods?.(); unsubPlans?.(); };
   }, []);
 
   const onAvatar = async (e) => {

@@ -32,6 +32,14 @@ export default function Subscription() {
     } catch { return []; }
   };
 
+  const loadPlans = async () => {
+    try {
+      const items = await base44.entities.SubscriptionPlan.filter({ active: true }, 'sort_order', 50);
+      setPlans(items || []);
+      return items || [];
+    } catch { return []; }
+  };
+
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
@@ -48,8 +56,8 @@ export default function Subscription() {
           setMySub(subData.subscription);
           setPendingPayments(subData.pendingPayments || []);
         }
-        // Ödeme yöntemi yoksa ve bekleyen ödeme de yoksa onay paneline yönlendir
-        if (validMethods.length === 0 && user?.id) {
+        // Ödeme yöntemi veya paket yoksa ve bekleyen ödeme de yoksa onay paneline yönlendir
+        if ((validMethods.length === 0 || (planItems.status === 'fulfilled' && (planItems.value || []).length === 0)) && user?.id) {
           const subs = await base44.entities.Subscription.filter({ user_id: user.id, status: 'active' }, '-created_date', 1).catch(() => []);
           if (!subs || subs.length === 0) {
             const pending = await base44.entities.Payment.filter({ user_id: user.id, status: 'pending' }, '-created_date', 1).catch(() => []);
@@ -63,10 +71,11 @@ export default function Subscription() {
       if (!cancelled) setLoading(false);
     };
     load();
-    // Gerçek zamanlı: ödeme yöntemi değişince anında güncelle
-    const unsub = base44.entities.PaymentMethod.subscribe(() => loadMethods());
+    // Gerçek zamanlı: ödeme yöntemi veya paket değişince anında güncelle
+    const unsubMethods = base44.entities.PaymentMethod.subscribe(() => loadMethods());
+    const unsubPlans = base44.entities.SubscriptionPlan.subscribe(() => loadPlans());
     const t = setTimeout(() => setLoading(false), 5000);
-    return () => { cancelled = true; unsub?.(); clearTimeout(t); };
+    return () => { cancelled = true; unsubMethods?.(); unsubPlans?.(); clearTimeout(t); };
   }, [user?.id]);
 
   // Referans numarası yoksa oluştur
