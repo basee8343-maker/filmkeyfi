@@ -28,7 +28,7 @@ export async function advanceRoomLevel(base44, userId, userName) {
     const level = Math.min(1000, previous + (count === 50 ? 1 : 0));
     // Compare-and-set: a simultaneous message or manual change cannot be overwritten.
     const result = await base44.asServiceRole.entities.RoomLevel.updateMany(
-      { id: current.id, updated_date: current.updated_date },
+      { id: current.id, level: current.level, message_count: current.message_count },
       { $set: { level, message_count: count % 50 } }
     );
     if (result.updated === 1) {

@@ -4,11 +4,14 @@ import { base44 } from '@/api/base44Client';
 import { Image } from '@/components/ui/image';
 import ProfileFrame from '@/components/ProfileFrame';
 import RoleBadge from '@/components/RoleBadge';
+import useRoomLevels from '@/hooks/useRoomLevels';
+import RoomLevelBadge from '@/components/levels/RoomLevelBadge';
 
 export default function ProfileHeader({ user, pkg, expired, editing, avatar, onAvatar }) {
   const name = user.username || user.full_name || 'Kullanıcı';
   const status = user.role === 'admin' ? 'Kurucu · Süresiz' : user.membership_status === 'pending' ? 'Onay Bekliyor' : expired ? 'Süresi Doldu' : pkg?.name || 'Aktif Üyelik';
   const hasRole = user.display_role || user.custom_role?.name;
+  const { levels: roomLevels } = useRoomLevels([user.id]);
   return <header className="flex flex-col items-center text-center mb-7">
     <div className="relative">
       {user.profile_frame ? (
@@ -24,6 +27,7 @@ export default function ProfileHeader({ user, pkg, expired, editing, avatar, onA
     <p className="text-muted-foreground">{user.email}</p>
     <span className="mt-2 rounded-md bg-amber-500/15 px-3 py-1 text-sm font-semibold text-amber-400">{status}</span>
     {hasRole && <div className="mt-2"><RoleBadge user={user} size="lg" /></div>}
+    <div className="mt-3"><RoomLevelBadge level={roomLevels[user.id]} profile /></div>
     <div className="mt-4 flex gap-3">
       {user.role === 'admin' && <Link to="/admin" className="rounded-full bg-secondary px-5 py-3 text-sm font-semibold flex items-center gap-2"><Crown className="w-4 h-4 text-amber-400" />Admin Paneli</Link>}
       <button onClick={() => base44.auth.logout('/login')} className="rounded-full bg-secondary px-5 py-3 text-sm font-semibold flex items-center gap-2"><LogOut className="w-4 h-4" />Çıkış</button>

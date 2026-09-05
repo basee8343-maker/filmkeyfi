@@ -23,6 +23,8 @@ import ProfileFrame from '@/components/ProfileFrame';
 import useSocialBadges from '@/hooks/useSocialBadges';
 import { isModerator } from '@/lib/roles';
 import { triggerBanNotice } from '@/lib/banNotice';
+import useRoomLevels from '@/hooks/useRoomLevels';
+import RoomLevelBadge from '@/components/levels/RoomLevelBadge';
 
 export default function WatchParty() {
   const { id } = useParams();
@@ -65,17 +67,7 @@ export default function WatchParty() {
   const { messages: directUnread } = useSocialBadges(user?.id);
   const [countdownText, setCountdownText] = useState('');
   const [autoDeleteMinutes, setAutoDeleteMinutes] = useState(0);
-  const [roomLevels, setRoomLevels] = useState({});
-  useEffect(() => {
-    base44.entities.RoomLevel.list('-updated_date', 500)
-      .then((levels) => { const map = {}; levels.filter((level) => level.owner_id === level.user_id).forEach((level) => { map[level.user_id] = level.level; }); setRoomLevels(map); })
-      .catch(() => {});
-    const unsub = base44.entities.RoomLevel.subscribe((event) => {
-      if (event.data?.owner_id !== event.data?.user_id) return;
-      setRoomLevels((current) => ({ ...current, [event.data.user_id]: event.data.level }));
-    });
-    return unsub;
-  }, []);
+
   const [roomNameEdit, setRoomNameEdit] = useState('');
   const openUserProfile = (userId) => navigate(`/kullanici/${userId}?room=${encodeURIComponent(id)}`);
   const [presenceMap, setPresenceMap] = useState({});
@@ -293,6 +285,7 @@ export default function WatchParty() {
 
   // İzleyici profillerini çek (gerçek avatarlar için)
   const participantIdsKey = [...(room?.participants || []), ...(room?.recent_participants || [])].map((p) => p.user_id).filter(Boolean).filter((value, index, all) => all.indexOf(value) === index).sort().join(',');
+  const { levels: roomLevels } = useRoomLevels(participantIdsKey ? participantIdsKey.split(',') : []);
   useEffect(() => {
     if (!participantIdsKey) return;
     const ids = participantIdsKey.split(',');
@@ -443,12 +436,6 @@ export default function WatchParty() {
     } catch (e) {
       toast({ title: 'Silinemedi', description: e.response?.data?.error || e.message, variant: 'destructive' });
     }
-  };
-
-  const setLevel = async (uid, level) => {
-    if (!canMod) return;
-    try { await base44.functions.invoke('room-presence', { action: 'set-level', room_id: id, target_id: uid, level }); toast({ title: 'Seviye güncellendi' }); }
-    catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
   const saveRoomName = async () => {
@@ -650,7 +637,7 @@ export default function WatchParty() {
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setChatOpen(false); }}
           >
-            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onDirect={() => { setDirectTarget(null); setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} onDirectUser={openDirectMessage} directUnread={directUnread} ownerId={room?.owner_id} roomModerators={room?.room_moderators || []} participants={room?.participants || []} recentParticipants={room?.recent_participants || []} viewerProfiles={viewerProfiles} presenceMap={presenceMap} onProfileCard={openUserProfile} onToggleChat={toggleChat} settingsProps={{ room, canMod, participants: room?.participants || [], roomModerators: room?.room_moderators || [], onAssignMod: assignMod, onRemoveMod: removeMod, roomName: roomNameEdit, setRoomName: setRoomNameEdit, onSaveName: saveRoomName, password: pwSetInput, setPassword: setPwSetInput, passwordOpen: showPwSet, setPasswordOpen: setShowPwSet, onVoice: toggleVoice, onChat: toggleChat, onHidden: toggleHidden, onPassword: () => savePassword(), onRemovePassword: () => setShowPwRemoveConfirm(true), onUnban: unbanUser, onPickMovie: () => setMoviePickerOpen(true), onDeleteRoom: deleteRoom, roomLevels, onSetLevel: setLevel }} />
+            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onDirect={() => { setDirectTarget(null); setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} onDirectUser={openDirectMessage} directUnread={directUnread} ownerId={room?.owner_id} roomModerators={room?.room_moderators || []} participants={room?.participants || []} recentParticipants={room?.recent_participants || []} viewerProfiles={viewerProfiles} presenceMap={presenceMap} onProfileCard={openUserProfile} onToggleChat={toggleChat} settingsProps={{ room, canMod, participants: room?.participants || [], roomModerators: room?.room_moderators || [], onAssignMod: assignMod, onRemoveMod: removeMod, roomName: roomNameEdit, setRoomName: setRoomNameEdit, onSaveName: saveRoomName, password: pwSetInput, setPassword: setPwSetInput, passwordOpen: showPwSet, setPasswordOpen: setShowPwSet, onVoice: toggleVoice, onChat: toggleChat, onHidden: toggleHidden, onPassword: () => savePassword(), onRemovePassword: () => setShowPwRemoveConfirm(true), onUnban: unbanUser, onPickMovie: () => setMoviePickerOpen(true), onDeleteRoom: deleteRoom }} />
           </div>
         )}
 
@@ -682,6 +669,7 @@ export default function WatchParty() {
                       <span className={`absolute bottom-0 right-0 w-2 h-2 rounded-full border border-card ${isOnline ? 'bg-green-400' : 'bg-red-400'}`} />
                     </div>
                     <span className="flex-1 truncate min-w-0">{p.name}{p.user_id === room.owner_id && <Crown className="w-3 h-3 text-amber-400 inline ml-0.5 shrink-0" />}</span>
+                    <RoomLevelBadge level={roomLevels[p.user_id]} textOnly />
                     {!isOnline && <span className="text-[9px] text-red-400 shrink-0">çevrim dışı</span>}
                   </button>
                 );
@@ -689,7 +677,7 @@ export default function WatchParty() {
             </div>
           </div>
         )}
-        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} participants={room.participants || []} roomModerators={room.room_moderators || []} onAssignMod={assignMod} onRemoveMod={removeMod} roomName={roomNameEdit} setRoomName={setRoomNameEdit} onSaveName={saveRoomName} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} onDeleteRoom={deleteRoom} roomLevels={roomLevels} onSetLevel={setLevel} />
+        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} participants={room.participants || []} roomModerators={room.room_moderators || []} onAssignMod={assignMod} onRemoveMod={removeMod} roomName={roomNameEdit} setRoomName={setRoomNameEdit} onSaveName={saveRoomName} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} onDeleteRoom={deleteRoom} />
       </div>
 
       <LiveKitDebugPanel voice={voice} />

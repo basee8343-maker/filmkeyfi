@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sanitizeText, rateLimit, safeErrorResponse, logSecurity } from '../../shared/security.ts';
 import { findProfanity } from '../../shared/profanity.ts';
+import { advanceRoomLevel } from '../../shared/roomLevels.ts';
 
 export default async function(req) {
   try {
@@ -60,28 +61,12 @@ export default async function(req) {
       room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
       text: clean, type: 'user'
     });
-    // Seviye yalnızca özel odalarda artar; kullanıcıya ait tek kalıcı kayıt tüm odalarda gösterilir.
+    // Tek kalıcı seviye yalnızca özel odalarda ilerler; tüm oda türlerinde aynı değer görünür.
     if (room.is_personal) {
       try {
-        const levels = await base44.asServiceRole.entities.RoomLevel.filter({ owner_id: user.id, user_id: user.id }, '-created_date', 1);
-        const levelRec = levels[0];
-        if (!levelRec) {
-          await base44.asServiceRole.entities.RoomLevel.create({
-            owner_id: user.id, user_id: user.id, user_name: name, level: 1, message_count: 1
-          });
-        } else {
-          const newCount = (levelRec.message_count || 0) + 1;
-          const leveledUp = newCount % 50 === 0;
-          const newLevel = (levelRec.level || 1) + (leveledUp ? 1 : 0);
-          await base44.asServiceRole.entities.RoomLevel.update(levelRec.id, {
-            message_count: newCount, level: newLevel, user_name: name
-          });
-          if (leveledUp) {
-            await base44.asServiceRole.entities.RoomMessage.create({
-              room_id, user_id: user.id, user_name: name,
-              text: `🎉 ${name} ${newLevel} lvl oldu! Tebrikler!`, type: 'system'
-            });
-          }
+        const progress = await advanceRoomLevel(base44, user.id, name);
+        if (progress.leveledUp) {
+          await base44.asServiceRole.entities.RoomMessage.create({ room_id, user_id: user.id, user_name: name, text: `🎉 ${name} ${progress.level} lvl oldu! Tebrikler!`, type: 'system' });
         }
       } catch {}
     }

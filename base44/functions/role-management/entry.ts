@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { safeErrorResponse, logSecurity } from '../../shared/security.ts';
 import { isSiteOwner, FRAME_DEFINITIONS, ROLE_DEFINITIONS } from '../../shared/roles.ts';
 import { upsertNotification } from '../../shared/upsertNotification.ts';
+import { setRoomLevel, validRoomLevel } from '../../shared/roomLevels.ts';
 
 async function removeFromAllRooms(base44, userId, userName) {
   const rooms = await base44.asServiceRole.entities.Room.filter({ status: 'active' }, '-created_date', 200).catch(() => []);
@@ -33,11 +34,10 @@ export default async function(req) {
     const me = await base44.auth.me();
     if (!me) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!isSiteOwner(me)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
-
     const body = await req.json();
     const { action, user_id } = body || {};
     if (!user_id || !action) return Response.json({ error: 'eksik bilgi' }, { status: 400 });
+    if (!isSiteOwner(me) && !(me.role === 'admin' && action === 'set_room_level')) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
 
     const target = await base44.asServiceRole.entities.User.get(user_id);
     if (!target) return Response.json({ error: 'kullanıcı bulunamadı' }, { status: 404 });
@@ -46,6 +46,15 @@ export default async function(req) {
     }
 
     const adminName = me.username || me.full_name;
+
+    if (action === 'set_room_level') {
+      const level = Number(body.level);
+      if (!validRoomLevel(level)) return Response.json({ error: 'LVL 1–1000 arasında tam sayı olmalıdır.' }, { status: 400 });
+      await setRoomLevel(base44, target, level);
+      await base44.asServiceRole.entities.AdminLog.create({ admin_id: me.id, admin_name: adminName, action: 'Ortak LVL güncellendi', target: target.email || user_id, details: `LVL ${level}` }).catch(() => {});
+      await upsertNotification(base44, { user_id, title: 'LVL seviyeniz güncellendi', body: `Yeni seviyeniz: LVL ${level}`, type: 'info' });
+      return Response.json({ ok: true, level });
+    }
 
     if (action === 'assign_role') {
       const { role_key } = body;

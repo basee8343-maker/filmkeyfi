@@ -10,13 +10,8 @@ export async function loadRoomLevels(ids) {
   for (let i = 0; i < ids.length; i += 100) chunks.push(ids.slice(i, i + 100));
   await Promise.all(chunks.map(async (chunk) => {
     const query = { $or: chunk.map((id) => ({ owner_id: id, user_id: id })) };
-    let skip = 0;
-    while (true) {
-      const rows = await base44.entities.RoomLevel.filter(query, '-created_date', 200, skip);
-      rows.forEach((row) => { if (result[row.user_id] === null) result[row.user_id] = row; });
-      if (rows.length < 200) break;
-      skip += rows.length;
-    }
+    const rows = await base44.entities.RoomLevel.filter(query, '-created_date', 200);
+    rows.forEach((row) => { if (result[row.user_id] === null) result[row.user_id] = row; });
   }));
   return result;
 }

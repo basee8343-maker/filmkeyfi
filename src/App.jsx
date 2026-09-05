@@ -11,6 +11,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 // Add page imports here
 import AppLayout from '@/components/layout/AppLayout';
 import { ThemeProvider } from '@/lib/ThemeContext';
+import RoomLevelProvider from '@/components/levels/RoomLevelProvider';
 import { Navigate } from 'react-router-dom';
 
 const Home = lazy(() => import('@/pages/Home'));
@@ -144,6 +145,7 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
+        <RoomLevelProvider>
         <ThemeProvider>
           <Router>
             <ScrollToTop />
@@ -151,6 +153,7 @@ function App() {
           </Router>
           <Toaster />
         </ThemeProvider>
+        </RoomLevelProvider>
       </QueryClientProvider>
     </AuthProvider>
   )

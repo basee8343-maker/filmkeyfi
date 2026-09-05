@@ -6,7 +6,7 @@ import ProfileFrame from '@/components/ProfileFrame';
 import RoleBadge from '@/components/RoleBadge';
 import RoleNameEffect from '@/components/role/RoleNameEffect';
 import RoleMessageEffect from '@/components/role/RoleMessageEffect';
-import FriendshipLevelBadge, { getFriendshipLevelTheme } from '@/components/friends/FriendshipLevelBadge';
+import RoomLevelBadge, { getRoomLevelTier } from '@/components/levels/RoomLevelBadge';
 import { getRoleInfo, isModerator } from '@/lib/roles';
 
 function RoomChatMessage({ message, profile, level, ownerId, roomModerators, currentUserId, canDelete, onDelete, onImage }) {
@@ -28,11 +28,11 @@ function RoomChatMessage({ message, profile, level, ownerId, roomModerators, cur
         {message.user_id === ownerId && <span className="text-[10px] font-bold text-amber-400">Oda Sahibi</span>}
         {profile && (profile.display_role || profile.custom_role?.name) && <RoleBadge user={profile} size="sm" showLabel={false} />}
       </div>
-      <FriendshipLevelBadge level={level} variant="room" maxLevel={Infinity} />
+      <RoomLevelBadge level={level} />
       <div className="isolate min-w-0 max-w-full overflow-hidden rounded-xl p-2">
         <RoleMessageEffect className="max-w-full min-w-0 align-top" roleKey={profile?.display_role || (profile?.custom_role?.name ? 'custom' : '')} msgEffect={role.msg_effect} msgColor={role.color}>
           {message.file_url && <Image src={message.file_url} alt="Sohbet görseli" className="mb-1 block h-44 w-44 max-w-full cursor-pointer rounded-lg" fittingType="fit" onClick={() => onImage(message.file_url)} />}
-          {message.text && <p className={`block h-auto max-w-full whitespace-pre-wrap break-words rounded-lg px-2.5 py-1.5 leading-relaxed [overflow-wrap:anywhere] ${emoji ? `text-3xl anim-emoji ${emojiMotion}` : 'text-sm'} bg-secondary text-secondary-foreground ${getFriendshipLevelTheme(level, Infinity).bubble}`} style={{ maxWidth: 'min(100%, calc(35ch + 1.25rem))' }}>{message.text}</p>}
+          {message.text && <p className={`block h-auto max-w-full whitespace-pre-wrap break-words rounded-lg px-2.5 py-1.5 leading-relaxed [overflow-wrap:anywhere] ${emoji ? `text-3xl anim-emoji ${emojiMotion}` : 'text-sm'} room-level-message bg-secondary text-secondary-foreground`} data-level-tier={getRoomLevelTier(level)} style={{ maxWidth: 'min(100%, calc(35ch + 1.25rem))' }}>{message.text}</p>}
         </RoleMessageEffect>
       </div>
     </div>

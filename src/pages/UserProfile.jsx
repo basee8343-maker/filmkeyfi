@@ -10,6 +10,8 @@ import RoleBadge from '@/components/RoleBadge';
 import ProfileFrame from '@/components/ProfileFrame';
 import { getRoleInfo } from '@/lib/roles';
 import ProfileRoomActions from '@/components/profile/ProfileRoomActions';
+import useRoomLevels from '@/hooks/useRoomLevels';
+import RoomLevelBadge from '@/components/levels/RoomLevelBadge';
 
 export default function UserProfile() {
   const { id } = useParams();
@@ -23,6 +25,7 @@ export default function UserProfile() {
   const [reportOpen, setReportOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState('');
+  const { levels: roomLevels } = useRoomLevels([id]);
 
   useEffect(() => {
     let active = true;
@@ -85,6 +88,7 @@ export default function UserProfile() {
           <h1 className="max-w-full text-2xl font-extrabold mt-4 flex flex-wrap justify-center items-center gap-2 [overflow-wrap:anywhere]">{profile.title || profile.username || profile.full_name || 'Kullanıcı'} {(profile.role === 'admin' || profile.role === 'moderator') && <Crown className="w-5 h-5 text-amber-400" />}</h1>
           {getRoleInfo(profile).label && <div className="mt-1.5"><RoleBadge user={profile} size="md" /></div>}
           {['admin', 'moderator'].includes(profile.role) && <p className="mt-2 text-sm font-bold text-primary">{profile.role === 'admin' ? 'YÖNETİCİ' : 'MODERATÖR'}</p>}
+          <div className="mt-3"><RoomLevelBadge level={roomLevels[id]} profile /></div>
           {profile.title && <p className="text-base font-semibold text-gradient mt-1">{profile.title}</p>}
           {profile.username && profile.username !== profile.title && <p className="text-sm text-muted-foreground">@{profile.username}</p>}
           <div className="mt-4 inline-flex items-center gap-2 bg-secondary/60 rounded-full pl-4 pr-1.5 py-1.5">

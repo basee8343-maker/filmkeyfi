@@ -14,6 +14,7 @@ import RoomChatMessage from '@/components/player/RoomChatMessage';
 import EmojiPicker from '@/components/player/EmojiPicker';
 import RoomSettingsContent from '@/components/player/RoomSettingsContent';
 import ParticipantHistoryPanel from '@/components/player/ParticipantHistoryPanel';
+import useRoomLevels from '@/hooks/useRoomLevels';
 
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
@@ -33,17 +34,8 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   const [msgFilter, setMsgFilter] = useState('all');
   const [blockedUsers, setBlockedUsers] = useState(user?.blocked_users || []);
   useEffect(() => { setBlockedUsers(user?.blocked_users || []); }, [user?.blocked_users]);
-  const [roomLevels, setRoomLevels] = useState({});
-  useEffect(() => {
-    base44.entities.RoomLevel.list('-updated_date', 500)
-      .then((levels) => { const map = {}; levels.filter((level) => level.owner_id === level.user_id).forEach((level) => { map[level.user_id] = level.level; }); setRoomLevels(map); })
-      .catch(() => {});
-    const unsub = base44.entities.RoomLevel.subscribe((event) => {
-      if (event.data?.owner_id !== event.data?.user_id) return;
-      setRoomLevels((current) => ({ ...current, [event.data.user_id]: event.data.level }));
-    });
-    return unsub;
-  }, []);
+  const levelUserIds = [...messages.map((message) => message.user_id), ...participants.map((participant) => participant.user_id), ...recentParticipants.map((participant) => participant.user_id)];
+  const { levels: roomLevels } = useRoomLevels(levelUserIds);
   const scrollRef = useRef(null);
   const profiles = useMessageProfiles(messages.map((message) => message.user_id));
   const [roomMods, setRoomMods] = useState([]);
@@ -276,13 +268,13 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                   );
                 })()
               ) : (
-                <RoomChatMessage message={m} profile={profiles[m.user_id]} level={roomLevels[m.user_id] || 1} ownerId={ownerId} roomModerators={roomModerators} currentUserId={user?.id} canDelete={isOwner || user?.id === m.user_id} onDelete={del} onImage={setLightbox} />
+                <RoomChatMessage message={m} profile={profiles[m.user_id]} level={roomLevels[m.user_id]} ownerId={ownerId} roomModerators={roomModerators} currentUserId={user?.id} canDelete={isOwner || user?.id === m.user_id} onDelete={del} onImage={setLightbox} />
               )}
             </div>
           ))}
           </div>
           ) : msgFilter === 'izleyici' ? (
-          <ParticipantHistoryPanel participants={participants} recentParticipants={recentParticipants} profiles={viewerProfiles} presenceMap={presenceMap} ownerId={ownerId} onSelect={onProfileCard} />
+          <ParticipantHistoryPanel participants={participants} recentParticipants={recentParticipants} profiles={viewerProfiles} presenceMap={presenceMap} roomLevels={roomLevels} ownerId={ownerId} onSelect={onProfileCard} />
           ) : msgFilter === 'yetkililer' ? (
           <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-1 bg-black">
           {roomMods.length === 0 ? <p className="text-center text-sm text-[#888] py-8">Henüz yetkili yok.</p> :

@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { incrementFriendshipProgression } from '../../shared/friendshipProgression.ts';
+import { advanceRoomLevel } from '../../shared/roomLevels.ts';
 
 export default async function(req) {
   try {
@@ -49,6 +50,12 @@ export default async function(req) {
         room_id: context_id, user_id: user.id, user_name: senderName, user_avatar: user.avatar || '',
         text: caption, file_url, type: 'user'
       });
+      if (room.is_personal) {
+        try {
+          const progress = await advanceRoomLevel(base44, user.id, senderName);
+          if (progress.leveledUp) await base44.asServiceRole.entities.RoomMessage.create({ room_id: context_id, user_id: user.id, user_name: senderName, text: `🎉 ${senderName} ${progress.level} lvl oldu! Tebrikler!`, type: 'system' });
+        } catch {}
+      }
       return Response.json({ ok: true });
     }
 
