@@ -268,7 +268,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                   );
                 })()
               ) : (
-                <RoomChatMessage message={m} profile={profiles[m.user_id]} level={roomLevels[m.user_id]} ownerId={ownerId} roomModerators={roomModerators} currentUserId={user?.id} canDelete={isOwner || user?.id === m.user_id} onDelete={del} onImage={setLightbox} />
+                <RoomChatMessage message={m} profile={profiles[m.user_id]} level={roomLevels[m.user_id]} ownerId={ownerId} roomModerators={roomModerators} currentUserId={user?.id} canDelete={isOwner || user?.id === m.user_id} onDelete={del} onImage={setLightbox} onOpenProfile={onProfileCard} />
               )}
             </div>
           ))}

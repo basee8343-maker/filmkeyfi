@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import VideoPlayer from '@/components/player/VideoPlayer';
 import ChatOverlay from '@/components/player/ChatOverlay';
@@ -25,10 +25,12 @@ import { isModerator } from '@/lib/roles';
 import { triggerBanNotice } from '@/lib/banNotice';
 import useRoomLevels from '@/hooks/useRoomLevels';
 import RoomLevelBadge from '@/components/levels/RoomLevelBadge';
+import UserProfile from '@/pages/UserProfile';
 
 export default function WatchParty() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: ul } = useCurrentUser();
   const { toast } = useToast();
   const [room, setRoom] = useState(null);
@@ -69,7 +71,19 @@ export default function WatchParty() {
   const [autoDeleteMinutes, setAutoDeleteMinutes] = useState(0);
 
   const [roomNameEdit, setRoomNameEdit] = useState('');
-  const openUserProfile = (userId) => navigate(`/kullanici/${userId}?room=${encodeURIComponent(id)}`);
+  const profileTarget = new URLSearchParams(location.search).get('profile');
+  const openUserProfile = (userId) => {
+    if (!userId) return;
+    const params = new URLSearchParams(location.search);
+    params.set('profile', userId);
+    navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { state: { ...(location.state || {}), roomProfileOverlay: true } });
+  };
+  const closeUserProfile = () => {
+    if (location.state?.roomProfileOverlay) { navigate(-1); return; }
+    const params = new URLSearchParams(location.search);
+    params.delete('profile');
+    navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true });
+  };
   const [presenceMap, setPresenceMap] = useState({});
   const isOwner = user?.id === room?.owner_id;
   const isMod = user?.role === 'admin' || user?.role === 'moderator';
@@ -692,6 +706,7 @@ export default function WatchParty() {
       />
 
       <MoviePickerSheet open={moviePickerOpen} onClose={() => setMoviePickerOpen(false)} onSelect={changeMovie} currentMovieId={movie?.id} />
+      {profileTarget && <UserProfile userId={profileTarget} roomIdOverride={id} onBack={closeUserProfile} embedded />}
     </div>
   );
 }

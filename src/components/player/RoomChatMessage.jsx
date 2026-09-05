@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { Link } from 'react-router-dom';
 import { Crown, Shield, Trash2 } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import ProfileFrame from '@/components/ProfileFrame';
@@ -9,22 +8,21 @@ import RoleMessageEffect from '@/components/role/RoleMessageEffect';
 import RoomLevelBadge, { getRoomLevelTier } from '@/components/levels/RoomLevelBadge';
 import { getRoleInfo, isModerator } from '@/lib/roles';
 
-function RoomChatMessage({ message, profile, level, ownerId, roomModerators, currentUserId, canDelete, onDelete, onImage }) {
+function RoomChatMessage({ message, profile, level, ownerId, roomModerators, currentUserId, canDelete, onDelete, onImage, onOpenProfile }) {
   const role = getRoleInfo(profile || message);
   const avatar = profile?.avatar || message.user_avatar;
-  const profileUrl = `/kullanici/${message.user_id}?room=${encodeURIComponent(message.room_id)}`;
   const trimmed = (message.text || '').trim();
   const emoji = ['😂','❤️','🔥','👏','🎉','😍','😱','😢','👍','🍿','🎬','💀'].includes(trimmed);
   const emojiMotion = ['😂','👏','😢','👍'].includes(trimmed) ? 'anim-emoji-bounce' : ['❤️','🎉','😍','🍿'].includes(trimmed) ? 'anim-emoji-pulse' : 'anim-emoji-shake';
   return <article className="group flex w-full min-w-0 shrink-0 items-start gap-2">
-    <Link to={profileUrl} className="mt-1 shrink-0" aria-label={`${message.user_name} profilini aç`}>
+    <button type="button" onClick={() => onOpenProfile?.(message.user_id)} className="mt-1 shrink-0" aria-label={`${message.user_name} profilini aç`}>
       {profile?.profile_frame ? <ProfileFrame frame={profile.profile_frame} size="sm" avatar={avatar} name={message.user_name} /> : avatar ? <Image src={avatar} alt={message.user_name} className="h-7 w-7 rounded-full" fittingType="fill" /> : <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{(message.user_name || '?')[0]}</span>}
-    </Link>
+    </button>
     <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
       <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5">
         {message.user_id === ownerId && <Crown className="h-3 w-3 shrink-0 text-amber-400" />}
         {(roomModerators.includes(message.user_id) || isModerator(profile)) && message.user_id !== ownerId && <Shield className="h-3 w-3 shrink-0 text-blue-400" />}
-        <Link to={profileUrl} className="min-w-0 max-w-full break-words text-xs font-semibold hover:underline [overflow-wrap:anywhere]"><RoleNameEffect nameEffect={role.name_effect} color={role.color}>{message.user_name}{currentUserId === message.user_id && ' (Sen)'}</RoleNameEffect></Link>
+        <button type="button" onClick={() => onOpenProfile?.(message.user_id)} className="min-w-0 max-w-full break-words text-left text-xs font-semibold hover:underline [overflow-wrap:anywhere]"><RoleNameEffect nameEffect={role.name_effect} color={role.color}>{message.user_name}{currentUserId === message.user_id && ' (Sen)'}</RoleNameEffect></button>
         {message.user_id === ownerId && <span className="text-[10px] font-bold text-amber-400">Oda Sahibi</span>}
         {profile && (profile.display_role || profile.custom_role?.name) && <RoleBadge user={profile} size="sm" showLabel={false} />}
       </div>
