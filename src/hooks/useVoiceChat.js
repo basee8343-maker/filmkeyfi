@@ -14,6 +14,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   const audioElementsRef = useRef(new Set());
   const mutedByModeratorRef = useRef(false);
   const deafenedRef = useRef(false);
+  const autoMicRoomRef = useRef(null);
   const [active, setActive] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [deafened, setDeafened] = useState(false);
@@ -168,11 +169,24 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     };
   }, [attachRemoteAudio, refreshState, roomId, user?.id, everVoiceEnabled]);
 
-  // Odaya giriş yalnızca dinleme bağlantısını açar; mikrofon izni sadece kullanıcı düğmeye bastığında istenir.
+  // Odaya ilk bağlantıda izin kabul edilirse mikrofonu otomatik aç; reddedilse bile uzak sesleri dinlet.
   useEffect(() => {
-    if (!roomRef.current || connectionState !== 'connected' || !everVoiceEnabled || voiceEnabled) return;
-    roomRef.current.localParticipant.setMicrophoneEnabled(false).then(refreshState).catch(() => {});
-  }, [voiceEnabled, connectionState, everVoiceEnabled, refreshState]);
+    const room = roomRef.current;
+    if (!room || connectionState !== 'connected' || !everVoiceEnabled) return;
+    if (!voiceEnabled) {
+      room.localParticipant.setMicrophoneEnabled(false).then(refreshState).catch(() => {});
+      return;
+    }
+    if (autoMicRoomRef.current === roomId) return;
+    autoMicRoomRef.current = roomId;
+    room.localParticipant.setMicrophoneEnabled(true, { echoCancellation: true, noiseSuppression: true, autoGainControl: true })
+      .then(refreshState)
+      .catch(async (micError) => {
+        await retryAudio();
+        setError(friendlyMicError(micError));
+        refreshState();
+      });
+  }, [voiceEnabled, connectionState, everVoiceEnabled, refreshState, retryAudio, roomId]);
 
   useEffect(() => {
     const moderatorMuted = !!participants?.find((participant) => participant.user_id === user?.id)?.muted;
