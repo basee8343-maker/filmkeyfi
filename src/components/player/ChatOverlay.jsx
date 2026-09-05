@@ -19,7 +19,7 @@ import UserProfileCard from '@/components/player/UserProfileCard';
 import EmojiPicker from '@/components/player/EmojiPicker';
 import RoomSettingsContent from '@/components/player/RoomSettingsContent';
 import ParticipantHistoryPanel from '@/components/player/ParticipantHistoryPanel';
-import FriendshipLevelBadge from '@/components/friends/FriendshipLevelBadge';
+import FriendshipLevelBadge, { getFriendshipLevelTheme } from '@/components/friends/FriendshipLevelBadge';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
@@ -332,12 +332,12 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                        <RoleNameEffect nameEffect={getRoleInfo(profiles[m.user_id] || m)?.name_effect} color={getRoleInfo(profiles[m.user_id] || m)?.color}>{m.user_name}{user?.id === m.user_id && ' (Sen)'}</RoleNameEffect>
                      </Link>
                      {m.user_id === ownerId && <span className="text-[10px] text-amber-400 font-bold shrink-0">Oda Sahibi</span>}
-                     <FriendshipLevelBadge level={roomLevels[m.user_id] || 1} room />
+                     <FriendshipLevelBadge level={roomLevels[m.user_id] || 1} variant="room" maxLevel={100} />
                      {profiles[m.user_id] && (profiles[m.user_id].display_role || profiles[m.user_id].custom_role?.name) && <RoleBadge user={profiles[m.user_id]} size="sm" showLabel={false} />}
                    </div>
                    <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')} msgEffect={getRoleInfo(profiles[m.user_id] || m)?.msg_effect} msgColor={getRoleInfo(profiles[m.user_id] || m)?.color}>
                       {m.file_url && <Image src={m.file_url} alt="foto" className="rounded-lg max-w-[180px] max-h-44 object-cover mb-1 cursor-pointer block" fittingType="fit" onClick={() => setLightbox(m.file_url)} />}
-                      {m.text && (() => { const trimmed = m.text.trim(); const animEmojis = ['😂','❤️','🔥','👏','🎉','😍','😱','😢','👍','🍿','🎬','💀']; if (animEmojis.includes(trimmed) && trimmed.length <= 3) { const ac = ['😂','👏','😢','👍'].includes(trimmed) ? 'anim-emoji-bounce' : ['❤️','🎉','😍','🍿'].includes(trimmed) ? 'anim-emoji-pulse' : 'anim-emoji-shake'; return <span className={`text-3xl inline-block anim-emoji ${ac}`}>{trimmed}</span>; } return <p className="text-sm break-words rounded-lg px-2.5 py-1.5 inline-block text-white" style={{ background: 'rgba(26, 26, 26, 0.9)', border: '1px solid rgba(255, 204, 0, 0.2)', borderLeft: '2px solid #ffcc00', borderBottom: '2px solid #ffcc00' }}>{m.text}</p>; })()}
+                      {m.text && (() => { const trimmed = m.text.trim(); const animEmojis = ['😂','❤️','🔥','👏','🎉','😍','😱','😢','👍','🍿','🎬','💀']; if (animEmojis.includes(trimmed) && trimmed.length <= 3) { const ac = ['😂','👏','😢','👍'].includes(trimmed) ? 'anim-emoji-bounce' : ['❤️','🎉','😍','🍿'].includes(trimmed) ? 'anim-emoji-pulse' : 'anim-emoji-shake'; return <span className={`text-3xl inline-block anim-emoji ${ac}`}>{trimmed}</span>; } return <p className={`text-sm break-words rounded-lg px-2.5 py-1.5 inline-block bg-[#1a1a1a] text-white shadow-lg ${getFriendshipLevelTheme(roomLevels[m.user_id] || 1, 100).bubble}`}>{m.text}</p>; })()}
                     </RoleMessageEffect>
                   </div>
                   {(isOwner || user?.id === m.user_id) && (

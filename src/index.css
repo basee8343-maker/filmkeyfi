@@ -999,4 +999,13 @@
   .friendship-level-energy { animation: friendship-level-energy 2s ease-in-out infinite; }
   .friendship-level-particle { position: absolute; left: 30%; top: 40%; width: 4px; height: 4px; border-radius: 9999px; background: currentColor; box-shadow: 14px 6px currentColor, 26px -4px currentColor; animation: friendship-level-particle 2s ease-out infinite; }
   .friendship-level-up { animation: friendship-level-up 2.6s ease-in-out forwards; }
+  .friendship-frame-basic { border-radius: 9999px; }
+  .friendship-frame-glow { border-radius: 1rem; box-shadow: 0 0 14px currentColor; }
+  .friendship-frame-neon { border-radius: 35% 65% 35% 65%; box-shadow: 0 0 18px currentColor; }
+  .friendship-frame-aura { clip-path: polygon(50% 0, 90% 18%, 100% 65%, 72% 100%, 28% 100%, 0 65%, 10% 18%); box-shadow: 0 0 20px currentColor; }
+  .friendship-frame-premium { clip-path: polygon(50% 0, 82% 15%, 100% 50%, 82% 85%, 50% 100%, 18% 85%, 0 50%, 18% 15%); }
+  .friendship-frame-rare { border-radius: 28% 72% 28% 72%; box-shadow: 0 0 24px currentColor; }
+  .friendship-frame-elite { clip-path: polygon(50% 0, 68% 22%, 100% 18%, 82% 52%, 100% 82%, 62% 78%, 50% 100%, 38% 78%, 0 82%, 18% 52%, 0 18%, 32% 22%); }
+  .friendship-frame-legend { clip-path: polygon(50% 0, 65% 25%, 100% 8%, 82% 50%, 100% 92%, 62% 75%, 50% 100%, 38% 75%, 0 92%, 18% 50%, 0 8%, 35% 25%); box-shadow: 0 0 28px currentColor; }
+  .friendship-frame-max { clip-path: polygon(50% 0, 62% 22%, 88% 5%, 82% 35%, 100% 50%, 82% 65%, 88% 95%, 62% 78%, 50% 100%, 38% 78%, 12% 95%, 18% 65%, 0 50%, 18% 35%, 12% 5%, 38% 22%); box-shadow: 0 0 34px currentColor; }
 }

@@ -71,9 +71,9 @@ export default async function(req) {
           });
         } else {
           const newCount = (levelRec.message_count || 0) + 1;
-          let newLevel = levelRec.level || 1;
+          let newLevel = Math.min(100, levelRec.level || 1);
           let leveledUp = false;
-          if (newCount % 50 === 0 && newLevel < 1000) {
+          if (newCount % 50 === 0 && newLevel < 100) {
             newLevel += 1;
             leveledUp = true;
           }
