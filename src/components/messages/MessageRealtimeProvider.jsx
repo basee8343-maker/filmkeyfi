@@ -16,7 +16,7 @@ export default function MessageRealtimeProvider({ userId, children }) {
   const [progressions, setProgressions] = useState([]);
   const [loading, setLoading] = useState(true);
   const openThread = useRef(null);
-  const typingTimers = useRef(new Map());
+  const [typingMap, setTypingMap] = useState({});
   const conversationsRef = useRef(conversations);
   conversationsRef.current = conversations;
   const reload = useCallback(async () => {
@@ -31,14 +31,6 @@ export default function MessageRealtimeProvider({ userId, children }) {
     setLoading(true); reload();
     const offConversations = base44.entities.Conversation.subscribe((event) => {
       const id = event.data?.id || event.id;
-      if (event.data?.typing_user_id && event.data?.typing_updated_at) {
-        clearTimeout(typingTimers.current.get(id));
-        const typingStamp = event.data.typing_updated_at;
-        typingTimers.current.set(id, setTimeout(() => {
-          setConversations((current) => current.map((item) => item.id === id && item.typing_updated_at === typingStamp ? { ...item, typing_user_id: '' } : item));
-          typingTimers.current.delete(id);
-        }, 3100));
-      }
       setConversations((current) => {
         if (event.type === 'delete') return current.filter((item) => item.id !== id);
         const existing = current.find((item) => item.id === id);
@@ -68,15 +60,41 @@ export default function MessageRealtimeProvider({ userId, children }) {
       const id = event.data?.id || event.id;
       setProgressions((current) => event.type === 'delete' ? current.filter((item) => item.id !== id) : [{ ...(current.find((item) => item.id === id) || {}), ...(event.data || {}), id }, ...current.filter((item) => item.id !== id)]);
     });
+    base44.entities.DmTyping.list('-updated_date', 200).then((records) => {
+      const now = Date.now();
+      const map = {};
+      (records || []).forEach((r) => {
+        if (r.conversation_id && now - new Date(r.updated_at || r.created_date).getTime() < 3000) {
+          map[r.conversation_id] = { user_id: r.user_id, user_name: r.user_name, updated_at: r.updated_at || r.created_date };
+        }
+      });
+      setTypingMap(map);
+    }).catch(() => {});
+    const offDmTyping = base44.entities.DmTyping.subscribe((event) => {
+      const data = event.data;
+      if (!data?.conversation_id) return;
+      setTypingMap((current) => {
+        if (event.type === 'delete') { const next = { ...current }; delete next[data.conversation_id]; return next; }
+        return { ...current, [data.conversation_id]: { user_id: data.user_id, user_name: data.user_name, updated_at: data.updated_at } };
+      });
+    });
+    const typingPoll = setInterval(() => {
+      setTypingMap((current) => {
+        const now = Date.now(); let changed = false; const next = {};
+        Object.entries(current).forEach(([cid, info]) => { if (now - new Date(info.updated_at || 0).getTime() < 3000) next[cid] = info; else changed = true; });
+        return changed ? next : current;
+      });
+    }, 1000);
     const opened = (event) => { openThread.current = event.detail?.conversationId || null; setConversations((current) => current.map((item) => item.id !== openThread.current ? item : { ...item, ...(item.user1_id === userId ? { unread_user1: 0 } : { unread_user2: 0 }) })); };
     const closed = () => { openThread.current = null; };
     const reconnect = () => reload(); const visible = () => { if (document.visibilityState === 'visible') reload(); };
     window.addEventListener('social-thread-open', opened); window.addEventListener('social-thread-close', closed); window.addEventListener('online', reconnect); document.addEventListener('visibilitychange', visible);
-    return () => { offConversations(); offMessages(); offFriends(); offProgressions(); typingTimers.current.forEach(clearTimeout); typingTimers.current.clear(); window.removeEventListener('social-thread-open', opened); window.removeEventListener('social-thread-close', closed); window.removeEventListener('online', reconnect); document.removeEventListener('visibilitychange', visible); };
+    return () => { offConversations(); offMessages(); offFriends(); offProgressions(); offDmTyping(); clearInterval(typingPoll); window.removeEventListener('social-thread-open', opened); window.removeEventListener('social-thread-close', closed); window.removeEventListener('online', reconnect); document.removeEventListener('visibilitychange', visible); };
   }, [userId, reload]);
   const badges = useMemo(() => ({ requests, messages: conversations.reduce((sum, item) => sum + (item.user1_id === userId ? item.unread_user1 || 0 : item.unread_user2 || 0), 0) }), [requests, conversations, userId]);
   const optimisticHide = useCallback((id) => setConversations((items) => items.filter((item) => item.id !== id)), []);
   const optimisticPatch = useCallback((id, patch) => setConversations((items) => items.map((item) => item.id === id ? { ...item, ...patch } : item)), []);
   const getProgression = useCallback((otherId) => progressions.find((item) => (item.members || []).includes(otherId)) || null, [progressions]);
-  return <MessageRealtimeContext.Provider value={{ conversations, loading, reload, optimisticHide, optimisticPatch, badges, progressions, getProgression }}>{children}</MessageRealtimeContext.Provider>;
+  const isTyping = useCallback((conversationId, otherId) => { const info = typingMap[conversationId]; return !!info && info.user_id === otherId; }, [typingMap]);
+  return <MessageRealtimeContext.Provider value={{ conversations, loading, reload, optimisticHide, optimisticPatch, badges, progressions, getProgression, typingMap, isTyping }}>{children}</MessageRealtimeContext.Provider>;
 }

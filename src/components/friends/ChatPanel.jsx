@@ -15,7 +15,7 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
   const { messages: allMessages, loading, sending, send: sendMsg, markRead, deleteMessage, deleteConversation } = useChatMessages(conversation?.id);
   const { user: currentUser } = useCurrentUser();
   const { toast } = useToast();
-  const { conversations, optimisticPatch } = useMessageRealtime();
+  const { conversations, optimisticPatch, isTyping } = useMessageRealtime();
   const realtimeConversation = conversations.find((item) => item.id === conversation?.id) || conversation;
   const isAdmin = currentUser?.role === 'admin';
   const [friendProfile, setFriendProfile] = useState(null);
@@ -32,13 +32,12 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
   const [uploading, setUploading] = useState(false);
   const [lightbox, setLightbox] = useState(null);
   const [keyboard, setKeyboard] = useState({ open: false, height: 0 });
-  const [friendTyping, setFriendTyping] = useState(false);
   const [profilePopup, setProfilePopup] = useState(false);
   const messagesRef = useRef(null);
   const layoutHeightRef = useRef(window.innerHeight);
   const keyboardOpenRef = useRef(false);
-  const typingTimer = useRef(null);
-  const typingActive = useRef(false);
+  const myTypingIdRef = useRef(null);
+  const typingTimerRef = useRef(null);
   const touchStart = useRef({ x: 0, y: 0 });
   const prevFriendStatus = useRef(null);
   const [acceptedNotice, setAcceptedNotice] = useState(false);
@@ -95,17 +94,35 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
   }, [allMessages]);
 
   useEffect(() => {
-    return () => { clearTimeout(typingTimer.current); };
+    return () => {
+      clearTimeout(typingTimerRef.current);
+      if (myTypingIdRef.current) { base44.entities.DmTyping.delete(myTypingIdRef.current).catch(() => {}); myTypingIdRef.current = null; }
+    };
   }, []);
 
-  useEffect(() => {
-    if (!realtimeConversation?.typing_user_id || realtimeConversation.typing_user_id === userId) { setFriendTyping(false); return; }
-    const elapsed = Date.now() - new Date(realtimeConversation.typing_updated_at || 0).getTime();
-    if (elapsed >= 3000) { setFriendTyping(false); return; }
-    setFriendTyping(true);
-    const timer = setTimeout(() => setFriendTyping(false), 3000 - elapsed);
-    return () => clearTimeout(timer);
-  }, [realtimeConversation?.typing_user_id, realtimeConversation?.typing_updated_at, userId]);
+  const sendTyping = () => {
+    if (!userId || !conversation?.id) return;
+    const updateOrCreate = async () => {
+      try {
+        if (myTypingIdRef.current) {
+          await base44.entities.DmTyping.update(myTypingIdRef.current, { updated_at: new Date().toISOString() });
+        } else {
+          const rec = await base44.entities.DmTyping.create({ conversation_id: conversation.id, user_id: userId, user_name: currentUser?.full_name || 'Kullanıcı', updated_at: new Date().toISOString() });
+          myTypingIdRef.current = rec.id;
+        }
+      } catch {
+        try {
+          const rec = await base44.entities.DmTyping.create({ conversation_id: conversation.id, user_id: userId, user_name: currentUser?.full_name || 'Kullanıcı', updated_at: new Date().toISOString() });
+          myTypingIdRef.current = rec.id;
+        } catch {}
+      }
+    };
+    updateOrCreate();
+    clearTimeout(typingTimerRef.current);
+    typingTimerRef.current = setTimeout(() => {
+      if (myTypingIdRef.current) { base44.entities.DmTyping.delete(myTypingIdRef.current).catch(() => {}); myTypingIdRef.current = null; }
+    }, 3000);
+  };
 
   useEffect(() => {
     if (!conversation?.id) return;
@@ -162,6 +179,7 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
   const name = mine ? conversation.user2_name : conversation.user1_name;
   const avatar = mine ? conversation.user2_avatar : conversation.user1_avatar;
   const friendId = mine ? conversation.user2_id : conversation.user1_id;
+  const friendTyping = isTyping(conversation.id, friendId);
   const items = allMessages;
   const onlineEnabled = !offlineFor.includes(userId);
   const readReceiptsEnabled = !readReceiptsDisabledFor.includes(userId);
@@ -172,31 +190,18 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!text.trim()) return;
-    clearTimeout(typingTimer.current);
-    typingActive.current = false;
     const messageText = text.trim();
     setText('');
     try {
       await sendMsg(messageText);
-      base44.entities.Conversation.update(conversation.id, { typing_user_id: '', typing_updated_at: new Date().toISOString() }).catch(() => {});
+      clearTimeout(typingTimerRef.current);
+      if (myTypingIdRef.current) { base44.entities.DmTyping.delete(myTypingIdRef.current).catch(() => {}); myTypingIdRef.current = null; }
     } catch {}
   };
 
   const changeText = (value) => {
     setText(value);
-    clearTimeout(typingTimer.current);
-    const isTyping = Boolean(value.trim());
-    typingActive.current = isTyping;
-    base44.entities.Conversation.update(conversation.id, {
-      typing_user_id: isTyping ? userId : '',
-      typing_updated_at: new Date().toISOString()
-    }).catch(() => {});
-    if (isTyping) {
-      typingTimer.current = setTimeout(() => {
-        typingActive.current = false;
-        base44.entities.Conversation.update(conversation.id, { typing_user_id: '', typing_updated_at: new Date().toISOString() }).catch(() => {});
-      }, 3000);
-    }
+    if (value.trim()) sendTyping();
   };
 
   const block = async () => {

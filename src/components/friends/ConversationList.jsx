@@ -6,7 +6,7 @@ import { useMessageRealtime } from '@/components/messages/MessageRealtimeProvide
 
 export default function ConversationList({ conversations, userId, onOpen, onHide, isOnline }) {
   const [swiped, setSwiped] = useState(null);
-  const { getProgression } = useMessageRealtime();
+  const { getProgression, isTyping } = useMessageRealtime();
   useEffect(() => { setSwiped(null); }, [conversations]);
   const touchStart = useRef({ x: 0, y: 0 });
   const swipingRef = useRef(false);
@@ -23,7 +23,7 @@ export default function ConversationList({ conversations, userId, onOpen, onHide
     // Çevrim dışı mod: arkadaş bu sohbette offline görünüyorsa
     const friendOffline = (conversation.offline_for || []).includes(otherId);
     const online = !friendOffline && isOnline ? isOnline(otherId) : false;
-    const typing = conversation.typing_user_id === otherId;
+    const typing = isTyping(conversation.id, otherId);
     return <div key={conversation.id} className="relative overflow-hidden border-b border-border">
       {/* Sil butonu — sadece swipe ile görünür */}
       <button
