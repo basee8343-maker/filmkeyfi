@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
@@ -47,6 +47,31 @@ export default function AppLayout() {
       navigate(target, { replace: true });
     }
   }, [loading, user, pathname, isRoom, publicSettings?.payment_available, publicSettings?.payment_required]);
+
+  // Abonelik onayı tespiti — realtime geçiş + 3sn polling yedeği
+  // Admin onayladığında kullanıcıyı ana sayfaya (filmler) yönlendir
+  const wasPendingRef = useRef(false);
+  useEffect(() => {
+    if (!user) return;
+    const isActive = membershipActive(user);
+    if (isActive) {
+      if (wasPendingRef.current && !pathname.startsWith('/admin') && pathname !== '/') {
+        wasPendingRef.current = false;
+        window.location.href = '/';
+      }
+      return;
+    }
+    wasPendingRef.current = true;
+    const id = setInterval(async () => {
+      try {
+        const fresh = await base44.auth.me();
+        if (fresh && (fresh.membership_status === 'active' || fresh.role === 'admin' || fresh.role === 'moderator')) {
+          window.location.href = '/';
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(id);
+  }, [user, pathname]);
 
   // Ban kontrolü — engellenmiş kullanıcıları giriş ekranına at
   useEffect(() => {
