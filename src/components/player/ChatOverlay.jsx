@@ -19,6 +19,7 @@ import UserProfileCard from '@/components/player/UserProfileCard';
 import EmojiPicker from '@/components/player/EmojiPicker';
 import RoomSettingsContent from '@/components/player/RoomSettingsContent';
 import ParticipantHistoryPanel from '@/components/player/ParticipantHistoryPanel';
+import FriendshipLevelBadge from '@/components/friends/FriendshipLevelBadge';
 
 const EMOJIS = ['😀', '😂', '😍', '🔥', '👍', '👏', '😱', '😢', '🎬', '🍿', '❤️', '🎉'];
 
@@ -331,7 +332,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                        <RoleNameEffect nameEffect={getRoleInfo(profiles[m.user_id] || m)?.name_effect} color={getRoleInfo(profiles[m.user_id] || m)?.color}>{m.user_name}{user?.id === m.user_id && ' (Sen)'}</RoleNameEffect>
                      </Link>
                      {m.user_id === ownerId && <span className="text-[10px] text-amber-400 font-bold shrink-0">Oda Sahibi</span>}
-                     {roomLevels[m.user_id] && <span className="text-[10px] font-bold text-blue-400 shrink-0">Lv{roomLevels[m.user_id]}</span>}
+                     <FriendshipLevelBadge level={roomLevels[m.user_id] || 1} room />
                      {profiles[m.user_id] && (profiles[m.user_id].display_role || profiles[m.user_id].custom_role?.name) && <RoleBadge user={profiles[m.user_id]} size="sm" showLabel={false} />}
                    </div>
                    <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')} msgEffect={getRoleInfo(profiles[m.user_id] || m)?.msg_effect} msgColor={getRoleInfo(profiles[m.user_id] || m)?.color}>

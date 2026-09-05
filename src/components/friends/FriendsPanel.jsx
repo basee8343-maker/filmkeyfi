@@ -4,10 +4,13 @@ import { MoreVertical, MessageCircle, UserMinus, Ban, DoorOpen } from 'lucide-re
 import { Image } from '@/components/ui/image';
 import FriendSearch from '@/components/friends/FriendSearch';
 import FriendRequests from '@/components/friends/FriendRequests';
+import FriendshipLevelBadge from '@/components/friends/FriendshipLevelBadge';
+import { useMessageRealtime } from '@/components/messages/MessageRealtimeProvider';
 
 export default function FriendsPanel({ relations, userId, invoke, onChat, isOnline, getRoomId, rooms }) {
   const [menuFor, setMenuFor] = useState(null);
   const navigate = useNavigate();
+  const { getProgression } = useMessageRealtime();
   const friends = relations.filter((r) => r.status === 'accepted');
   const action = async (type, relation) => { await invoke({ action: type, friendship_id: relation.id }); setMenuFor(null); };
 
@@ -34,6 +37,7 @@ export default function FriendsPanel({ relations, userId, invoke, onChat, isOnli
             <div className="relative shrink-0">{avatar ? <Image src={avatar} className="w-11 h-11 rounded-full" fittingType="fill" /> : <div className="w-11 h-11 rounded-full bg-gradient-to-br from-primary to-accent text-primary-foreground flex items-center justify-center font-bold">{name?.[0]}</div>}<span className={`absolute right-0 bottom-0 w-3 h-3 rounded-full border-2 border-card ${online ? 'bg-green-500' : 'bg-muted-foreground'}`} /></div>
             <div className="flex-1 min-w-0"><p className="font-semibold truncate">{name}</p><p className="text-xs text-muted-foreground truncate">{friendRoom?.isPublic ? <span className="text-red-500 font-semibold">{friendRoom.room.owner_name}'in odasında</span> : online ? <span className="text-green-500">Çevrim içi</span> : 'Çevrim dışı'}{member ? ` · ${member}` : ''}</p></div>
           </button>
+          <FriendshipLevelBadge level={getProgression(friendId)?.level || 1} />
           <button onClick={() => onChat(r)} className="shrink-0 flex items-center gap-1 bg-primary text-primary-foreground rounded-lg px-2.5 py-1.5 text-xs font-semibold"><MessageCircle className="w-3.5 h-3.5" /> Sohbet</button>
           <button onClick={() => setMenuFor(menuFor === r.id ? null : r.id)} className="shrink-0 p-1.5 rounded-full hover:bg-secondary"><MoreVertical className="w-4 h-4 text-muted-foreground" /></button>
         </div>

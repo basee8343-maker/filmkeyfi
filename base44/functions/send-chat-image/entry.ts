@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { incrementFriendshipProgression } from '../../shared/friendshipProgression.ts';
 
 export default async function(req) {
   try {
@@ -69,7 +70,7 @@ export default async function(req) {
         }, '-created_date', 1).catch(() => []);
         if (!friendships.length) return Response.json({ error: 'Yalnızca arkadaşlarınıza mesaj gönderebilirsiniz' }, { status: 403 });
       }
-      await base44.asServiceRole.entities.ChatMessage.create({
+      const message = await base44.asServiceRole.entities.ChatMessage.create({
         conversation_id: context_id,
         sender_id: user.id, sender_name: senderName,
         receiver_id: receiverId,
@@ -77,6 +78,7 @@ export default async function(req) {
         deleted_for: [], read_by: [user.id]
       });
       const updates: any = {
+        deleted_for: (conversation.deleted_for || []).filter((id) => id !== receiverId),
         last_message_text: caption || '[Görsel]',
         last_message_at: new Date().toISOString(),
         last_sender_id: user.id, last_sender_name: senderName
@@ -87,7 +89,9 @@ export default async function(req) {
         updates.unread_user1 = (conversation.unread_user1 || 0) + 1;
       }
       await base44.asServiceRole.entities.Conversation.update(context_id, updates);
-      return Response.json({ ok: true });
+      const isAdminChat = user.role === 'admin' || receiver?.role === 'admin';
+      const progression = isAdminChat ? null : await incrementFriendshipProgression(base44, user.id, receiverId, message.id);
+      return Response.json({ ok: true, message, progression });
     }
 
     return Response.json({ error: 'geçersiz bağlam' }, { status: 400 });

@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { findProfanity } from '../../shared/profanity.ts';
+import { incrementFriendshipProgression } from '../../shared/friendshipProgression.ts';
 
 export default async function(req) {
   try {
@@ -112,6 +113,7 @@ export default async function(req) {
 
       // Sohbeti güncelle — son mesaj ve okunmamış sayısı
       const updates: any = {
+        deleted_for: (conversation.deleted_for || []).filter((id) => id !== receiverId),
         last_message_text: content,
         last_message_at: new Date().toISOString(),
         last_sender_id: user.id, last_sender_name: userName
@@ -122,8 +124,9 @@ export default async function(req) {
         updates.unread_user1 = (conversation.unread_user1 || 0) + 1;
       }
       await base44.asServiceRole.entities.Conversation.update(conversationId, updates);
+      const progression = isAdminChat ? null : await incrementFriendshipProgression(base44, user.id, receiverId, message.id);
 
-      return Response.json({ message });
+      return Response.json({ message, progression });
     }
 
     // delete_conversation: Sohbeti SADECE bu kullanıcı için sil + tüm mesajları temizle (clean slate)
@@ -133,7 +136,10 @@ export default async function(req) {
       if (!conversation) return Response.json({ error: 'Sohbet bulunamadı' }, { status: 404 });
       if (!(conversation.members || []).includes(user.id)) return Response.json({ error: 'yetkisiz' }, { status: 403 });
       const deletedFor = [...new Set([...(conversation.deleted_for || []), user.id])];
-      await base44.asServiceRole.entities.Conversation.update(conversationId, { deleted_for: deletedFor });
+      const hideUpdate: any = { deleted_for: deletedFor };
+      if (conversation.user1_id === user.id) hideUpdate.unread_user1 = 0;
+      else hideUpdate.unread_user2 = 0;
+      await base44.asServiceRole.entities.Conversation.update(conversationId, hideUpdate);
       // Tüm mesajları bu kullanıcı için sil — tekrar açınca eski mesajlar görünmesin
       const messages = await base44.asServiceRole.entities.ChatMessage.filter({ conversation_id: conversationId }, 'created_date', 500).catch(() => []);
       if (messages.length) {
