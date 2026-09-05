@@ -118,8 +118,7 @@ export default function ProfileDropdown() {
 
               <div className="my-0.5 border-t border-white/10" />
 
-              {isActive && (
-                <Link to="/profil" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors relative">
+              <Link to="/profil" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors relative">
                   <div className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-purple-500" />
                   <User className="w-5 h-5 text-white/70 shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -128,7 +127,6 @@ export default function ProfileDropdown() {
                   </div>
                   <ChevronRight className="w-4 h-4 text-white/30 shrink-0" />
                 </Link>
-              )}
 
               {isActive && (
                 <Link to="/listem" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">

@@ -1,4 +1,5 @@
 const cache = new Map();
+const resolvedCache = new Map();
 const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 const rgbAt = (data, pixel) => [data[pixel * 4], data[pixel * 4 + 1], data[pixel * 4 + 2]];
 
@@ -12,8 +13,12 @@ function palette(data, width, height, accepts) {
   return [...counts].sort((a, b) => b[1] - a[1]).slice(0, 24).map(([key]) => key.split(',').map(Number));
 }
 
+const frameCacheKey = (src, crop) => `${src}|${crop ? `${crop.col},${crop.row},${crop.columns},${crop.rows}` : 'full'}`;
+export const getTransparentFrame = (src, crop) => resolvedCache.get(frameCacheKey(src, crop)) || '';
+
 export function makeTransparentFrame(src, crop) {
-  const cacheKey = `${src}|${crop ? `${crop.col},${crop.row},${crop.columns},${crop.rows}` : 'full'}`;
+  const cacheKey = frameCacheKey(src, crop);
+  if (resolvedCache.has(cacheKey)) return Promise.resolve(resolvedCache.get(cacheKey));
   if (cache.has(cacheKey)) return cache.get(cacheKey);
   const task = new Promise((resolve, reject) => {
     const image = new window.Image();
@@ -45,8 +50,9 @@ export function makeTransparentFrame(src, crop) {
         const innerRadius = crop?.innerRadius || .185;
         const centerDistance = Math.min(...centerBackground.map((color) => distance(rgb, color)));
         const edgeDistance = Math.min(...edgeBackground.map((color) => distance(rgb, color)));
-        if (edgeDistance < 82 || radius < innerRadius || (radius < innerRadius + .12 && centerDistance < 92)) data[pixel * 4 + 3] = 0;
-        else if (edgeDistance < 112) data[pixel * 4 + 3] = Math.min(data[pixel * 4 + 3], Math.round((edgeDistance - 82) * 8.5));
+        const backgroundDistance = Math.min(centerDistance, edgeDistance);
+        if (backgroundDistance < 82 || radius < innerRadius || (radius < innerRadius + .12 && centerDistance < 92)) data[pixel * 4 + 3] = 0;
+        else if (backgroundDistance < 112) data[pixel * 4 + 3] = Math.min(data[pixel * 4 + 3], Math.round((backgroundDistance - 82) * 8.5));
       }
       ctx.putImageData(pixels, 0, 0);
       if (crop) return resolve(canvas.toDataURL('image/png'));
@@ -70,5 +76,6 @@ export function makeTransparentFrame(src, crop) {
     image.src = src;
   });
   cache.set(cacheKey, task);
+  task.then((url) => resolvedCache.set(cacheKey, url));
   return task;
 }

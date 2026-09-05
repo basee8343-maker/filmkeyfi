@@ -10,16 +10,23 @@ const SIZES = {
 
 export default function ProfileFrame({ frame, children, size = 'md', className = '', avatar, name }) {
   const frameInfo = FRAME_DEFINITIONS[frame];
-  if (!frame || !frameInfo?.image_url) return children;
   const dims = SIZES[size] || SIZES.md;
+  if (!frame || !frameInfo?.image_url) return children || (
+    <div className={`relative shrink-0 overflow-hidden rounded-full bg-background ${dims.avatar} ${className}`}>
+      {avatar
+        ? <Image src={avatar} className="h-full w-full object-cover object-center" fittingType="fill" focalPointX={0.5} focalPointY={0.5} />
+        : <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-white">{(name || '?')[0]}</span>}
+    </div>
+  );
   const artworkClass = frameInfo.sprite
     ? 'h-[240%] w-[168%] -translate-x-1/2 -translate-y-[42%]'
     : 'h-[168%] w-[168%] -translate-x-1/2 -translate-y-1/2';
+  const avatarInset = frameInfo.avatarScale === 'large' ? '-inset-[11%]' : 'inset-0';
 
   return (
     <div className={`relative shrink-0 overflow-visible ${frameInfo.sprite ? dims.sprite : dims.avatar} ${className}`} title={frameInfo.label}>
       <div className={`relative mx-auto ${dims.avatar}`}>
-        <div className="absolute inset-0 overflow-hidden rounded-full bg-background">
+        <div className={`absolute overflow-hidden rounded-full bg-background ${avatarInset}`}>
           {avatar
             ? <Image src={avatar} className="h-full w-full object-cover object-center" fittingType="fill" focalPointX={0.5} focalPointY={0.5} />
             : <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-white">{(name || '?')[0]}</span>}
