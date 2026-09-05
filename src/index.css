@@ -1060,6 +1060,7 @@
   .friendship-level-up { animation: friendship-level-up 2.6s ease-in-out forwards; }
   @keyframes xp-frame-breathe { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.045); filter: brightness(1.18); } }
   .xp-frame-asset { animation: xp-frame-breathe 3s ease-in-out infinite; }
+  .xp-frame-luminous { filter: brightness(1.12) saturate(1.16) drop-shadow(0 0 4px hsl(var(--foreground) / .5)) drop-shadow(0 0 9px hsl(var(--primary) / .45)); }
   @media (prefers-reduced-motion: reduce) { .xp-frame-asset { animation: none; } }
   .friendship-frame-basic { border-radius: 9999px; }
   .friendship-frame-glow { border-radius: 1rem; box-shadow: 0 0 14px currentColor; }

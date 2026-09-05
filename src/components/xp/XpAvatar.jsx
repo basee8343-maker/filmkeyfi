@@ -29,7 +29,7 @@ export default function XpAvatar({ avatar, name, frame, userId, size = 'sm', cla
           : <span className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-white ${dims.text}`}>{(name || '?')[0]}</span>}
       </div>
       {/* Katman 2 — merkezi ve dışı gerçek alpha şeffaf SVG frame */}
-      <div className="pointer-events-none absolute left-1/2 top-1/2 z-[2] h-[168%] w-[168%] max-w-none -translate-x-1/2 -translate-y-1/2 overflow-visible">
+      <div className="xp-frame-luminous pointer-events-none absolute left-1/2 top-1/2 z-[2] h-[168%] w-[168%] max-w-none -translate-x-1/2 -translate-y-1/2 overflow-visible">
         {needsAlphaCleanup ? (
           <TransparentFrameImage src={resolved.image_url} animated={false} />
         ) : hasFrameAsset ? (

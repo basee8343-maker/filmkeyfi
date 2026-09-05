@@ -95,20 +95,6 @@ export const FRAME_DEFINITIONS: Record<string, any> = {
   'fenerbahce': { label: 'Fenerbahçe', color: '#002244', colors: ['#002244', '#facc15'] },
   'besiktas': { label: 'Beşiktaş', color: '#000000', colors: ['#000000', '#e5e7eb'] },
   'trabzonspor': { label: 'Trabzonspor', color: '#6B0C72', colors: ['#6B0C72', '#4A90D9'] },
-  'xp_61_70': { label: '61 - 70', color: '#00bfff' },
-  'xp_71_80': { label: '71 - 80', color: '#20d425' },
-  'xp_81_90': { label: '81 - 90', color: '#9d39ff' },
-  'xp_91_100': { label: '91 - 100', color: '#ff9d00' },
-  'xp_101_120': { label: '101 - 120', color: '#008cff' },
-  'xp_121_150': { label: '121 - 150', color: '#ff35af' },
-  'xp_151_200': { label: '151 - 200', color: '#ed1c24' },
-  'xp_201_300': { label: '201 - 300', color: '#ffb000' },
-  'xp_301_400': { label: '301 - 400', color: '#00bfff' },
-  'xp_401_500': { label: '401 - 500', color: '#5b39ff' },
-  'xp_501_750': { label: '501 - 750', color: '#ff3d00' },
-  'xp_751_1000': { label: '751 - 1000', color: '#f0a000' },
-  'xp_1001_1500': { label: '1001 - 1500', color: '#922dff' },
-  'xp_1501_plus': { label: '1501+', color: '#ff2900' },
 };
 
 export const ANIMATION_DEFINITIONS: { key: string; label: string }[] = [

@@ -155,20 +155,6 @@ export const FRAME_DEFINITIONS = {
     image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/c1ab8665f_68781285-2AB1-44F1-8F15-41D3B81AB66F.png',
     colors: ['#6B0C72', '#4A90D9'],
   },
-  'xp_61_70': { label: '61 - 70', color: '#00bfff', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 0, row: 0, columns: 7, rows: 2, centerY: .42, innerRadius: .28 } },
-  'xp_71_80': { label: '71 - 80', color: '#20d425', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 1, row: 0, columns: 7, rows: 2, centerY: .42, innerRadius: .28 } },
-  'xp_81_90': { label: '81 - 90', color: '#9d39ff', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 2, row: 0, columns: 7, rows: 2, centerY: .42, innerRadius: .28 } },
-  'xp_91_100': { label: '91 - 100', color: '#ff9d00', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 3, row: 0, columns: 7, rows: 2, centerY: .42, innerRadius: .28 } },
-  'xp_101_120': { label: '101 - 120', color: '#008cff', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 4, row: 0, columns: 7, rows: 2, centerY: .42, innerRadius: .28 } },
-  'xp_121_150': { label: '121 - 150', color: '#ff35af', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 5, row: 0, columns: 7, rows: 2, centerY: .42, innerRadius: .28 } },
-  'xp_151_200': { label: '151 - 200', color: '#ed1c24', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 6, row: 0, columns: 7, rows: 2, centerY: .42, innerRadius: .28 } },
-  'xp_201_300': { label: '201 - 300', color: '#ffb000', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 0, row: 1, columns: 7, rows: 2, centerY: .43, innerRadius: .29 } },
-  'xp_301_400': { label: '301 - 400', color: '#00bfff', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 1, row: 1, columns: 7, rows: 2, centerY: .43, innerRadius: .29 } },
-  'xp_401_500': { label: '401 - 500', color: '#5b39ff', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 2, row: 1, columns: 7, rows: 2, centerY: .43, innerRadius: .29 } },
-  'xp_501_750': { label: '501 - 750', color: '#ff3d00', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 3, row: 1, columns: 7, rows: 2, centerY: .43, innerRadius: .29 } },
-  'xp_751_1000': { label: '751 - 1000', color: '#f0a000', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 4, row: 1, columns: 7, rows: 2, centerY: .43, innerRadius: .29 } },
-  'xp_1001_1500': { label: '1001 - 1500', color: '#922dff', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 5, row: 1, columns: 7, rows: 2, centerY: .43, innerRadius: .29 } },
-  'xp_1501_plus': { label: '1501+', color: '#ff2900', image_url: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/ce6f75c38_A5FA701C-57A5-478C-9C11-76C63B3EAFA8.png', sprite: { col: 6, row: 1, columns: 7, rows: 2, centerY: .43, innerRadius: .29 } },
 };
 
 export const ANIMATION_DEFINITIONS = [
