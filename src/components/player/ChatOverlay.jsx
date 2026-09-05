@@ -42,16 +42,15 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
   useEffect(() => { setBlockedUsers(user?.blocked_users || []); }, [user?.blocked_users]);
   const [roomLevels, setRoomLevels] = useState({});
   useEffect(() => {
-    if (!ownerId) return;
-    base44.entities.RoomLevel.filter({ owner_id: ownerId }, 'created_date', 100)
-      .then((levels) => { const map = {}; levels.forEach((l) => { map[l.user_id] = l.level; }); setRoomLevels(map); })
+    base44.entities.RoomLevel.list('-updated_date', 500)
+      .then((levels) => { const map = {}; levels.filter((level) => level.owner_id === level.user_id).forEach((level) => { map[level.user_id] = level.level; }); setRoomLevels(map); })
       .catch(() => {});
-    const unsub = base44.entities.RoomLevel.subscribe((ev) => {
-      if (ev.data?.owner_id !== ownerId) return;
-      setRoomLevels((prev) => ({ ...prev, [ev.data.user_id]: ev.data.level }));
+    const unsub = base44.entities.RoomLevel.subscribe((event) => {
+      if (event.data?.owner_id !== event.data?.user_id) return;
+      setRoomLevels((current) => ({ ...current, [event.data.user_id]: event.data.level }));
     });
     return unsub;
-  }, [ownerId]);
+  }, []);
   const scrollRef = useRef(null);
   const profiles = useMessageProfiles(messages.map((message) => message.user_id));
   const [roomMods, setRoomMods] = useState([]);
@@ -332,12 +331,12 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
                        <RoleNameEffect nameEffect={getRoleInfo(profiles[m.user_id] || m)?.name_effect} color={getRoleInfo(profiles[m.user_id] || m)?.color}>{m.user_name}{user?.id === m.user_id && ' (Sen)'}</RoleNameEffect>
                      </Link>
                      {m.user_id === ownerId && <span className="text-[10px] text-amber-400 font-bold shrink-0">Oda Sahibi</span>}
-                     <FriendshipLevelBadge level={roomLevels[m.user_id] || 1} variant="room" maxLevel={100} />
+                     <FriendshipLevelBadge level={roomLevels[m.user_id] || 1} variant="room" maxLevel={Infinity} />
                      {profiles[m.user_id] && (profiles[m.user_id].display_role || profiles[m.user_id].custom_role?.name) && <RoleBadge user={profiles[m.user_id]} size="sm" showLabel={false} />}
                    </div>
                    <RoleMessageEffect roleKey={profiles[m.user_id]?.display_role || (profiles[m.user_id]?.custom_role?.name ? 'custom' : '')} msgEffect={getRoleInfo(profiles[m.user_id] || m)?.msg_effect} msgColor={getRoleInfo(profiles[m.user_id] || m)?.color}>
                       {m.file_url && <Image src={m.file_url} alt="foto" className="rounded-lg max-w-[180px] max-h-44 object-cover mb-1 cursor-pointer block" fittingType="fit" onClick={() => setLightbox(m.file_url)} />}
-                      {m.text && (() => { const trimmed = m.text.trim(); const animEmojis = ['😂','❤️','🔥','👏','🎉','😍','😱','😢','👍','🍿','🎬','💀']; if (animEmojis.includes(trimmed) && trimmed.length <= 3) { const ac = ['😂','👏','😢','👍'].includes(trimmed) ? 'anim-emoji-bounce' : ['❤️','🎉','😍','🍿'].includes(trimmed) ? 'anim-emoji-pulse' : 'anim-emoji-shake'; return <span className={`text-3xl inline-block anim-emoji ${ac}`}>{trimmed}</span>; } return <p className={`text-sm break-words rounded-lg px-2.5 py-1.5 inline-block bg-[#1a1a1a] text-white shadow-lg ${getFriendshipLevelTheme(roomLevels[m.user_id] || 1, 100).bubble}`}>{m.text}</p>; })()}
+                      {m.text && (() => { const trimmed = m.text.trim(); const animEmojis = ['😂','❤️','🔥','👏','🎉','😍','😱','😢','👍','🍿','🎬','💀']; if (animEmojis.includes(trimmed) && trimmed.length <= 3) { const ac = ['😂','👏','😢','👍'].includes(trimmed) ? 'anim-emoji-bounce' : ['❤️','🎉','😍','🍿'].includes(trimmed) ? 'anim-emoji-pulse' : 'anim-emoji-shake'; return <span className={`text-3xl inline-block anim-emoji ${ac}`}>{trimmed}</span>; } return <p className={`text-sm break-words rounded-lg px-2.5 py-1.5 inline-block bg-[#1a1a1a] text-white shadow-lg ${getFriendshipLevelTheme(roomLevels[m.user_id] || 1, Infinity).bubble}`}>{m.text}</p>; })()}
                     </RoleMessageEffect>
                   </div>
                   {(isOwner || user?.id === m.user_id) && (

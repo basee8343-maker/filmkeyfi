@@ -332,18 +332,20 @@ export default async function(req) {
     }
 
     if (action === 'set-level') {
+      if (!room.is_personal) return Response.json({ error: 'seviye yalnızca özel odalarda yönetilir' }, { status: 400 });
       if (!isOwner && !isMod) return Response.json({ error: 'yetkisiz' }, { status: 403 });
       const { target_id: tid, level: newLevel } = body || {};
       if (!tid) return Response.json({ error: 'kullanıcı gerekli' }, { status: 400 });
-      const clampedLevel = Math.max(1, Math.min(100, parseInt(newLevel) || 1));
-      const levels = await base44.asServiceRole.entities.RoomLevel.filter({ owner_id: room.owner_id, user_id: tid }, '-created_date', 1).catch(() => []);
+      const parsedLevel = parseInt(newLevel);
+      const level = Number.isSafeInteger(parsedLevel) ? Math.max(1, parsedLevel) : 1;
+      const levels = await base44.asServiceRole.entities.RoomLevel.filter({ owner_id: tid, user_id: tid }, '-created_date', 1).catch(() => []);
       if (levels[0]) {
-        await base44.asServiceRole.entities.RoomLevel.update(levels[0].id, { level: clampedLevel });
+        await base44.asServiceRole.entities.RoomLevel.update(levels[0].id, { level });
       } else {
         const targetUser = await base44.asServiceRole.entities.User.get(tid).catch(() => null);
         const targetName = targetUser?.username || targetUser?.full_name || 'Kullanıcı';
         await base44.asServiceRole.entities.RoomLevel.create({
-          owner_id: room.owner_id, user_id: tid, user_name: targetName, level: clampedLevel, message_count: 0
+          owner_id: tid, user_id: tid, user_name: targetName, level, message_count: 0
         });
       }
       return Response.json({ ok: true });

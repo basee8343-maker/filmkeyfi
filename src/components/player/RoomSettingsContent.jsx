@@ -76,7 +76,7 @@ export default function RoomSettingsContent({ room, canMod, participants, roomMo
         )}
         {room.is_personal && canMod && onSetLevel && (
           <div className="space-y-1.5">
-            <p className="text-xs font-bold text-muted-foreground px-1">Seviye Yönetimi (1-100)</p>
+            <p className="text-xs font-bold text-muted-foreground px-1">Seviye Yönetimi</p>
             <div className="rounded-xl border border-border bg-secondary/40 p-2 space-y-1.5 max-h-40 overflow-y-auto">
               {participants.filter((p) => p.user_id !== room.owner_id).map((p) => {
                 const lvl = roomLevels?.[p.user_id] || 1;
@@ -85,7 +85,7 @@ export default function RoomSettingsContent({ room, canMod, participants, roomMo
                     <span className="text-xs truncate flex-1">{p.name}</span>
                     <button onClick={() => onSetLevel(p.user_id, Math.max(1, lvl - 1))} className="w-6 h-6 rounded-lg bg-secondary text-xs font-bold">-</button>
                     <span className="text-xs font-bold w-8 text-center">{lvl}</span>
-                    <button onClick={() => onSetLevel(p.user_id, Math.min(100, lvl + 1))} className="w-6 h-6 rounded-lg bg-secondary text-xs font-bold">+</button>
+                    <button onClick={() => onSetLevel(p.user_id, lvl + 1)} className="w-6 h-6 rounded-lg bg-secondary text-xs font-bold">+</button>
                   </div>
                 );
               })}

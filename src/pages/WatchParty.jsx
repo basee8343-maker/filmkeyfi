@@ -67,16 +67,15 @@ export default function WatchParty() {
   const [autoDeleteMinutes, setAutoDeleteMinutes] = useState(0);
   const [roomLevels, setRoomLevels] = useState({});
   useEffect(() => {
-    if (!room?.owner_id || !room?.is_personal) return;
-    base44.entities.RoomLevel.filter({ owner_id: room.owner_id }, 'created_date', 100)
-      .then((levels) => { const map = {}; levels.forEach((l) => { map[l.user_id] = l.level; }); setRoomLevels(map); })
+    base44.entities.RoomLevel.list('-updated_date', 500)
+      .then((levels) => { const map = {}; levels.filter((level) => level.owner_id === level.user_id).forEach((level) => { map[level.user_id] = level.level; }); setRoomLevels(map); })
       .catch(() => {});
-    const unsub = base44.entities.RoomLevel.subscribe((ev) => {
-      if (ev.data?.owner_id !== room.owner_id) return;
-      setRoomLevels((prev) => ({ ...prev, [ev.data.user_id]: ev.data.level }));
+    const unsub = base44.entities.RoomLevel.subscribe((event) => {
+      if (event.data?.owner_id !== event.data?.user_id) return;
+      setRoomLevels((current) => ({ ...current, [event.data.user_id]: event.data.level }));
     });
     return unsub;
-  }, [room?.owner_id, room?.is_personal]);
+  }, []);
   const [roomNameEdit, setRoomNameEdit] = useState('');
   const [profileCard, setProfileCard] = useState(null);
   const [presenceMap, setPresenceMap] = useState({});

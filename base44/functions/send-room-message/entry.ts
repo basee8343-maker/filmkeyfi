@@ -60,25 +60,21 @@ export default async function(req) {
       room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
       text: clean, type: 'user'
     });
-    // Normal ve kişisel odalarda kalıcı mesaj seviyesi
-    {
+    // Seviye yalnızca özel odalarda artar; kullanıcıya ait tek kalıcı kayıt tüm odalarda gösterilir.
+    if (room.is_personal) {
       try {
-        const levels = await base44.asServiceRole.entities.RoomLevel.filter({ owner_id: room.owner_id, user_id: user.id }, '-created_date', 1);
+        const levels = await base44.asServiceRole.entities.RoomLevel.filter({ owner_id: user.id, user_id: user.id }, '-created_date', 1);
         const levelRec = levels[0];
         if (!levelRec) {
           await base44.asServiceRole.entities.RoomLevel.create({
-            owner_id: room.owner_id, user_id: user.id, user_name: name, level: 1, message_count: 1
+            owner_id: user.id, user_id: user.id, user_name: name, level: 1, message_count: 1
           });
         } else {
           const newCount = (levelRec.message_count || 0) + 1;
-          let newLevel = Math.min(100, levelRec.level || 1);
-          let leveledUp = false;
-          if (newCount % 50 === 0 && newLevel < 100) {
-            newLevel += 1;
-            leveledUp = true;
-          }
+          const leveledUp = newCount % 50 === 0;
+          const newLevel = (levelRec.level || 1) + (leveledUp ? 1 : 0);
           await base44.asServiceRole.entities.RoomLevel.update(levelRec.id, {
-            message_count: newCount, level: newLevel
+            message_count: newCount, level: newLevel, user_name: name
           });
           if (leveledUp) {
             await base44.asServiceRole.entities.RoomMessage.create({

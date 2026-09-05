@@ -155,9 +155,10 @@ export default async function(req) {
       if (!conversation) return Response.json({ error: 'Sohbet bulunamadı' }, { status: 404 });
       if (!(conversation.members || []).includes(user.id)) return Response.json({ error: 'yetkisiz' }, { status: 403 });
       const offlineFor = conversation.offline_for || [];
-      const newOfflineFor = offlineFor.includes(user.id)
+      const showOnline = typeof body.online === 'boolean' ? body.online : offlineFor.includes(user.id);
+      const newOfflineFor = showOnline
         ? offlineFor.filter((id) => id !== user.id)
-        : [...offlineFor, user.id];
+        : [...new Set([...offlineFor, user.id])];
       await base44.asServiceRole.entities.Conversation.update(conversationId, { offline_for: newOfflineFor });
       return Response.json({ ok: true, offline_for: newOfflineFor });
     }

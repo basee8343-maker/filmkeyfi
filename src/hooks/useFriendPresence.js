@@ -5,62 +5,71 @@ export default function useFriendPresence(user, maintain = false) {
   const [presence, setPresence] = useState([]);
   const [now, setNow] = useState(Date.now());
   const ownRef = useRef(null);
-  const presenceRef = useRef([]);
-  const flushTimerRef = useRef(null);
 
   const load = useCallback(async () => {
     if (!user) return;
     const records = await base44.entities.UserPresence.list('-updated_date', 200);
-    presenceRef.current = records;
     setPresence(records);
     let own = records.find((record) => record.user_id === user.id);
-    if (!own && maintain) own = await base44.entities.UserPresence.create({ user_id: user.id, online: true, last_seen: new Date().toISOString() });
+    if (maintain) {
+      const data = { online: document.visibilityState === 'visible' && navigator.onLine, last_seen: new Date().toISOString() };
+      own = own
+        ? await base44.entities.UserPresence.update(own.id, data)
+        : await base44.entities.UserPresence.create({ user_id: user.id, ...data });
+      setPresence((current) => [own, ...current.filter((record) => record.user_id !== user.id)]);
+    }
     ownRef.current = own;
   }, [user?.id, maintain]);
 
   useEffect(() => {
     if (!user) return;
     load();
-    const flush = () => { flushTimerRef.current = null; setPresence([...presenceRef.current]); };
-    const scheduleFlush = () => { if (!flushTimerRef.current) flushTimerRef.current = setTimeout(flush, 2000); };
     const off = base44.entities.UserPresence.subscribe((event) => {
-      const current = presenceRef.current;
-      if (event.type === 'create') {
-        if (!current.some((item) => item.id === event.id)) { presenceRef.current = [...current, event.data]; scheduleFlush(); }
-      } else if (event.type === 'update') {
-        presenceRef.current = current.map((item) => item.id === event.id ? { ...item, ...event.data } : item);
-        scheduleFlush();
-      } else {
-        presenceRef.current = current.filter((item) => item.id !== event.id);
-        scheduleFlush();
-      }
+      const id = event.data?.id || event.id;
+      setPresence((current) => {
+        if (event.type === 'delete') return current.filter((item) => item.id !== id);
+        const existing = current.find((item) => item.id === id);
+        const merged = { ...(existing || {}), ...(event.data || {}), id };
+        if (merged.user_id === user.id) ownRef.current = merged;
+        return [merged, ...current.filter((item) => item.id !== id)];
+      });
+      setNow(Date.now());
     });
-    if (!maintain) return () => { off(); if (flushTimerRef.current) clearTimeout(flushTimerRef.current); };
+    if (!maintain) return off;
+
     const update = async (online) => {
-      if (!ownRef.current) return;
       const data = { online, last_seen: new Date().toISOString() };
-      ownRef.current = { ...ownRef.current, ...data };
-      await base44.entities.UserPresence.update(ownRef.current.id, data);
+      if (!ownRef.current) {
+        ownRef.current = await base44.entities.UserPresence.create({ user_id: user.id, ...data });
+      } else {
+        ownRef.current = { ...ownRef.current, ...data };
+        await base44.entities.UserPresence.update(ownRef.current.id, data);
+      }
+      setNow(Date.now());
     };
-    const heartbeat = setInterval(() => { setNow(Date.now()); update(document.visibilityState === 'visible' && navigator.onLine).catch(() => {}); }, 25000);
-    const visibility = () => update(document.visibilityState === 'visible' && navigator.onLine).catch(() => {});
-    document.addEventListener('visibilitychange', visibility);
-    window.addEventListener('online', visibility);
-    window.addEventListener('offline', visibility);
+    const syncVisibility = () => update(document.visibilityState === 'visible' && navigator.onLine).catch(() => {});
+    const goOffline = () => update(false).catch(() => {});
+    const heartbeat = setInterval(syncVisibility, 10000);
+    document.addEventListener('visibilitychange', syncVisibility);
+    window.addEventListener('online', syncVisibility);
+    window.addEventListener('offline', syncVisibility);
+    window.addEventListener('pagehide', goOffline);
+    window.addEventListener('beforeunload', goOffline);
     return () => {
       clearInterval(heartbeat);
       off();
-      if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
-      document.removeEventListener('visibilitychange', visibility);
-      window.removeEventListener('online', visibility);
-      window.removeEventListener('offline', visibility);
-      update(false).catch(() => {});
+      document.removeEventListener('visibilitychange', syncVisibility);
+      window.removeEventListener('online', syncVisibility);
+      window.removeEventListener('offline', syncVisibility);
+      window.removeEventListener('pagehide', goOffline);
+      window.removeEventListener('beforeunload', goOffline);
+      goOffline();
     };
   }, [user?.id, load, maintain]);
 
   const isOnline = (userId) => {
     const record = presence.find((item) => item.user_id === userId);
-    return Boolean(record?.online && now - new Date(record.last_seen).getTime() < 60000);
+    return Boolean(record?.online && now - new Date(record.last_seen).getTime() < 30000);
   };
   const getRoomId = (userId) => presence.find((item) => item.user_id === userId)?.current_room_id || '';
   return { isOnline, getRoomId };
