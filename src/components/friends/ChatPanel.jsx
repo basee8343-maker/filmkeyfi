@@ -8,12 +8,15 @@ import useChatMessages from '@/hooks/useChatMessages';
 import ReportDialog from '@/components/ReportDialog';
 import RoleMessageEffect from '@/components/role/RoleMessageEffect';
 import ChatSettingsPanel from '@/components/friends/ChatSettingsPanel';
+import { useMessageRealtime } from '@/components/messages/MessageRealtimeProvider';
 
 
 export default function ChatPanel({ conversation, userId, onBack, online, embedded }) {
   const { messages: allMessages, loading, sending, send: sendMsg, markRead, deleteMessage, deleteConversation } = useChatMessages(conversation?.id);
   const { user: currentUser } = useCurrentUser();
   const { toast } = useToast();
+  const { conversations } = useMessageRealtime();
+  const realtimeConversation = conversations.find((item) => item.id === conversation?.id) || conversation;
   const isAdmin = currentUser?.role === 'admin';
   const [friendProfile, setFriendProfile] = useState(null);
   const [friendship, setFriendship] = useState(null);
@@ -96,13 +99,13 @@ export default function ChatPanel({ conversation, userId, onBack, online, embedd
   }, []);
 
   useEffect(() => {
-    if (!conversation?.typing_user_id || conversation.typing_user_id === userId) { setFriendTyping(false); return; }
-    const elapsed = Date.now() - new Date(conversation.typing_updated_at || 0).getTime();
+    if (!realtimeConversation?.typing_user_id || realtimeConversation.typing_user_id === userId) { setFriendTyping(false); return; }
+    const elapsed = Date.now() - new Date(realtimeConversation.typing_updated_at || 0).getTime();
     if (elapsed >= 3000) { setFriendTyping(false); return; }
     setFriendTyping(true);
     const timer = setTimeout(() => setFriendTyping(false), 3000 - elapsed);
     return () => clearTimeout(timer);
-  }, [conversation?.typing_user_id, conversation?.typing_updated_at, userId]);
+  }, [realtimeConversation?.typing_user_id, realtimeConversation?.typing_updated_at, userId]);
 
   useEffect(() => {
     if (!conversation?.id) return;
