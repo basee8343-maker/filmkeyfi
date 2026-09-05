@@ -45,8 +45,8 @@ export function makeTransparentFrame(src, crop) {
         const innerRadius = crop?.innerRadius || .185;
         const centerDistance = Math.min(...centerBackground.map((color) => distance(rgb, color)));
         const edgeDistance = Math.min(...edgeBackground.map((color) => distance(rgb, color)));
-        if (radius < innerRadius || (radius < innerRadius + .09 && centerDistance < 92) || (radius > .32 && edgeDistance < 82)) data[pixel * 4 + 3] = 0;
-        else if (radius > .32 && edgeDistance < 112) data[pixel * 4 + 3] = Math.min(data[pixel * 4 + 3], Math.round((edgeDistance - 82) * 8.5));
+        if (edgeDistance < 82 || radius < innerRadius || (radius < innerRadius + .12 && centerDistance < 92)) data[pixel * 4 + 3] = 0;
+        else if (edgeDistance < 112) data[pixel * 4 + 3] = Math.min(data[pixel * 4 + 3], Math.round((edgeDistance - 82) * 8.5));
       }
       ctx.putImageData(pixels, 0, 0);
       if (crop) return resolve(canvas.toDataURL('image/png'));

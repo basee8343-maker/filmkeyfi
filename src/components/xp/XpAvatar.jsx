@@ -23,7 +23,7 @@ export default function XpAvatar({ avatar, name, frame, userId, size = 'sm', cla
   return (
     <div className={`relative shrink-0 ${dims.box} ${className}`} title={resolved?.name || ''}>
       {/* Katman 1 — profil fotoğrafı */}
-      <div className="absolute inset-0 rounded-full overflow-hidden bg-background">
+      <div className="absolute -inset-[11%] rounded-full overflow-hidden bg-background">
         {avatar
           ? <Image src={avatar} className="w-full h-full object-cover object-center" fittingType="fill" focalPointX={0.5} focalPointY={0.5} />
           : <span className={`w-full h-full flex items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-white ${dims.text}`}>{(name || '?')[0]}</span>}
