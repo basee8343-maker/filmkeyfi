@@ -71,8 +71,8 @@
     },
     "profile_frame_scale": {
       "type": "integer",
-      "minimum": 70,
-      "maximum": 130,
+      "minimum": 80,
+      "maximum": 180,
       "default": 100
     },
     "profile_frame_entrance_enabled": {

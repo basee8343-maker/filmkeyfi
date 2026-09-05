@@ -115,7 +115,7 @@ export default async function(req) {
 
     if (action === 'set_frame_display') {
       const scale = Number(body.scale);
-      if (!Number.isInteger(scale) || scale < 70 || scale > 130) return Response.json({ error: 'Boyut 70–130 arasında olmalıdır.' }, { status: 400 });
+      if (!Number.isInteger(scale) || scale < 80 || scale > 180) return Response.json({ error: 'Yakınlaştırma 80–180 arasında olmalıdır.' }, { status: 400 });
       const entranceEnabled = !!body.entrance_enabled;
       await base44.asServiceRole.entities.User.update(user_id, { profile_frame_scale: scale, profile_frame_entrance_enabled: entranceEnabled });
       await base44.asServiceRole.entities.AdminLog.create({ admin_id: me.id, admin_name: adminName, action: 'Çerçeve görünümü güncellendi', target: target.email || user_id, details: `%${scale} · giriş ${entranceEnabled ? 'açık' : 'kapalı'}` }).catch(() => {});

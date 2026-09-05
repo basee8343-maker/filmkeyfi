@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import ProfileFrameEntrance from '@/components/player/ProfileFrameEntrance';
 
-export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
+export default function RoleEntrance({ roomId, joinTrigger = 0, userId }) {
   const [queue, setQueue] = useState([]);
   const [current, setCurrent] = useState(null);
   const processed = useRef(new Set());
@@ -10,6 +10,7 @@ export default function RoleEntrance({ roomId, joinTrigger = 0 }) {
     if (!message || message.room_id !== roomId || message.type !== 'system' || processed.current.has(message.id)) return;
     const match = (message.text || '').match(/^\{\{PFRAME\|([^|}]+)\|([0-9]+)\}\}/);
     if (!match || !message.text.includes('odaya katıldı')) return;
+    if (userId && message.user_id === userId) return;
     processed.current.add(message.id);
     setQueue((items) => [...items.slice(-4), { key: message.id, frame: match[1], scale: Number(match[2]) || 100, avatar: message.user_avatar || '', name: message.user_name || 'Kullanıcı' }]);
   }, [roomId]);

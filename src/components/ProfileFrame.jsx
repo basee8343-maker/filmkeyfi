@@ -26,7 +26,7 @@ export default function ProfileFrame({ frame, children, size = 'md', className =
   const artworkClass = frameInfo.sprite
     ? 'h-[240%] w-[168%] -translate-x-1/2 -translate-y-[42%]'
     : 'h-[168%] w-[168%] -translate-x-1/2 -translate-y-1/2';
-  const avatarScale = frameMetrics?.avatarScale || 1;
+  const avatarScale = (frameMetrics?.avatarScale || 1) * (Math.min(180, Math.max(80, Number(frameScale) || 100)) / 100);
 
   return (
     <div className={`relative shrink-0 overflow-visible ${frameInfo.sprite ? dims.sprite : dims.avatar} ${className}`} title={frameInfo.label}>
