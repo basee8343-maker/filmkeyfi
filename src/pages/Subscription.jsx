@@ -33,7 +33,8 @@ export default function Subscription() {
         if (planItems.status === 'fulfilled') setPlans(planItems.value || []);
         if (methodsRes.status === 'fulfilled') {
           const m = methodsRes.value;
-          setMethods(m.data || m || []);
+          const arr = m?.data ?? m ?? [];
+          setMethods(Array.isArray(arr) ? arr : []);
         }
         if (subRes.status === 'fulfilled') {
           const subData = subRes.value.data || subRes.value;
@@ -58,7 +59,7 @@ export default function Subscription() {
     }
   }, [user?.id, ul]);
 
-  const bankMethod = methods.find((m) => m.provider_key === 'bank_transfer');
+  const bankMethod = (Array.isArray(methods) ? methods : []).find((m) => m.provider_key === 'bank_transfer');
 
   const copyIban = () => {
     if (bankMethod?.iban) {
