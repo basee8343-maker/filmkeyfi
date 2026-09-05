@@ -38,7 +38,6 @@ export default function AppLayout() {
   // Abonelik kontrolü: ödemesi olmayan kullanıcılar içerik sayfalarına gidemez
   useEffect(() => {
     if (loading || !user || isRoom) return;
-    if (publicSettings?.payment_required === false && publicSettings?.payment_available !== false) return;
     if (membershipActive(user)) return;
     const paymentAvailable = publicSettings?.payment_available !== false;
     const target = paymentAvailable ? '/abonelik' : '/onay-bekleniyor';
