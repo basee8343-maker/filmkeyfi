@@ -56,6 +56,7 @@ const AdminSecurity = lazy(() => import('@/pages/admin/AdminSecurity'));
 const AdminPromoVideo = lazy(() => import('@/pages/admin/AdminPromoVideo'));
 const AdminSessions = lazy(() => import('@/pages/admin/AdminSessions'));
 const AdminUpdates = lazy(() => import('@/pages/admin/AdminUpdates'));
+const AdminRoles = lazy(() => import('@/pages/admin/AdminRoles'));
 
 
 const AuthenticatedApp = () => {
@@ -118,6 +119,7 @@ const AuthenticatedApp = () => {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />
           <Route path="kullanicilar" element={<AdminUsers />} />
+          <Route path="roller" element={<AdminRoles />} />
           <Route path="filmler" element={<AdminMovies />} />
           <Route path="film-ekle" element={<AdminMovies />} />
           <Route path="kategoriler" element={<AdminCategories />} />

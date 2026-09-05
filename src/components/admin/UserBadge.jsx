@@ -6,7 +6,7 @@ import RoleBadge from '@/components/RoleBadge';
 import ProfileFrame from '@/components/ProfileFrame';
 import { getRoleInfo } from '@/lib/roles';
 
-export default function UserBadge({ userId, name, avatar, memberId, size = 'sm', showCopy = true, isOwner = false, displayRole, customRole, profileFrame, className = '' }) {
+export default function UserBadge({ userId, name, avatar, memberId, size = 'sm', showCopy = true, isOwner = false, displayRole, customRole, profileFrame, frameScale = 100, className = '' }) {
   const { toast } = useToast();
   const copy = (e) => {
     e.preventDefault();
@@ -28,7 +28,7 @@ export default function UserBadge({ userId, name, avatar, memberId, size = 'sm',
   return (
     <Link to={userId ? `/kullanici/${userId}` : '#'} className={`inline-flex items-center gap-2 min-w-0 group hover:opacity-90 ${className}`}>
       {hasFrame
-        ? <ProfileFrame frame={profileFrame} size={size} avatar={avatar} name={name}>{avatarEl}</ProfileFrame>
+        ? <ProfileFrame frame={profileFrame} size={size} avatar={avatar} name={name} frameScale={frameScale}>{avatarEl}</ProfileFrame>
         : avatarEl}
       <div className="min-w-0">
         <p className="font-medium text-sm truncate inline-flex items-center gap-1">

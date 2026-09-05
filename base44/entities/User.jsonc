@@ -69,6 +69,16 @@
       },
       "default": []
     },
+    "profile_frame_scale": {
+      "type": "integer",
+      "minimum": 70,
+      "maximum": 130,
+      "default": 100
+    },
+    "profile_frame_entrance_enabled": {
+      "type": "boolean",
+      "default": false
+    },
     "special_frame_id": {
       "type": "string",
       "default": ""

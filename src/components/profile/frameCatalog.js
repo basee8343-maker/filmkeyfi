@@ -16,7 +16,7 @@ const frameCatalog = {
   ask: frame('Aşk', '#dc2626', '136ec4ead_ask.png', [0.22329, 0.21531, 0.56778, 0.57018]),
   kalp: frame('Kalp', '#ef4444', 'd15ef18d7_kalp.png', [0.2512, 0.25598, 0.50478, 0.50159]),
   ertugrul: frame('Ertuğrul', '#b91c1c', '88f9853d6_ertugrul.png', [0.24322, 0.22967, 0.51356, 0.50239]),
-  zengin: frame('Zengin', '#ef4444', '2f871912e_zengin-seffaf.png', [0.19136, 0.22645, 0.61568, 0.66911]),
+  zengin: frame('Zengin', '#ef4444', 'd4c8fcffa_zengin-orijinal-seffaf.png', [0.275, 0.24, 0.45, 0.45]),
   vip: frame('VIP', '#ef4444', 'e23b28e9b_vip-tam-seffaf.png', [0.21688, 0.2121, 0.56464, 0.54072]),
   kral: frame('Kral', '#dc2626', 'c127c17c4_kral-tam-seffaf.png', [0.22167, 0.22964, 0.55428, 0.5463]),
   ates: frame('Ateş', '#f97316', '4e1c3e985_ates-tam-seffaf.png', [0.19375, 0.18977, 0.61169, 0.62126]),

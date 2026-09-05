@@ -4,7 +4,6 @@ import { useCurrentUser } from '@/lib/useCurrentUser';
 import { useToast } from '@/components/ui/use-toast';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import UserBadge from '@/components/admin/UserBadge';
-import RoleFrameManager from '@/components/admin/RoleFrameManager';
 import RoleLabelEditor from '@/components/admin/RoleLabelEditor';
 import RoomLevelManager from '@/components/admin/RoomLevelManager';
 import useRoomLevels from '@/hooks/useRoomLevels';
@@ -163,7 +162,7 @@ export default function AdminUsers({ pendingOnly = false }) {
             return (
               <div key={u.id} className="bg-card border border-border rounded-xl p-3 flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <UserBadge userId={u.id} name={u.username || u.full_name || '?'} avatar={u.avatar} memberId={u.member_id} size="md" displayRole={u.display_role} customRole={u.custom_role} profileFrame={u.profile_frame} />
+                  <UserBadge userId={u.id} name={u.username || u.full_name || '?'} avatar={u.avatar} memberId={u.member_id} size="md" displayRole={u.display_role} customRole={u.custom_role} profileFrame={u.profile_frame} frameScale={u.profile_frame_scale} />
                   <div className="hidden sm:block min-w-0">
                     <p className="text-xs text-muted-foreground truncate">{u.email}</p>
                     {u.payment_reference && <p className="text-xs text-purple-400 font-mono truncate">Ref: {u.payment_reference}</p>}
@@ -173,7 +172,7 @@ export default function AdminUsers({ pendingOnly = false }) {
                 {paidUserIds.has(u.id) && <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400 font-semibold">ÖDENDİ</span>}
                 {onlineUsers.has(u.id) ? <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400">Online</span> : <span className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">Offline</span>}
                 {u.is_banned && <span className="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 font-semibold" title={u.ban_reason}>🚫 ENGELLİ</span>}
-                {!pendingOnly && <><RoomLevelManager user={u} level={roomLevels[u.id]} onUpdated={load} /><RoleFrameManager user={u} onUpdated={load} /></>}
+                {!pendingOnly && <RoomLevelManager user={u} level={roomLevels[u.id]} onUpdated={load} />}
                 <div className="flex flex-wrap gap-1.5">
                 {!pendingOnly && <button onClick={() => setDetail(u)} className={`${btn} bg-secondary hover:bg-secondary/70`}>GÖRÜNTÜLE</button>}
                 {!isActive && paidUserIds.has(u.id) && <button onClick={() => approve(u)} className={`${btn} bg-green-500/20 text-green-400 hover:bg-green-500/30`}>AKTİF ET</button>}

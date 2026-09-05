@@ -23,6 +23,8 @@ export default async function(req) {
       display_role: u.display_role || '',
       custom_role: u.custom_role || null,
       profile_frame: u.profile_frame || '',
+      profile_frame_scale: u.profile_frame_scale || 100,
+      profile_frame_entrance_enabled: !!u.profile_frame_entrance_enabled,
       special_frame_id: u.special_frame_id || '',
       special_frame_title: u.special_frame_title || '',
       special_frame_entry: u.special_frame_entry !== false,

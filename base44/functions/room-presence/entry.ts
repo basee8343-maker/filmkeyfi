@@ -20,6 +20,14 @@ function rememberParticipant(room, participant) {
   return [{ user_id: participant.user_id, name: participant.name, avatar: participant.avatar || '', joined_at: participant.joined_at || new Date().toISOString(), left_at: new Date().toISOString() }, ...recent].slice(0, 100);
 }
 
+function profileFrameMeta(user) {
+  const frame = user?.profile_frame || '';
+  const automatic = frame.startsWith('lvl_');
+  if (!frame || (!automatic && !user?.profile_frame_entrance_enabled)) return '';
+  const scale = Math.min(130, Math.max(70, Math.floor(Number(user.profile_frame_scale) || 100)));
+  return `{{PFRAME|${frame}|${scale}}}`;
+}
+
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -45,7 +53,7 @@ export default async function(req) {
     const isOwner = room.owner_id === user.id;
     const isRoomMod = (room.room_moderators || []).includes(user.id);
     const canModRoom = isOwner || isMod || isRoomMod;
-    const hasVisibleRole = !!(me.display_role || me.custom_role?.name || me.special_frame_id);
+    const hasVisibleRole = !!(me.display_role || me.custom_role?.name || me.special_frame_id || (me.profile_frame && (me.profile_frame.startsWith('lvl_') || me.profile_frame_entrance_enabled)));
     const ghost = isAdmin && !isOwner && !hasVisibleRole;
     const labelOverrides = await getRoleLabelOverrides(base44);
 
@@ -107,7 +115,8 @@ export default async function(req) {
       }
       const roleInfo = getRoleInfo(me, labelOverrides);
       const frameInfo = await getSpecialFrameInfo(base44, me, true);
-      if (!already || roleInfo.label || frameInfo) {
+      const profileMeta = profileFrameMeta(me);
+      if (!already || roleInfo.label || frameInfo || profileMeta) {
         const roleMeta = roleInfo.label ? `{{ROLE|${roleInfo.key || ''}|${roleInfo.color || ''}|${roleInfo.animation || 'pulse'}}}` : '';
         const frameMeta = frameInfo ? `{{FRAME|${frameInfo.id}|${frameInfo.theme_color}|${frameInfo.text_color}|${frameInfo.glow_color}|${frameInfo.title}}}` : '';
         const titlePrefix = frameInfo?.title
@@ -116,7 +125,7 @@ export default async function(req) {
         const entryName = frameInfo ? `${name} ` : (roleInfo.hide_username_entry ? '' : `${name} `);
         await base44.asServiceRole.entities.RoomMessage.create({
           room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
-          text: `${frameMeta}${roleMeta}${titlePrefix}${entryName}odaya katıldı.`, type: 'system'
+          text: `${profileMeta}${frameMeta}${roleMeta}${titlePrefix}${entryName}odaya katıldı.`, type: 'system'
         });
       }
       await updatePresenceRoom(base44, user.id, room_id);

@@ -10,11 +10,11 @@ const SIZES = {
   lg: { avatar: 'h-32 w-32 text-3xl', sprite: 'h-60 w-56' },
 };
 
-export default function ProfileFrame({ frame, children, size = 'md', className = '', avatar, name }) {
+export default function ProfileFrame({ frame, children, size = 'md', className = '', avatar, name, frameScale = 100 }) {
   const [frameMetrics, setFrameMetrics] = useState(null);
   const frameInfo = FRAME_DEFINITIONS[frame];
   const dims = SIZES[size] || SIZES.md;
-  if (frameInfo?.prepared) return <FramedPortrait info={frameInfo} avatar={avatar} name={name} size={size} className={className} />;
+  if (frameInfo?.prepared) return <FramedPortrait info={frameInfo} avatar={avatar} name={name} size={size} className={className} scale={frameScale} />;
   if (!frame || !frameInfo?.image_url) return children || (
     <div className={`relative shrink-0 overflow-hidden rounded-full bg-background ${dims.avatar} ${className}`}>
       {avatar
