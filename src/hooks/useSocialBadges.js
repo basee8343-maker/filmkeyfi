@@ -39,7 +39,12 @@ export default function useSocialBadges(userId) {
       if (msg.sender_id !== userId && msg.receiver_id !== userId) return;
       debouncedLoad();
     });
-    const openThread = (event) => { openThreadRef.current = event.detail?.conversationId || null; setBadges((current) => ({ ...current, messages: 0 })); debouncedLoad(); };
+    const openThread = (event) => {
+      openThreadRef.current = event.detail?.conversationId || null;
+      const readCount = Number(event.detail?.unreadCount || 0);
+      setBadges((current) => ({ ...current, messages: Math.max(0, current.messages - readCount) }));
+      debouncedLoad();
+    };
     const closeThread = () => { openThreadRef.current = null; };
     window.addEventListener('social-badges-refresh', debouncedLoad);
     window.addEventListener('social-thread-open', openThread);

@@ -63,11 +63,6 @@ export default function WatchParty() {
   const seenRoomMessagesRef = useRef(new Set());
   const voice = useVoiceChat({ roomId: id, user, participants: room?.participants, voiceEnabled: !!room?.voice_enabled && voiceReady });
   const { messages: directUnread } = useSocialBadges(user?.id);
-  const [dmNotif, setDmNotif] = useState(null);
-  const [dmNotifLeaving, setDmNotifLeaving] = useState(false);
-  const dmNotifTimer = useRef(null);
-  const directOpenRef = useRef(false);
-  useEffect(() => { directOpenRef.current = directOpen; }, [directOpen]);
   const [countdownText, setCountdownText] = useState('');
   const [autoDeleteMinutes, setAutoDeleteMinutes] = useState(0);
   const [roomLevels, setRoomLevels] = useState({});
@@ -341,23 +336,6 @@ export default function WatchParty() {
     return () => { leaveRoomRef.current(); window.removeEventListener('pagehide', handler); window.removeEventListener('beforeunload', handler); };
   }, []);
 
-  // Oda içindeyken özel mesaj gelince üstte bildirim göster (sadece alıcı görür)
-  useEffect(() => {
-    if (!user?.id) return;
-    const unsub = base44.entities.ChatMessage.subscribe((event) => {
-      if (event.type !== 'create') return;
-      const msg = event.data;
-      if (!msg || msg.receiver_id !== user.id || msg.sender_id === user.id || directOpenRef.current) return;
-      setDmNotifLeaving(false);
-      base44.functions.invoke('user-profile', { user_id: msg.sender_id })
-        .then((res) => setDmNotif({ id: msg.id, senderId: msg.sender_id, name: msg.sender_name, avatar: res.data?.avatar }))
-        .catch(() => setDmNotif({ id: msg.id, senderId: msg.sender_id, name: msg.sender_name, avatar: null }));
-      clearTimeout(dmNotifTimer.current);
-      dmNotifTimer.current = setTimeout(() => { setDmNotifLeaving(true); setTimeout(() => setDmNotif(null), 400); }, 5000);
-    });
-    return () => { unsub(); clearTimeout(dmNotifTimer.current); };
-  }, [user?.id]);
-
   useEffect(() => {
     if (!user?.id) return;
     let hiddenAt = null;
@@ -629,12 +607,6 @@ export default function WatchParty() {
       <div ref={playerWrapRef} className="flex-1 flex min-h-0 relative" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <RoomNotifications participants={room?.participants || []} currentUserId={user?.id} />
         <RoleEntrance roomId={id} joinTrigger={joinCount} />
-        {dmNotif && (
-          <div onClick={() => { setDirectTarget(dmNotif.senderId); setDirectOpen(true); setDmNotif(null); clearTimeout(dmNotifTimer.current); }} className={`absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] flex items-center gap-2 rounded-xl bg-card/95 border border-border px-3 py-2 shadow-2xl backdrop-blur-xl max-w-[70%] cursor-pointer ${dmNotifLeaving ? 'dm-notif-out' : 'dm-notif-in'}`}>
-            {dmNotif.avatar ? <Image src={dmNotif.avatar} className="w-8 h-8 rounded-full" fittingType="fill" /> : <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm">{dmNotif.name?.[0]}</div>}
-            <div className="min-w-0"><p className="text-xs font-bold truncate">{dmNotif.name}</p><p className="text-[10px] text-muted-foreground">mesaj yazdı</p></div>
-          </div>
-        )}
         {joinRequests.length > 0 && (
           <div className="absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] space-y-1.5 max-w-[80%]">
             {joinRequests.map((req) => (
@@ -683,7 +655,7 @@ export default function WatchParty() {
         )}
 
         {directOpen && (
-          <div className="absolute right-0 top-0 bottom-0 z-[70] w-full max-w-sm"
+          <div className="absolute inset-0 z-[70] w-full sm:left-auto sm:max-w-sm"
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setDirectOpen(false); }}
           >

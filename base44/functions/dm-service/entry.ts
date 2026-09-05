@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { findProfanity } from '../../shared/profanity.ts';
-import { notifyUser } from '../../shared/notifyUser.ts';
 
 export default async function(req) {
   try {
@@ -21,6 +20,14 @@ export default async function(req) {
       if (!target) return Response.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 });
       const targetName = target.username || target.full_name || 'Kullanıcı';
       const targetAvatar = target.avatar || '';
+      const isAdminChat = user.role === 'admin' || target.role === 'admin';
+      if (!isAdminChat) {
+        const friendships = await base44.asServiceRole.entities.Friendship.filter({
+          $or: [{ requester_id: user.id, recipient_id: targetId }, { requester_id: targetId, recipient_id: user.id }],
+          status: 'accepted'
+        }, '-created_date', 1).catch(() => []);
+        if (!friendships.length) return Response.json({ error: 'Yalnızca arkadaşlarınıza mesaj gönderebilirsiniz' }, { status: 403 });
+      }
 
       // İki kullanıcı arasındaki sohbetleri user1_id/user2_id ile bul (members array filter güvenilir değil)
       const allConvos = await base44.asServiceRole.entities.Conversation.filter({
@@ -77,13 +84,7 @@ export default async function(req) {
           ]
         }, '-created_date', 10).catch(() => []);
         const friendship = friendships[0];
-        if (friendship) {
-          if (friendship.status === 'blocked') {
-            const blockedBy = friendship.blocked_by || [];
-            if (blockedBy.includes(friendId)) return Response.json({ error: 'Kullanıcı sizi engelledi' }, { status: 403 });
-            if (blockedBy.includes(user.id)) return Response.json({ error: 'Bu kullanıcıyı engellediniz' }, { status: 403 });
-          }
-        }
+        if (!friendship || friendship.status !== 'accepted') return Response.json({ error: 'Yalnızca arkadaşlarınıza mesaj gönderebilirsiniz' }, { status: 403 });
       }
 
       // Küfür filtresi
@@ -121,12 +122,6 @@ export default async function(req) {
         updates.unread_user1 = (conversation.unread_user1 || 0) + 1;
       }
       await base44.asServiceRole.entities.Conversation.update(conversationId, updates);
-
-      // Alıcıya bildirim
-      await notifyUser(base44, {
-        user_id: receiverId, title: userName, body: content.substring(0, 100),
-        type: 'dm', link: '/arkadaslar', ref_id: conversationId
-      });
 
       return Response.json({ message });
     }

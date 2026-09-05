@@ -61,6 +61,14 @@ export default async function(req) {
       }
       const receiverId = conversation.user1_id === user.id ? conversation.user2_id : conversation.user1_id;
       const receiverName = conversation.user1_id === user.id ? conversation.user2_name : conversation.user1_name;
+      const receiver = await base44.asServiceRole.entities.User.get(receiverId).catch(() => null);
+      if (user.role !== 'admin' && receiver?.role !== 'admin') {
+        const friendships = await base44.asServiceRole.entities.Friendship.filter({
+          $or: [{ requester_id: user.id, recipient_id: receiverId }, { requester_id: receiverId, recipient_id: user.id }],
+          status: 'accepted'
+        }, '-created_date', 1).catch(() => []);
+        if (!friendships.length) return Response.json({ error: 'Yalnızca arkadaşlarınıza mesaj gönderebilirsiniz' }, { status: 403 });
+      }
       await base44.asServiceRole.entities.ChatMessage.create({
         conversation_id: context_id,
         sender_id: user.id, sender_name: senderName,

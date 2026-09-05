@@ -129,7 +129,8 @@ export default function AppLayout() {
         window.location.href = '/login?banned=1';
         return;
       }
-      // Yeni bildirimleri anlık toast olarak göster
+      // Özel mesajlar üst bildirim yerine yalnızca sohbet rozetinde gösterilir.
+      if (ev.data?.type === 'dm') return;
       toast({ title: ev.data?.title || 'Bildirim', description: ev.data?.body });
     });
     const unsubUser = base44.entities.User.subscribe((ev) => {
@@ -148,22 +149,7 @@ export default function AppLayout() {
         window.location.href = '/login?removed=1';
       }
     });
-    // Oda dışındayken yeni özel mesaj gelince toast göster
-    const unsubDM = base44.entities.DirectMessage.subscribe((ev) => {
-      if (ev.type !== 'create') return;
-      const msg = ev.data;
-      if (!msg || msg.recipient_id !== user.id) return;
-      if (window.location.pathname.startsWith('/oda/') || window.location.pathname === '/arkadaslar') return;
-      toast({ title: msg.sender_name || 'Yeni mesaj', description: (msg.text || 'Yeni bir mesajınız var').slice(0, 100) });
-    });
-    const unsubChatMessage = base44.entities.ChatMessage.subscribe((ev) => {
-      if (ev.type !== 'create') return;
-      const msg = ev.data;
-      if (!msg || msg.receiver_id !== user.id || msg.sender_id === user.id) return;
-      if (window.location.pathname.startsWith('/oda/') || window.location.pathname === '/arkadaslar') return;
-      toast({ title: msg.sender_name || 'Yeni mesaj', description: (msg.content || 'Yeni bir mesajınız var').slice(0, 100) });
-    });
-    return () => { unsubNotif(); unsubUser(); unsubDM(); unsubChatMessage(); };
+    return () => { unsubNotif(); unsubUser(); };
   }, [user?.id]);
 
   // Oturum heartbeat — aktif kalma sinyali + opsiyonel GPS

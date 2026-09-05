@@ -5,7 +5,7 @@ import { Image } from '@/components/ui/image';
 export default function ConversationList({ conversations, userId, onOpen, onHide, isOnline }) {
   const [swiped, setSwiped] = useState(null);
   useEffect(() => { setSwiped(null); }, [conversations]);
-  const startX = useRef(0);
+  const touchStart = useRef({ x: 0, y: 0 });
   const swipingRef = useRef(false);
   const chats = conversations.map((c) => {
     const mine = c.user1_id === userId;
@@ -30,10 +30,11 @@ export default function ConversationList({ conversations, userId, onOpen, onHide
         <Trash2 className="w-5 h-5 mb-1" /> Sil
       </button>
       <div
-        onTouchStart={(e) => { startX.current = e.touches[0].clientX; }}
+        onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
         onTouchEnd={(e) => {
-          const distance = startX.current - e.changedTouches[0].clientX;
-          if (distance > 55) {
+          const distance = touchStart.current.x - e.changedTouches[0].clientX;
+          const vertical = Math.abs(touchStart.current.y - e.changedTouches[0].clientY);
+          if (distance > 55 && distance > vertical * 1.5) {
             setSwiped(conversation.id);
             swipingRef.current = true;
             setTimeout(() => { swipingRef.current = false; }, 350);

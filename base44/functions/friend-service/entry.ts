@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { findProfanity } from '../../shared/profanity.ts';
-import { notifyUser } from '../../shared/notifyUser.ts';
 
 const cleanUser = (user) => ({
   id: user.id,
@@ -129,6 +128,17 @@ export default async function(req) {
         await base44.asServiceRole.entities.Friendship.update(friendship.id, { hidden_for: hiddenFor });
       } else if (action === 'unfriend') {
         await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: 'removed' });
+        const otherId = friendship.members.find((id) => id !== user.id);
+        const myName = user.username || user.full_name || 'Kullanıcı';
+        const otherName = friendship.requester_id === otherId ? friendship.requester_name : friendship.recipient_name;
+        const conversations = await base44.asServiceRole.entities.Conversation.filter({ $or: [{ user1_id: user.id, user2_id: otherId }, { user1_id: otherId, user2_id: user.id }] }, '-created_date', 1).catch(() => []);
+        const conversation = conversations[0] || await base44.asServiceRole.entities.Conversation.create({ user1_id: user.id, user1_name: myName, user1_avatar: user.avatar || '', user2_id: otherId, user2_name: otherName || 'Kullanıcı', user2_avatar: '', members: [user.id, otherId], deleted_for: [], last_message_text: '', unread_user1: 0, unread_user2: 0 });
+        const content = `${myName} sizi arkadaşlıktan çıkardı.`;
+        await base44.asServiceRole.entities.ChatMessage.create({ conversation_id: conversation.id, sender_id: user.id, sender_name: myName, receiver_id: otherId, content, deleted_for: [], read_by: [user.id] });
+        const conversationUpdate: any = { deleted_for: (conversation.deleted_for || []).filter((id) => id !== otherId), last_message_text: content, last_message_at: new Date().toISOString(), last_sender_id: user.id, last_sender_name: myName };
+        if (conversation.user1_id === otherId) conversationUpdate.unread_user1 = (conversation.unread_user1 || 0) + 1;
+        else conversationUpdate.unread_user2 = (conversation.unread_user2 || 0) + 1;
+        await base44.asServiceRole.entities.Conversation.update(conversation.id, conversationUpdate);
       } else if (action === 'block') {
         const blockedBy = [...new Set([...(friendship.blocked_by || []), user.id])];
         await base44.asServiceRole.entities.Friendship.update(friendship.id, { status: 'blocked', blocked_by: blockedBy });
@@ -166,10 +176,6 @@ export default async function(req) {
       const visibleToBoth = (friendship.hidden_for || []).filter((id) => id !== user.id && id !== recipientId);
       if (visibleToBoth.length !== (friendship.hidden_for || []).length) await base44.asServiceRole.entities.Friendship.update(friendship.id, { hidden_for: visibleToBoth });
       const message = await base44.asServiceRole.entities.DirectMessage.create({ friendship_id: friendship.id, sender_id: user.id, sender_name: senderName, recipient_id: recipientId, recipient_name: recipientName, participants: friendship.members, read_by: [user.id], text });
-      await notifyUser(base44, {
-        user_id: recipientId, title: senderName, body: text.substring(0, 100),
-        type: 'dm', link: '/arkadaslar', ref_id: friendship.id
-      });
       return Response.json({ message });
     }
 
