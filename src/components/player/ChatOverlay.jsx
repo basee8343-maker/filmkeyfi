@@ -124,9 +124,13 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
     if (el) el.scrollTop = el.scrollHeight;
   };
 
+  const isHiddenMarker = (m) => {
+    const t = m?.text || '';
+    return t.includes('{{ADMIN_WELCOME}}') || t.includes('{{CAN_ABLAM_WELCOME}}') || t.includes('{{PFRAME|') || t.includes('{{ROLE|') || t.includes('{{FRAME|');
+  };
   const load = () => {
     base44.entities.RoomMessage.filter({ room_id: roomId }, 'created_date', 200)
-      .then((r) => { setMessages((current) => mergeMessages(current, r)); setLoading(false); setTimeout(scrollToBottom, 100); })
+      .then((r) => { setMessages((current) => mergeMessages(current, r.filter((m) => !isHiddenMarker(m)))); setLoading(false); setTimeout(scrollToBottom, 100); })
       .catch(() => setLoading(false));
   };
 
@@ -135,6 +139,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
     const unsub = base44.entities.RoomMessage.subscribe((ev) => {
       if (ev.data?.room_id !== roomId) return;
       if (ev.type === 'delete') setMessages((prev) => prev.filter((message) => message.id !== ev.id));
+      else if (isHiddenMarker(ev.data)) return;
       else setMessages((prev) => {
         const tempMatch = prev.find((message) => message.id?.startsWith('temp-') && message.user_id === ev.data.user_id && message.text === ev.data.text);
         const clean = tempMatch ? prev.filter((message) => message.id !== tempMatch.id) : prev;
