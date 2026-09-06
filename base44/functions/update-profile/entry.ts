@@ -63,7 +63,7 @@ export default async function(req) {
       updates.profile_frame_entrance_enabled = !!profile_frame_entrance_enabled;
     }
     if (Object.keys(updates).length > 0) {
-      await base44.auth.updateMe(updates);
+      await base44.asServiceRole.entities.User.update(user.id, updates);
     }
     return Response.json({ ok: true });
   } catch (e) {
