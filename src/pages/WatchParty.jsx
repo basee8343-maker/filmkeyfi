@@ -696,13 +696,13 @@ export default function WatchParty() {
             </div>
           );
         })()}
-        <div className={`flex items-center justify-center bg-black ${chatOpen ? 'flex-1 min-w-0' : 'flex-1 min-w-0'}`}>
+        <div className={`room-video-stage flex min-w-0 flex-1 items-center justify-center bg-black ${chatOpen || directOpen ? 'room-video-panel-open' : ''}`}>
           {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={canMod} isTimeSource={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} onEnded={() => setMoviePickerOpen(true)} fullscreenRef={playerWrapRef} watermark={user} /> :
             <div className="text-muted-foreground text-sm p-6 text-center">Video kaynağı yok</div>}
         </div>
 
         {chatOpen && (
-          <div className="absolute right-0 top-0 bottom-0 z-40 flex w-full max-w-md flex-col border-l border-white/10 bg-black pt-[max(env(safe-area-inset-top),0.75rem)] pb-[max(env(safe-area-inset-bottom),0.5rem)] pl-[max(env(safe-area-inset-left),0px)] pr-[max(env(safe-area-inset-right),0px)] shadow-2xl"
+          <div className="room-side-panel absolute bottom-0 right-0 top-0 z-40 flex w-full max-w-md flex-col border-l border-white/10 bg-black pt-[max(env(safe-area-inset-top),0.75rem)] pb-[max(env(safe-area-inset-bottom),0.5rem)] pl-[max(env(safe-area-inset-left),0px)] pr-[max(env(safe-area-inset-right),0px)] shadow-2xl"
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setChatOpen(false); }}
           >
@@ -711,7 +711,7 @@ export default function WatchParty() {
         )}
 
         {directOpen && (
-          <div className="absolute inset-0 z-[70] w-full sm:left-auto sm:max-w-sm"
+          <div className="room-side-panel room-direct-panel absolute inset-0 z-[70] w-full sm:left-auto sm:max-w-sm"
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setDirectOpen(false); }}
           >

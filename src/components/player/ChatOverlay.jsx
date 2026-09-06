@@ -194,7 +194,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
 
 
   return (
-    <div className="h-full min-h-0 flex flex-col bg-black text-white">
+    <div className="room-chat-shell flex h-full min-h-0 flex-col bg-black text-white">
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/10 gap-1.5">
         <h3 className="font-bold flex items-center gap-1.5 text-white">💬 Sohbet {chatEnabled && <span className="text-xs text-[#888] font-normal">({messages.length})</span>}</h3>
         <div className="flex items-center gap-1.5">
@@ -224,7 +224,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
         </div>
       )}
       {(chatEnabled || isOwner) && (
-        <div className="flex items-center gap-1 px-3 py-2 border-b border-white/10 bg-[#0d0d0d] overflow-x-auto no-scrollbar" onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
+        <div className="room-chat-tabs flex items-center gap-1 overflow-x-auto border-b border-white/10 bg-[#0d0d0d] px-3 py-2 no-scrollbar" onTouchStart={(e) => e.stopPropagation()} onTouchEnd={(e) => e.stopPropagation()}>
           {['all', 'yetkililer', 'izleyici', 'yonetici', ...(isOwner ? ['istekler'] : [])].map((f) => (
             <button key={f} onClick={() => setMsgFilter(f)} className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${msgFilter === f ? 'text-[#ffcc00]' : 'text-[#888] hover:text-white'}`} style={msgFilter === f ? { borderBottom: '2px solid #ffcc00', background: 'rgba(255, 204, 0, 0.08)' } : {}}>
               {f === 'all' ? 'Tümü' : f === 'yetkililer' ? 'Yetkililer' : f === 'izleyici' ? 'İzleyici' : f === 'istekler' ? `İstekler${joinRequests.length > 0 ? ` (${joinRequests.length})` : ''}` : 'Yönetici'}

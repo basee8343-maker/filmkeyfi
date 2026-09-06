@@ -1113,3 +1113,49 @@ h1, h2, h3, p, a, button, label {
     min-height: 100dvh;
   }
 }
+
+/* İzleme odası: telefon ve tablet landscape panel yerleşimi */
+@media (orientation: landscape) and (max-height: 720px) {
+  :root {
+    --room-side-panel-width: clamp(22rem, 52vw, 40rem);
+  }
+
+  .room-side-panel {
+    width: var(--room-side-panel-width) !important;
+    max-width: 68vw !important;
+  }
+
+  .room-video-panel-open {
+    margin-right: min(68vw, var(--room-side-panel-width));
+  }
+
+  .room-chat-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+    gap: 0.25rem;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .room-chat-tabs > button {
+    min-width: 0;
+    justify-content: center;
+    padding-left: 0.375rem;
+    padding-right: 0.375rem;
+  }
+
+  .room-chat-shell input[type="text"] {
+    min-width: 6rem;
+  }
+}
+
+@media (orientation: landscape) and (min-width: 1180px) {
+  .room-side-panel {
+    width: 40rem !important;
+    max-width: 40rem !important;
+  }
+
+  .room-video-panel-open {
+    margin-right: 40rem;
+  }
+}

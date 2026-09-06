@@ -7,8 +7,12 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(false);
-  const [volume, setVolume] = useState(1);
+  const [volume, setVolume] = useState(() => {
+    const saved = Number(localStorage.getItem('filmkeyfi_player_volume'));
+    return Number.isFinite(saved) && saved > 0 && saved <= 1 ? saved : 1;
+  });
+  const [muted, setMuted] = useState(() => localStorage.getItem('filmkeyfi_player_muted') === 'true');
+  const previousVolumeRef = useRef(volume || 1);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -19,10 +23,15 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
   const hideTimer = useRef(null);
   const lastSyncRef = useRef(0);
 
-  // Ses değişikliklerini anında uygula — state değiştikçe video elementine yaz
+  // Ses, ilerleme zamanından tamamen bağımsızdır ve kaynak değişimlerinde korunur.
   useEffect(() => {
-    const v = videoRef.current;
-    if (v) { v.volume = volume; v.muted = muted; }
+    const video = videoRef.current;
+    if (video) {
+      video.volume = volume;
+      video.muted = muted || volume === 0;
+    }
+    if (volume > 0) localStorage.setItem('filmkeyfi_player_volume', String(volume));
+    localStorage.setItem('filmkeyfi_player_muted', String(muted || volume === 0));
   }, [volume, muted]);
 
   const fmt = (s) => {
@@ -140,13 +149,31 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     return () => { document.removeEventListener('fullscreenchange', h); v?.removeEventListener('webkitendfullscreen', endFs); };
   }, []);
 
-  const changeVolume = useCallback((value) => {
-    const next = Math.min(1, Math.max(0, Number(value) || 0));
-    const v = videoRef.current;
-    if (v) { v.volume = next; v.muted = next === 0; }
+  const changeVolume = useCallback((percent) => {
+    const next = Math.min(1, Math.max(0, Number(percent) / 100));
+    const video = videoRef.current;
+    if (next > 0) previousVolumeRef.current = next;
+    if (video) {
+      video.volume = next;
+      video.muted = next === 0;
+    }
     setVolume(next);
     setMuted(next === 0);
   }, []);
+
+  const toggleMute = useCallback(() => {
+    const video = videoRef.current;
+    if (muted || volume === 0) {
+      const restored = previousVolumeRef.current > 0 ? previousVolumeRef.current : 1;
+      if (video) { video.volume = restored; video.muted = false; }
+      setVolume(restored);
+      setMuted(false);
+      return;
+    }
+    previousVolumeRef.current = volume;
+    if (video) video.muted = true;
+    setMuted(true);
+  }, [muted, volume]);
 
   const moveBar = (e) => {
     if (!isOwner) return;
@@ -170,6 +197,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
       style={{ touchAction: isOwner ? 'manipulation' : 'none' }}>
       <video ref={videoRef} src={src} className="w-full h-full object-contain"
         onLoadedMetadata={onLoaded} onTimeUpdate={onTime} onPlay={handlePlay} onPause={handlePause}
+        onVolumeChange={() => { const video = videoRef.current; if (!video) return; setVolume(video.volume); setMuted(video.muted || video.volume === 0); if (video.volume > 0) previousVolumeRef.current = video.volume; }}
         onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onEnded={onEnded}
         crossOrigin="anonymous" preload="metadata" playsInline controls={false} disablePictureInPicture={!isOwner} />
 
@@ -195,12 +223,12 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
             <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-primary rounded-full -ml-1.5" style={{ left: `${duration ? (current / duration) * 100 : 0}%` }} />
           </div>}
           {isOwner && <span>{fmt(duration)}</span>}
-          <VolumeSlider volume={volume} muted={muted} onChange={changeVolume} />
         </div>
-        <div className="flex items-center gap-1 sm:gap-2 text-white">
+        <div className="flex flex-wrap items-center gap-1 text-white sm:gap-2">
           {isOwner && <button onClick={togglePlay} className="p-2 hover:bg-white/10 rounded-lg">{playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}</button>}
           {isOwner && <button onClick={() => skip(-10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn geri"><Rewind className="w-5 h-5" /></button>}
           {isOwner && <button onClick={() => skip(10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn ileri"><FastForward className="w-5 h-5" /></button>}
+          <VolumeSlider volume={volume} muted={muted} onChange={changeVolume} onToggleMute={toggleMute} />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             {isOwner && (
               <div className="relative">

@@ -1,22 +1,27 @@
-// Çalışan ses kontrolü: hoparlör ikonu + range slider + kalıcı yüzde etiketi.
-// Range input mobil/masaüstü güvenilir çalışır; accent-primary ile renkli.
-export default function VolumeSlider({ volume, muted, onChange }) {
-  const value = muted ? 0 : volume;
-  const percent = Math.round(value * 100);
+import { Volume2, VolumeX } from 'lucide-react';
+
+export default function VolumeSlider({ volume, muted, onChange, onToggleMute }) {
+  const percent = muted ? 0 : Math.round(volume * 100);
+  const stop = (event) => event.stopPropagation();
+
   return (
-    <div className="flex items-center gap-2 shrink-0">
+    <div className="flex min-w-0 shrink-0 items-center gap-2" onClick={stop} onPointerDown={stop} onTouchStart={stop}>
+      <button type="button" onClick={onToggleMute} className="rounded-lg p-2 hover:bg-white/10" aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}>
+        {muted || percent === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+      </button>
       <input
         type="range"
-        min={0}
-        max={1}
-        step={0.05}
-        value={value}
-        onInput={(e) => onChange(parseFloat(e.currentTarget.value))}
-        className="w-20 sm:w-28 cursor-pointer accent-primary"
+        min="0"
+        max="100"
+        step="1"
+        value={percent}
+        onInput={(event) => onChange(Number(event.currentTarget.value))}
+        className="h-8 w-14 cursor-pointer accent-primary min-[390px]:w-20 landscape:w-24 sm:w-28"
         style={{ touchAction: 'none' }}
         aria-label="Ses seviyesi"
+        aria-valuetext={`%${percent}`}
       />
-      <span className="text-xs text-white tabular-nums w-9 text-center select-none">{percent}%</span>
+      <span className="hidden w-9 select-none text-center text-xs tabular-nums text-white min-[360px]:block">{percent}%</span>
     </div>
   );
 }
