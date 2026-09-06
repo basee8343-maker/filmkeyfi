@@ -119,10 +119,10 @@ export default function WatchParty() {
   // Oda adını düzenleme alanını odadan başlat
   useEffect(() => { setRoomNameEdit(room?.name || ''); }, [room?.name]);
 
-  // Odaya girince karşılama görseli göster (tüm kullanıcılar)
+  // Yönetici odaya girince karşılama görseli göster
   useEffect(() => {
-    if (joinCount > 0) setShowAdminWelcome(true);
-  }, [joinCount]);
+    if (joinCount > 0 && user?.role === 'admin') setShowAdminWelcome(true);
+  }, [joinCount, user?.role]);
 
   // Kişisel oda: film yoksa sadece oda sahibine otomatik film seçme panelini aç
   useEffect(() => {
