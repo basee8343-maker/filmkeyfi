@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Image } from '@/components/ui/image';
-import LightningStrike from '@/components/player/LightningStrike';
 
-const SPLASH_IMAGE = 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/afbb507a5_generated_image.png';
+const SPLASH_IMAGE = 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/626ce77b9_generated_image.png';
 
 export default function CanAbimWelcome({ onDone }) {
   const [exiting, setExiting] = useState(false);
@@ -12,13 +10,9 @@ export default function CanAbimWelcome({ onDone }) {
   return (
     <div className={`pointer-events-none fixed inset-0 z-[90] flex items-end justify-center pb-[20vh] ${exiting ? 'opacity-0 transition-opacity duration-500' : 'animate-[can-abim-fade_.35s_ease-out]'}`}>
       <div className="absolute inset-0 bg-blue-500/5 animate-[can-abim-flash_1.35s_infinite]" />
-      <LightningStrike side="left" />
-      <LightningStrike side="right" />
-      <LightningStrike side="top" />
-      <LightningStrike side="bottom" />
-      <button type="button" onClick={dismiss} className="pointer-events-auto relative z-10 border-0 bg-transparent p-0" aria-label="Karşılamayı kapat">
-        <div className="absolute inset-2 rounded-full bg-blue-500/25 blur-3xl animate-pulse" />
-        <Image src={SPLASH_IMAGE} alt="Can Abim - Kral Turgay" originWidth={1024} originHeight={1024} className="relative w-[76vw] max-w-[340px] animate-[can-abim-pop_.8s_cubic-bezier(.34,1.56,.64,1)]" fittingType="fit" draggable={false} />
+      <button type="button" onClick={dismiss} className="pointer-events-auto absolute inset-0 z-10 border-0 bg-transparent p-0" aria-label="Karşılamayı kapat">
+        <div className="absolute inset-0 bg-blue-500/10 animate-pulse" />
+        <img src={SPLASH_IMAGE} alt="Can Abim - Kral Turgay" className="absolute inset-0 w-full h-full object-cover animate-[can-abim-pop_.8s_cubic-bezier(.34,1.56,.64,1)]" draggable={false} />
       </button>
       <style>{`
         @keyframes can-abim-fade { from { opacity: 0 } to { opacity: 1 } }
