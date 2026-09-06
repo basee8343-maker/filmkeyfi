@@ -126,7 +126,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
 
   const isHiddenMarker = (m) => {
     const t = m?.text || '';
-    return t.includes('{{ADMIN_WELCOME}}') || t.includes('{{CAN_ABLAM_WELCOME}}') || t.includes('{{PFRAME|') || t.includes('{{ROLE|') || t.includes('{{FRAME|');
+    return t.includes('{{ADMIN_WELCOME}}') || t.includes('{{CAN_ABLAM_WELCOME}}') || t.includes('{{CAN_ABIM_WELCOME}}') || t.includes('{{PFRAME|') || t.includes('{{ROLE|') || t.includes('{{FRAME|');
   };
   const load = () => {
     base44.entities.RoomMessage.filter({ room_id: roomId }, 'created_date', 200)
@@ -251,7 +251,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       <div ref={scrollRef} className="flex min-w-0 flex-1 min-h-0 flex-col gap-3 overflow-x-hidden overflow-y-auto overscroll-contain p-3 bg-black" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
         {loading ? <p className="text-center text-sm text-[#888] py-8">Yükleniyor...</p> :
          messages.length === 0 ? <p className="text-center text-sm text-[#888] py-8">Henüz mesaj yok. İlk mesajı sen at! 🍿</p> :
-         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { if ((m.text || '').includes('{{ADMIN_WELCOME}}') || (m.text || '').includes('{{CAN_ABLAM_WELCOME}}')) return false; const lower = (m.text || '').toLowerCase(); if (lower.includes('katıldı') || lower.includes('ayrıldı') || lower.includes('moderatör')) return false; } return true; }).map((m) => (
+         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { if ((m.text || '').includes('{{ADMIN_WELCOME}}') || (m.text || '').includes('{{CAN_ABLAM_WELCOME}}') || (m.text || '').includes('{{CAN_ABIM_WELCOME}}')) return false; const lower = (m.text || '').toLowerCase(); if (lower.includes('katıldı') || lower.includes('ayrıldı') || lower.includes('moderatör')) return false; } return true; }).map((m) => (
             <div key={m.id} className={`flex w-full min-w-0 shrink-0 gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
               {m.type === 'system' ? (
                 (() => {

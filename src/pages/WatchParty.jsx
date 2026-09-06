@@ -29,6 +29,7 @@ import UserProfile from '@/pages/UserProfile';
 import SubscriptionPrompt from '@/components/SubscriptionPrompt';
 import AdminRoomWelcome from '@/components/admin/AdminWelcomeSplash';
 import CanAblamWelcome from '@/components/player/CanAblamWelcome';
+import CanAbimWelcome from '@/components/player/CanAbimWelcome';
 
 export default function WatchParty() {
   const { id } = useParams();
@@ -77,6 +78,7 @@ export default function WatchParty() {
   const [roomNameEdit, setRoomNameEdit] = useState('');
   const [showAdminWelcome, setShowAdminWelcome] = useState(false);
   const [showCanAblamWelcome, setShowCanAblamWelcome] = useState(false);
+  const [showCanAbimWelcome, setShowCanAbimWelcome] = useState(false);
   const profileTarget = new URLSearchParams(location.search).get('profile');
   const openUserProfile = (userId) => {
     if (!userId) return;
@@ -129,6 +131,8 @@ export default function WatchParty() {
         if (adminRecent) setShowAdminWelcome(true);
         const cabRecent = items.find((m) => (m.text || '').includes('{{CAN_ABLAM_WELCOME}}') && now - new Date(m.created_date).getTime() < 10000);
         if (cabRecent) setShowCanAblamWelcome(true);
+        const canAbimRecent = items.find((m) => (m.text || '').includes('{{CAN_ABIM_WELCOME}}') && now - new Date(m.created_date).getTime() < 10000);
+        if (canAbimRecent) setShowCanAbimWelcome(true);
       })
       .catch(() => {});
     const unsub = base44.entities.RoomMessage.subscribe((ev) => {
@@ -136,6 +140,7 @@ export default function WatchParty() {
       const txt = ev.data?.text || '';
       if (txt.includes('{{ADMIN_WELCOME}}')) setShowAdminWelcome(true);
       if (txt.includes('{{CAN_ABLAM_WELCOME}}')) setShowCanAblamWelcome(true);
+      if (txt.includes('{{CAN_ABIM_WELCOME}}')) setShowCanAbimWelcome(true);
     });
     return unsub;
   }, [id]);
@@ -753,6 +758,7 @@ export default function WatchParty() {
       <MoviePickerSheet open={moviePickerOpen} onClose={() => setMoviePickerOpen(false)} onSelect={changeMovie} currentMovieId={movie?.id} />
       {showAdminWelcome && <AdminRoomWelcome onDone={() => setShowAdminWelcome(false)} />}
       {showCanAblamWelcome && <CanAblamWelcome onDone={() => setShowCanAblamWelcome(false)} />}
+      {showCanAbimWelcome && <CanAbimWelcome onDone={() => setShowCanAbimWelcome(false)} />}
       {profileTarget && <UserProfile userId={profileTarget} roomIdOverride={id} onBack={closeUserProfile} onMessage={(userId) => { closeUserProfile(); openDirectMessage(userId); }} embedded />}
     </div>
   );

@@ -25,11 +25,10 @@ export default function RoomNotifications({ participants, currentUserId, profile
         const automatic = prof.profile_frame.startsWith('lvl_');
         return automatic || !!prof.profile_frame_entrance_enabled;
       };
-      // Can Ablam rolündeki kullanıcılar için özel karşılama görseli gösterildiğinden
-      // normal "katıldı/ayrıldı" bildirimini gizle.
-      const isCanAblam = (p) => (profiles[p.user_id] || {}).display_role === 'can_ablam';
-      joined.forEach((p) => { if (!hasFrameEntrance(p) && !isCanAblam(p)) addNotif(p, 'join'); });
-      left.forEach((p) => { if (!hasFrameEntrance(p) && !isCanAblam(p)) addNotif(p, 'leave'); });
+      // Özel karşılama görseli olan rollerde normal katıldı/ayrıldı bildirimini gizle.
+      const hasSpecialWelcome = (p) => ['can_ablam', 'can_abim'].includes((profiles[p.user_id] || {}).display_role);
+      joined.forEach((p) => { if (!hasFrameEntrance(p) && !hasSpecialWelcome(p)) addNotif(p, 'join'); });
+      left.forEach((p) => { if (!hasFrameEntrance(p) && !hasSpecialWelcome(p)) addNotif(p, 'leave'); });
     }
 
     prevRef.current = list;
