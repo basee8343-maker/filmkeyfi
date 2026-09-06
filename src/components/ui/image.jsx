@@ -194,6 +194,7 @@ const Image = React.forwardRef(
 
     const imageProps = {
       ...props,
+      referrerPolicy: props.referrerPolicy || "no-referrer",
       onError: () => setImgSrc(FALLBACK_IMAGE_URL),
     }
 

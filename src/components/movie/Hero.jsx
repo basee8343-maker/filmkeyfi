@@ -50,7 +50,7 @@ export default function Hero({ movie }) {
           </div>
           <p className="text-xs sm:text-base text-muted-foreground line-clamp-2 sm:line-clamp-3 max-w-xl">{movie.description}</p>
           <div className="flex flex-wrap items-center gap-2 sm:gap-4 pt-2 sm:pt-3">
-            <Link to={`/izle/${movie.id}`} className="inline-flex items-center gap-1.5 sm:gap-2.5 text-white font-bold px-4 sm:px-7 py-2 sm:py-3.5 rounded-lg transition-all text-xs sm:text-base" style={{ background: 'linear-gradient(135deg, #8B31FF, #5F24A1)' }}>
+            <Link to={`/video/${movie.id}`} className="inline-flex items-center gap-1.5 sm:gap-2.5 text-white font-bold px-4 sm:px-7 py-2 sm:py-3.5 rounded-lg transition-all text-xs sm:text-base" style={{ background: 'linear-gradient(135deg, #8B31FF, #5F24A1)' }}>
               <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-white" /> İzlemeye Başla
             </Link>
             <button onClick={add} className="inline-flex items-center gap-1.5 sm:gap-2.5 bg-[#1a1a1a]/80 border border-white/20 hover:bg-[#2a2a2a] text-white px-3 sm:px-6 py-2 sm:py-3.5 rounded-lg font-semibold transition-colors text-xs sm:text-base">

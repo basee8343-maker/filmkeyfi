@@ -64,7 +64,7 @@ export default function Watch() {
           <Lock className="w-10 h-10 text-muted-foreground mb-3" />
           <p className="font-semibold mb-1">{videoError}</p>
         </div> :
-       src ? <VideoPlayer src={src} title={movie.title} watermark={user} /> :
+       src ? <div className="aspect-video w-full overflow-hidden rounded-xl bg-black"><VideoPlayer src={src} title={movie.title} watermark={user} isOwner={true} isTimeSource={true} /></div> :
         <div className="aspect-video bg-card border border-border rounded-xl flex flex-col items-center justify-center text-center p-6">
           <Lock className="w-10 h-10 text-muted-foreground mb-3" />
           <p className="font-semibold mb-1">Video kaynağı bulunamadı</p>
