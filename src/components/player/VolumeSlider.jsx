@@ -4,13 +4,8 @@ export default function VolumeSlider({ volume, muted, onChange, onToggleMute }) 
   const percent = muted ? 0 : Math.round(volume * 100);
   const stop = (event) => event.stopPropagation();
   const mute = (event) => {
-    event.preventDefault();
     event.stopPropagation();
     onToggleMute();
-  };
-  const finishTouch = (event) => {
-    event.stopPropagation();
-    if (event.target?.type === 'range') event.preventDefault();
   };
   const change = (event) => {
     event.stopPropagation();
@@ -22,9 +17,9 @@ export default function VolumeSlider({ volume, muted, onChange, onToggleMute }) 
       className="relative z-[70] isolate flex min-w-0 shrink-0 items-center gap-2 pointer-events-auto"
       onClick={stop} onDoubleClick={stop} onMouseDown={stop} onMouseUp={stop}
       onPointerDown={stop} onPointerUp={stop} onPointerCancel={stop}
-      onTouchStart={stop} onTouchMove={stop} onTouchEnd={finishTouch} onTouchCancel={stop}
+      onTouchStart={stop} onTouchMove={stop} onTouchEnd={stop} onTouchCancel={stop}
     >
-      <button type="button" onClick={mute} onTouchEnd={mute} className="rounded-lg p-2 hover:bg-white/10" aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}>
+      <button type="button" onClick={mute} className="rounded-lg p-2 hover:bg-white/10" aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}>
         {muted || percent === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
       </button>
       <input

@@ -173,7 +173,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
         <div className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-black/70 text-white text-sm px-3 py-1 rounded pointer-events-none">{subtitles}</div>
       )}
 
-      <div className={`absolute inset-x-0 p-3 sm:p-4 bg-gradient-to-t from-black/90 to-transparent transition-opacity ${controlsRaised ? 'bottom-24' : 'bottom-0'} ${showControls ? 'opacity-100' : 'opacity-0'}`} style={{ paddingBottom: controlsRaised ? undefined : 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
+      <div className={`absolute inset-x-0 z-[60] pointer-events-auto p-3 sm:p-4 bg-gradient-to-t from-black/90 to-transparent transition-opacity ${controlsRaised ? 'bottom-24' : 'bottom-0'} ${showControls ? 'opacity-100' : 'opacity-0'}`} style={{ paddingBottom: controlsRaised ? undefined : 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
         <div className="flex items-center gap-2 mb-2 text-white text-xs">
           {isOwner && <span>{fmt(current)}</span>}
           {isOwner && <div className="flex-1 h-1.5 bg-white/30 rounded-full cursor-pointer relative" onClick={moveBar}>
@@ -186,7 +186,16 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
           {isOwner && <button onClick={togglePlay} className="p-2 hover:bg-white/10 rounded-lg">{playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}</button>}
           {isOwner && <button onClick={() => skip(-10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn geri"><Rewind className="w-5 h-5" /></button>}
           {isOwner && <button onClick={() => skip(10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn ileri"><FastForward className="w-5 h-5" /></button>}
-          <VolumeSlider volume={volume} muted={muted} onChange={setVolumePercent} onToggleMute={toggleMute} />
+          <div
+            className="relative z-[80] pointer-events-auto"
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerUp={(event) => event.stopPropagation()}
+            onTouchStart={(event) => event.stopPropagation()}
+            onTouchEnd={(event) => event.stopPropagation()}
+          >
+            <VolumeSlider volume={volume} muted={muted} onChange={setVolumePercent} onToggleMute={toggleMute} />
+          </div>
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             {isOwner && (
               <div className="relative">
