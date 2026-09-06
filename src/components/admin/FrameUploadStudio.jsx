@@ -10,6 +10,11 @@ export default function FrameUploadStudio() {
   const { toast } = useToast();
   const [busy, setBusy] = useState(null);
   const customFrames = Object.entries(frames).filter(([key]) => key.startsWith('special:'));
+  const handleSave = async ({ name, file, opening }) => {
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    await base44.entities.SpecialFrame.create({ name, image_url: file_url, opening, active: true });
+    toast({ title: 'Çerçeve atama kataloğuna eklendi' });
+  };
   const remove = async (id, name) => {
     if (!confirm(`"${name}" çerçevesi silinsin mi?`)) return;
     setBusy(id);
@@ -21,7 +26,7 @@ export default function FrameUploadStudio() {
     <h2 className="text-lg font-bold">Şeffaf PNG Çerçeve Aracı</h2>
     <p className="mb-4 text-sm text-muted-foreground">Telefonda dokunarak profil alanını seçin, ayrıntıları koruyarak şeffaf PNG hazırlayın.</p>
     <button onClick={() => setOpen(true)} className="min-h-14 w-full rounded-xl bg-primary px-4 text-base font-extrabold text-primary-foreground">＋ PNG Yükle ve Düzenle</button>
-    {open && <MobileFrameEditor onClose={() => setOpen(false)} />}
+    {open && <MobileFrameEditor onClose={() => setOpen(false)} onSave={handleSave} saveLabel="Kataloğa Kaydet" />}
     {customFrames.length > 0 && <div className="mt-4 space-y-2">
       <h3 className="text-sm font-bold">Kayıtlı Çerçeveler ({customFrames.length})</h3>
       {customFrames.map(([key, frame]) => <div key={key} className="flex items-center gap-3 rounded-xl border border-border bg-secondary/40 p-2">

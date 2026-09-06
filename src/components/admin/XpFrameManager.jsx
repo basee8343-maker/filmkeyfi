@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
+import MobileFrameEditor from '@/components/admin/frame-editor/MobileFrameEditor';
 
 const STYLES = [
   ['starter', 'Başlangıç'], ['blue', 'Mavi'], ['green', 'Yeşil'], ['cyan', 'Cyan'],
@@ -11,29 +12,19 @@ export default function XpFrameManager() {
   const { toast } = useToast();
   const [frames, setFrames] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [name, setName] = useState('');
   const [minXp, setMinXp] = useState('0');
   const [style, setStyle] = useState('starter');
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(null);
 
   const load = () => base44.entities.XpFrame.list('-min_xp', 100).then((items) => { setFrames(items); setLoading(false); });
   useEffect(() => { load(); const off = base44.entities.XpFrame.subscribe(load); return off; }, []);
 
-  const pick = (selected) => { setFile(selected); if (selected) setPreview(URL.createObjectURL(selected)); else setPreview(''); };
-
-  const save = async () => {
-    if (!name.trim() || !file) return toast({ title: 'Çerçeve adı ve görsel gerekli', variant: 'destructive' });
-    setSaving(true);
-    try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      await base44.entities.XpFrame.create({ name: name.trim(), min_xp: Math.max(0, Number(minXp) || 0), style, image_url: file_url, active: true, animated: true, sort_order: Math.max(0, Number(minXp) || 0) });
-      setName(''); setFile(null); setPreview(''); setMinXp('0'); setStyle('starter');
-      toast({ title: 'Level çerçevesi eklendi' });
-    } catch (error) { toast({ title: 'Eklenemedi', description: error.message, variant: 'destructive' }); }
-    finally { setSaving(false); }
+  const handleSave = async ({ name, file }) => {
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    await base44.entities.XpFrame.create({ name, min_xp: Math.max(0, Number(minXp) || 0), style, image_url: file_url, active: true, animated: true, sort_order: Math.max(0, Number(minXp) || 0) });
+    setMinXp('0'); setStyle('starter');
+    toast({ title: 'Level çerçevesi eklendi' });
   };
 
   const update = async (id, field, value) => {
@@ -53,10 +44,9 @@ export default function XpFrameManager() {
 
   return <section className="mb-4 rounded-xl border border-border bg-card p-4">
     <h2 className="text-lg font-bold">Level (XP) Çerçeveleri</h2>
-    <p className="mb-4 text-sm text-muted-foreground">Odadaki seviye çerçevesi görsellerini yükleyin, XP eşiğini ayarlayın ve silin. Onayladığınızda kullanıcıların level çerçevesi güncellenir.</p>
+    <p className="mb-4 text-sm text-muted-foreground">Odadaki seviye çerçevesi görsellerini profesyonel PNG editörüyle hazırlayın, XP eşiğini ayarlayın ve silin. Onayladığınızda kullanıcıların level çerçevesi güncellenir.</p>
     <div className="space-y-3">
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Çerçeve adı (örn. LVL 50)" className="min-h-12 w-full rounded-xl border border-border bg-secondary px-3 text-base" />
-      <label className="block text-sm font-bold">Minimum XP
+      <label className="block text-sm font-bold">Minimum XP (bu çerçevenin aktif olacağı XP eşiği)
         <input type="number" min="0" value={minXp} onChange={(e) => setMinXp(e.target.value)} className="mt-1.5 min-h-12 w-full rounded-xl border border-border bg-secondary px-3 text-base" />
       </label>
       <label className="block text-sm font-bold">Stil / Renk
@@ -64,12 +54,8 @@ export default function XpFrameManager() {
           {STYLES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select>
       </label>
-      <label className="block min-h-14 cursor-pointer rounded-xl border-2 border-dashed border-border bg-secondary/40 px-4 text-center text-base font-bold leading-[3.25rem]">
-        {file ? '✓ Görsel Seçildi (değiştirmek için dokun)' : '＋ Çerçeve Görseli Yükle'}
-        <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => pick(e.target.files?.[0] || null)} />
-      </label>
-      {preview && <img src={preview} alt="Önizleme" className="mx-auto h-32 w-32 object-contain" />}
-      <button onClick={save} disabled={saving || !file || !name.trim()} className="min-h-14 w-full rounded-xl bg-primary text-base font-extrabold text-primary-foreground disabled:opacity-50">{saving ? 'Kaydediliyor...' : 'Level Çerçevesi Ekle'}</button>
+      <button onClick={() => setOpen(true)} className="min-h-14 w-full rounded-xl bg-primary text-base font-extrabold text-primary-foreground">＋ PNG Yükle ve Düzenle</button>
+      {open && <MobileFrameEditor onClose={() => setOpen(false)} onSave={handleSave} saveLabel="Level Çerçevesi Ekle" requireOpening={false} namePlaceholder="Çerçeve adı (örn. LVL 50)" />}
     </div>
     <div className="mt-4 space-y-2">
       <h3 className="text-sm font-bold">Mevcut Level Çerçeveleri ({frames.length})</h3>
