@@ -22,7 +22,7 @@ export default function CanAblamWelcome({ onDone }) {
 
   return (
     <div
-      className={`pointer-events-none fixed inset-0 z-[90] flex items-end justify-center pb-[22vh] ${exiting ? 'opacity-0 transition-opacity duration-600' : 'animate-[cab-fade_0.5s_ease-out]'}`}
+      className={`pointer-events-none fixed inset-0 z-[90] flex items-start justify-center pt-[max(env(safe-area-inset-top),2.5rem)] ${exiting ? 'opacity-0 transition-opacity duration-600' : 'animate-[cab-fade_0.5s_ease-out]'}`}
     >
       {/* ÜST KALPLER */}
       <HeartEdge position="top" />
@@ -41,7 +41,7 @@ export default function CanAblamWelcome({ onDone }) {
           <img
             src={SPLASH_IMAGE}
             alt="Can Ablam"
-            className="relative w-[72vw] max-w-[320px] h-auto object-contain"
+            className="relative w-[82vw] max-w-[380px] h-auto object-contain"
             style={{ filter: 'drop-shadow(0 0 16px rgba(255,23,68,0.5))', imageRendering: 'auto' }}
             draggable={false}
           />

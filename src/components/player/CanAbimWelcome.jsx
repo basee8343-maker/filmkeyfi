@@ -20,7 +20,7 @@ export default function CanAbimWelcome({ onDone }) {
   };
 
   return (
-    <div className={`pointer-events-none fixed inset-0 z-[90] flex items-end justify-center pb-[22vh] ${exiting ? 'opacity-0 transition-opacity duration-500' : 'animate-[cab-fade_.4s_ease-out]'}`}>
+    <div className={`pointer-events-none fixed inset-0 z-[90] flex items-start justify-center pt-[max(env(safe-area-inset-top),2.5rem)] ${exiting ? 'opacity-0 transition-opacity duration-500' : 'animate-[cab-fade_.4s_ease-out]'}`}>
       {/* Hafif mavi flash overlay */}
       <div className="absolute inset-0 bg-blue-500/5 animate-[cab-flash_1.4s_ease-in-out_infinite]" />
 
@@ -38,7 +38,7 @@ export default function CanAbimWelcome({ onDone }) {
           <img
             src={SPLASH_IMAGE}
             alt="Can Abim - Kral Turgay"
-            className="relative w-[74vw] max-w-[330px] h-auto object-contain"
+            className="relative w-[82vw] max-w-[380px] h-auto object-contain"
             style={{ filter: 'drop-shadow(0 0 16px rgba(59,130,246,0.5))' }}
             draggable={false}
           />
