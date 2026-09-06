@@ -1,6 +1,6 @@
 import { Volume2, VolumeX } from 'lucide-react';
 
-export default function VolumeSlider({ volume, muted, onChange, onToggleMute }) {
+export default function VolumeSlider({ volume, muted, disabled = false, onChange, onToggleMute }) {
   const percent = muted ? 0 : Math.round(volume * 100);
   const stop = (event) => event.stopPropagation();
   const mute = (event) => {
@@ -14,12 +14,12 @@ export default function VolumeSlider({ volume, muted, onChange, onToggleMute }) 
 
   return (
     <div
-      className="relative z-[70] isolate flex min-w-0 shrink-0 items-center gap-2 pointer-events-auto"
+      className={`relative z-[70] isolate flex min-w-0 shrink-0 items-center gap-2 pointer-events-auto ${disabled ? 'opacity-50' : ''}`}
       onClick={stop} onDoubleClick={stop} onMouseDown={stop} onMouseUp={stop}
       onPointerDown={stop} onPointerUp={stop} onPointerCancel={stop}
       onTouchStart={stop} onTouchMove={stop} onTouchEnd={stop} onTouchCancel={stop}
     >
-      <button type="button" onClick={mute} className="rounded-lg p-2 hover:bg-white/10" aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}>
+      <button type="button" disabled={disabled} onClick={mute} className="rounded-lg p-2 hover:bg-white/10 disabled:cursor-not-allowed" aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}>
         {muted || percent === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
       </button>
       <input
@@ -28,8 +28,9 @@ export default function VolumeSlider({ volume, muted, onChange, onToggleMute }) 
         max="100"
         step="1"
         value={percent}
+        disabled={disabled}
         onInput={change}
-        className="relative z-[71] h-8 w-14 cursor-pointer accent-primary pointer-events-auto min-[390px]:w-20 landscape:w-24 sm:w-28"
+        className="relative z-[71] h-8 w-14 cursor-pointer accent-primary pointer-events-auto min-[390px]:w-20 landscape:w-24 sm:w-28 disabled:cursor-not-allowed"
         style={{ touchAction: 'none' }}
         aria-label="Ses seviyesi"
         aria-valuetext={`%${percent}`}
