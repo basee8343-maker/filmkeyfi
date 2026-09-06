@@ -15,6 +15,7 @@ import RoomLevelBadge from '@/components/levels/RoomLevelBadge';
 import useXp from '@/hooks/useXp';
 import XpAvatar from '@/components/xp/XpAvatar';
 import XpStatsCard from '@/components/xp/XpStatsCard';
+import AccountStatusAvatar, { getAccountState } from '@/components/friends/AccountStatusAvatar';
 import { daysInApp } from '@/lib/xp';
 
 export default function UserProfile({ userId, roomIdOverride, onBack, onMessage, embedded = false }) {
@@ -38,7 +39,7 @@ export default function UserProfile({ userId, roomIdOverride, onBack, onMessage,
     setProfile(null); setErr(''); setLoading(true);
     const load = () => base44.functions.invoke('user-profile', { user_id: id })
       .then((res) => { if (active) { setProfile(res.data); setErr(''); } })
-      .catch((e) => { if (active) setErr(e.response?.data?.error || e.message); })
+      .catch((e) => { if (active) { if (e?.response?.status === 404) setProfile({ account_status: 'deleted' }); else setErr(e.response?.data?.error || e.message); } })
       .finally(() => { if (active) setLoading(false); });
     load();
     const off = base44.entities.User.subscribe((event) => { if ((event.data?.id || event.id) === id) load(); });
@@ -82,6 +83,18 @@ export default function UserProfile({ userId, roomIdOverride, onBack, onMessage,
   if (loading) return <div className="h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   const isSelf = me?.id === id;
+  const accountState = getAccountState(profile);
+
+  if (accountState && !isSelf) return (
+    <div className={`${embedded ? 'fixed inset-0 z-[100] bg-background pt-[env(safe-area-inset-top)]' : ''} flex min-h-screen items-center justify-center p-4`}>
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 text-center">
+        <AccountStatusAvatar status={profile.account_status} className="mx-auto h-28 w-28" />
+        <h1 className="mt-4 text-xl font-bold">{accountState.name}</h1>
+        <p className="mt-2 text-sm text-destructive">{accountState.message}</p>
+        <button onClick={() => onBack ? onBack() : navigate(-1)} className="mt-5 rounded-lg bg-secondary px-5 py-2 text-sm font-semibold">Geri</button>
+      </div>
+    </div>
+  );
 
   return (
     <div className={`${embedded ? 'fixed inset-0 z-[100] overflow-y-auto overscroll-contain bg-background pt-[env(safe-area-inset-top)]' : ''}`}>

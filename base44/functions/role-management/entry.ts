@@ -29,6 +29,27 @@ async function removeFromAllRooms(base44, userId, userName) {
   }
 }
 
+async function syncAccountStatus(base44, target, status) {
+  const states = {
+    deleted: { name: 'Silinmiş Hesap', avatar: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/0665aaba3_generated_image.png', message: 'Bu hesap yönetici tarafından silinmiştir.' },
+    banned: { name: 'Engellenmiş Hesap', avatar: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/63e635ef8_generated_image.png', message: 'Bu hesap yönetici tarafından engellenmiştir.' },
+    suspended: { name: 'Askıya Alınmış Hesap', avatar: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/d59dc5667_generated_image.png', message: 'Bu hesap yönetici tarafından askıya alınmıştır.' },
+    active: { name: target.username || target.full_name || 'Kullanıcı', avatar: target.avatar || '', message: '' }
+  };
+  const state = states[status];
+  const conversations = await base44.asServiceRole.entities.Conversation.filter({ $or: [{ user1_id: target.id }, { user2_id: target.id }] }, '-updated_date', 500).catch(() => []);
+  if (conversations.length) await base44.asServiceRole.entities.Conversation.bulkUpdate(conversations.map((item) => ({
+    id: item.id,
+    ...(item.user1_id === target.id ? { user1_name: state.name, user1_avatar: state.avatar } : { user2_name: state.name, user2_avatar: state.avatar }),
+    last_message_text: state.message
+  }))).catch(() => {});
+  const friendships = await base44.asServiceRole.entities.Friendship.filter({ $or: [{ requester_id: target.id }, { recipient_id: target.id }] }, '-updated_date', 500).catch(() => []);
+  if (friendships.length) await base44.asServiceRole.entities.Friendship.bulkUpdate(friendships.map((item) => ({
+    id: item.id,
+    ...(item.requester_id === target.id ? { requester_name: state.name, requester_avatar: state.avatar } : { recipient_name: state.name, recipient_avatar: state.avatar })
+  }))).catch(() => {});
+}
+
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -177,6 +198,22 @@ export default async function(req) {
       return Response.json({ ok: true, ...updates });
     }
 
+    if (action === 'delete_user') {
+      const targetName = target.username || target.full_name || 'Kullanıcı';
+      await syncAccountStatus(base44, target, 'deleted');
+      await base44.asServiceRole.entities.UserSession.updateMany(
+        { user_id, status: 'active' },
+        { $set: { status: 'inactive', ended_at: new Date().toISOString() } }
+      ).catch(() => {});
+      await removeFromAllRooms(base44, user_id, targetName);
+      await base44.asServiceRole.entities.User.delete(user_id);
+      await base44.asServiceRole.entities.AdminLog.create({
+        admin_id: me.id, admin_name: adminName,
+        action: 'Kullanıcı silindi', target: target.email || user_id
+      }).catch(() => {});
+      return Response.json({ ok: true });
+    }
+
     if (action === 'ban_user') {
       const { reason, description } = body;
       const targetName = target.username || target.full_name || 'Kullanıcı';
@@ -194,6 +231,7 @@ export default async function(req) {
         { $set: { status: 'inactive', ended_at: new Date().toISOString() } }
       ).catch(() => {});
       await removeFromAllRooms(base44, user_id, targetName);
+      await syncAccountStatus(base44, target, 'banned');
       await upsertNotification(base44, {
         user_id, title: '🚫 Hesabınız engellendi',
         body: `Engel nedeni: ${reason || 'Belirtilmedi'}`,
@@ -224,6 +262,8 @@ export default async function(req) {
         { user_id, status: 'active' },
         { $set: { status: 'inactive', ended_at: new Date().toISOString() } }
       ).catch(() => {});
+      await removeFromAllRooms(base44, user_id, targetName);
+      await syncAccountStatus(base44, target, 'suspended');
       await upsertNotification(base44, {
         user_id, title: '⏸️ Hesabınız askıya alındı',
         body: `Askıya alma nedeni: ${reason || 'Belirtilmedi'}`,
@@ -247,6 +287,7 @@ export default async function(req) {
         suspended_by: '',
         membership_status: 'active',
       });
+      await syncAccountStatus(base44, target, 'active');
       await upsertNotification(base44, {
         user_id, title: '✅ Askıya alma kaldırıldı',
         body: 'Hesabınız tekrar aktif edildi.',
@@ -273,6 +314,7 @@ export default async function(req) {
         suspended_by: '',
         membership_status: 'active',
       });
+      await syncAccountStatus(base44, target, 'active');
       await upsertNotification(base44, {
         user_id, title: '✅ Engel kaldırıldı',
         body: 'Hesabınız tekrar aktif edildi.',

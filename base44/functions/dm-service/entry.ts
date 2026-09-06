@@ -18,7 +18,9 @@ export default async function(req) {
       const targetId = String(body.target_id || '');
       if (!targetId || targetId === user.id) return Response.json({ error: 'Geçersiz kullanıcı' }, { status: 400 });
       const target = await base44.asServiceRole.entities.User.get(targetId).catch(() => null);
-      if (!target) return Response.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 });
+      if (!target) return Response.json({ error: 'Bu hesap yönetici tarafından silinmiştir.' }, { status: 404 });
+      if (target.is_banned || target.role === 'banned' || target.membership_status === 'blocked') return Response.json({ error: 'Bu hesap yönetici tarafından engellenmiştir.' }, { status: 403 });
+      if (target.is_suspended || target.membership_status === 'suspended') return Response.json({ error: 'Bu hesap yönetici tarafından askıya alınmıştır.' }, { status: 403 });
       const targetName = target.username || target.full_name || 'Kullanıcı';
       const targetAvatar = target.avatar || '';
       const isAdminChat = user.role === 'admin' || target.role === 'admin';
@@ -76,7 +78,10 @@ export default async function(req) {
       // Arkadaşlık durumu kontrolü — admin sohbetlerinde arkadaşlık şartı aranmaz
       const friendId = conversation.user1_id === user.id ? conversation.user2_id : conversation.user1_id;
       const friendUser = await base44.asServiceRole.entities.User.get(friendId).catch(() => null);
-      const isAdminChat = user.role === 'admin' || friendUser?.role === 'admin';
+      if (!friendUser) return Response.json({ error: 'Bu hesap yönetici tarafından silinmiştir.' }, { status: 404 });
+      if (friendUser.is_banned || friendUser.role === 'banned' || friendUser.membership_status === 'blocked') return Response.json({ error: 'Bu hesap yönetici tarafından engellenmiştir.' }, { status: 403 });
+      if (friendUser.is_suspended || friendUser.membership_status === 'suspended') return Response.json({ error: 'Bu hesap yönetici tarafından askıya alınmıştır.' }, { status: 403 });
+      const isAdminChat = user.role === 'admin' || friendUser.role === 'admin';
       if (!isAdminChat) {
         const friendships = await base44.asServiceRole.entities.Friendship.filter({
           $or: [

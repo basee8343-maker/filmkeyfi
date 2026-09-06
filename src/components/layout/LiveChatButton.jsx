@@ -202,7 +202,7 @@ export default function LiveChatButton() {
         toast({ title: `${u.username || u.email} askıya alındı` });
         setSelectedUser((prev) => prev && prev.id === u.id ? { ...prev, is_suspended: true, suspend_reason: reason.trim(), suspend_description: description.trim(), membership_status: 'suspended' } : prev);
       } else if (type === 'delete') {
-        await base44.entities.User.delete(u.id);
+        await base44.functions.invoke('role-management', { action: 'delete_user', user_id: u.id });
         toast({ title: 'Kullanıcı silindi' });
         setSelectedUser(null);
         setResults((p) => p.filter((r) => r.id !== u.id));

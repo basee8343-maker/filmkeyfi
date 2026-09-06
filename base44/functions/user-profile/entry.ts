@@ -11,6 +11,12 @@ export default async function(req) {
     const rl = await rateLimit(base44, 'user-profile:' + user.id, user.id, 60, 60000);
     if (!rl.allowed) return Response.json({ error: 'çok fazla istek' }, { status: 429 });
 
+    const accountStatus = (u) => u?.is_banned || u?.role === 'banned' || u?.membership_status === 'blocked'
+      ? 'banned'
+      : u?.is_suspended || u?.membership_status === 'suspended'
+        ? 'suspended'
+        : 'active';
+
     // Batch modu: birden fazla kullanıcı profilini tek sorguda getir (N+1 önleme)
     const { user_id, user_ids } = body || {};
     if (Array.isArray(user_ids) && user_ids.length > 0) {
@@ -28,13 +34,14 @@ export default async function(req) {
           special_frame_id: u.special_frame_id || '', special_frame_title: u.special_frame_title || '',
           special_frame_entry: u.special_frame_entry !== false, special_frame_exit: u.special_frame_exit !== false,
           title: u.title || '', created_date: u.created_date || null,
+          account_status: accountStatus(u),
         };
       });
       return Response.json({ data: profiles });
     }
 
     if (!user_id) return Response.json({ error: 'user_id gerekli' }, { status: 400 });
-    const u = await base44.asServiceRole.entities.User.get(user_id);
+    const u = await base44.asServiceRole.entities.User.get(user_id).catch(() => null);
     if (!u) return Response.json({ error: 'kullanıcı bulunamadı' }, { status: 404 });
     return Response.json({
       username: u.username || '',
@@ -52,7 +59,8 @@ export default async function(req) {
       special_frame_entry: u.special_frame_entry !== false,
       special_frame_exit: u.special_frame_exit !== false,
       title: u.title || '',
-      created_date: u.created_date || null
+      created_date: u.created_date || null,
+      account_status: accountStatus(u)
     });
   } catch (e) {
     return safeErrorResponse(e);

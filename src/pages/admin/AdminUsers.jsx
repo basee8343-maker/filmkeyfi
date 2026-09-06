@@ -84,29 +84,17 @@ export default function AdminUsers({ pendingOnly = false }) {
   };
   const toggleActive = async (u) => {
     try {
-      const next = u.membership_status === 'active' ? 'blocked' : 'active';
-      await base44.entities.User.update(u.id, { membership_status: next });
-      await log(next === 'active' ? 'Kullanıcı aktif edildi' : 'Kullanıcı pasif edildi', u.email);
-      if (next === 'blocked') {
-        base44.functions.invoke('admin-notify', {
-          event: 'subscription_cancelled',
-          ref_id: `sub_cancel_manual:${u.id}`,
-          title: 'Abonelik iptal edildi (Manuel)',
-          body: u.username || u.full_name || u.email,
-          link: '/admin/abonelikler',
-          telegram_data: { username: u.username || u.full_name || u.email, date: new Date().toLocaleString('tr-TR') }
-        }).catch(() => {});
+      const suspending = u.membership_status === 'active';
+      if (suspending) {
+        await base44.functions.invoke('role-management', { action: 'suspend_user', user_id: u.id, reason: 'Yönetici tarafından askıya alındı' });
+      } else if (u.is_suspended || u.membership_status === 'suspended') {
+        await base44.functions.invoke('role-management', { action: 'unsuspend_user', user_id: u.id });
       } else {
-        base44.functions.invoke('admin-notify', {
-          event: 'subscription_active',
-          ref_id: `sub_active_manual:${u.id}`,
-          title: 'Abonelik aktif edildi (Manuel)',
-          body: u.username || u.full_name || u.email,
-          link: '/admin/abonelikler',
-          telegram_data: { username: u.username || u.full_name || u.email, package: 'Manuel Aktivasyon', date: new Date().toLocaleString('tr-TR') }
-        }).catch(() => {});
+        await base44.entities.User.update(u.id, { membership_status: 'active' });
       }
-      toast({ title: next === 'active' ? 'Kullanıcı aktif edildi' : 'Kullanıcı pasif edildi' }); load();
+      await log(suspending ? 'Kullanıcı askıya alındı' : 'Kullanıcı aktif edildi', u.email);
+      toast({ title: suspending ? 'Kullanıcı askıya alındı' : 'Kullanıcı aktif edildi' });
+      load();
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.message, variant: 'destructive' }); }
   };
   const extend = async (u) => {
@@ -135,9 +123,7 @@ export default function AdminUsers({ pendingOnly = false }) {
   };
   const del = async (u) => {
     try {
-      await base44.entities.UserSession.updateMany({ user_id: u.id, status: 'active' }, { $set: { status: 'inactive', ended_at: new Date().toISOString() } }).catch(() => {});
-      await base44.entities.User.delete(u.id);
-      await log('Kullanıcı silindi', u.email);
+      await base44.functions.invoke('role-management', { action: 'delete_user', user_id: u.id });
       toast({ title: 'Kullanıcı silindi.' }); setConfirm(null); load();
     } catch (e) { toast({ title: 'Silinemedi', description: e.message, variant: 'destructive' }); }
   };

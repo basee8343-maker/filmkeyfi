@@ -35,12 +35,12 @@ export default function AdminUserReports() {
     catch (e) { toast({ title: 'İşlem başarısız', variant: 'destructive' }); }
   };
   const suspendUser = async (uid) => {
-    try { await base44.entities.User.update(uid, { membership_status: 'suspended' }); toast({ title: 'Kullanıcı askıya alındı' }); }
+    try { await base44.functions.invoke('role-management', { action: 'suspend_user', user_id: uid, reason: 'Şikayet üzerinden askıya alındı' }); toast({ title: 'Kullanıcı askıya alındı' }); }
     catch { toast({ title: 'İşlem başarısız', variant: 'destructive' }); }
   };
   const deleteUser = async (uid, name) => {
     if (!confirm(`${name} kalıcı olarak silinsin mi?`)) return;
-    try { await base44.entities.User.delete(uid); toast({ title: 'Kullanıcı silindi' }); }
+    try { await base44.functions.invoke('role-management', { action: 'delete_user', user_id: uid }); toast({ title: 'Kullanıcı silindi' }); }
     catch { toast({ title: 'İşlem başarısız', variant: 'destructive' }); }
   };
   const contextLabel = { dm: 'Özel Mesaj', room: 'Oda', profile: 'Profil' };
