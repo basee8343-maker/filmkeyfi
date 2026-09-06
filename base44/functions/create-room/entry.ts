@@ -23,7 +23,7 @@ export default async function(req) {
     if (!name) return Response.json({ error: 'geçersiz oda adı' }, { status: 400 });
 
     // Admin rate limit'ten muaf
-    const me = await base44.asServiceRole.entities.User.get(user.id).catch(() => null);
+    const me = await base44.entities.User.get(user.id).catch(() => null);
     if (!hasActiveMembership(me)) return Response.json({ error: 'aktif üyelik gerekli' }, { status: 403 });
     const isAdmin = me?.role === 'admin';
     if (!isAdmin) {
