@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Image } from '@/components/ui/image';
 import LightningStrike from '@/components/player/LightningStrike';
 
-const SPLASH_IMAGE = 'https://base44.app/api/apps/6a77d66e4da6de214628ee62/files/mp/public/6a77d66e4da6de214628ee62/1f6e23d7c_can-abim-gercek-seffaf.png';
+const SPLASH_IMAGE = 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/0b1e2843f_generated_image.png';
 
 export default function CanAbimWelcome({ onDone }) {
   const [exiting, setExiting] = useState(false);
