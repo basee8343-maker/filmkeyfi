@@ -17,9 +17,16 @@ export default function RoomNotifications({ participants, currentUserId, profile
     if (initializedRef.current) {
       const joined = list.filter((p) => !prevIds.has(p.user_id) && p.user_id !== currentUserId);
       const left = prev.filter((p) => !currIds.has(p.user_id) && p.user_id !== currentUserId);
-      // Çerçeveli kullanıcılar için normal "katıldı/ayrıldı" bildirimini gizle — onlarda özel frame giriş/çıkış kartı çıkar.
-      joined.forEach((p) => { if (!(profiles[p.user_id] || {}).profile_frame) addNotif(p, 'join'); });
-      left.forEach((p) => { if (!(profiles[p.user_id] || {}).profile_frame) addNotif(p, 'leave'); });
+      // Çerçeve giriş animasyonu kapalıysa normal "katıldı/ayrıldı" bildirimi göster.
+      // Açıkysa özel frame giriş/çıkış kartı çıkar, bu bildirimi gizle.
+      const hasFrameEntrance = (p) => {
+        const prof = profiles[p.user_id] || {};
+        if (!prof.profile_frame) return false;
+        const automatic = prof.profile_frame.startsWith('lvl_');
+        return automatic || !!prof.profile_frame_entrance_enabled;
+      };
+      joined.forEach((p) => { if (!hasFrameEntrance(p)) addNotif(p, 'join'); });
+      left.forEach((p) => { if (!hasFrameEntrance(p)) addNotif(p, 'leave'); });
     }
 
     prevRef.current = list;
