@@ -60,7 +60,12 @@ export default function AppLayout() {
         const u = await base44.auth.me();
         // Ban / askıya alma / silme
         if (u?.is_banned || u?.role === 'banned' || u?.is_suspended || u?.membership_status === 'suspended') {
-          triggerBanNotice('banned');
+          const isSusp = !u?.is_banned && u?.role !== 'banned' && (u?.is_suspended || u?.membership_status === 'suspended');
+          triggerBanNotice(
+            isSusp ? 'suspended' : 'banned',
+            isSusp ? (u?.suspend_reason || '') : (u?.ban_reason || ''),
+            isSusp ? (u?.suspend_description || '') : (u?.ban_description || '')
+          );
           base44.auth.logout().catch(() => {});
           window.location.href = '/login?banned=1';
           return;

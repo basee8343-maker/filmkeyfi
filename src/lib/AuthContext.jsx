@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { appParams } from '@/lib/app-params';
 import { createAxiosClient } from '@base44/sdk/dist/utils/axios-client';
 import { detectConnectionType } from '@/lib/connectionType';
+import { triggerBanNotice } from '@/lib/banNotice';
 
 const AuthContext = createContext();
 
@@ -103,7 +104,11 @@ export const AuthProvider = ({ children }) => {
       setIsLoadingAuth(true);
       const currentUser = await base44.auth.me();
       if (currentUser.is_banned || currentUser.role === 'banned' || currentUser.membership_status === 'suspended') {
+        const isSuspended = !currentUser.is_banned && currentUser.role !== 'banned' && currentUser.membership_status === 'suspended';
+        const reason = isSuspended ? (currentUser.suspend_reason || '') : (currentUser.ban_reason || '');
+        const description = isSuspended ? (currentUser.suspend_description || '') : (currentUser.ban_description || '');
         if (window.location.pathname !== '/login') {
+          triggerBanNotice(isSuspended ? 'suspended' : 'banned', reason, description);
           await base44.auth.logout();
           window.location.href = '/login?banned=1';
           return;

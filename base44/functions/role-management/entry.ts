@@ -208,6 +208,57 @@ export default async function(req) {
       return Response.json({ ok: true });
     }
 
+    if (action === 'suspend_user') {
+      const { reason, description } = body;
+      const targetName = target.username || target.full_name || 'Kullanıcı';
+      await base44.asServiceRole.entities.User.update(user_id, {
+        is_suspended: true,
+        suspend_reason: (reason || '').slice(0, 100),
+        suspend_description: (description || '').slice(0, 500),
+        suspended_at: new Date().toISOString(),
+        suspended_by: me.id,
+        membership_status: 'suspended',
+        active_session_id: '',
+      });
+      await base44.asServiceRole.entities.UserSession.updateMany(
+        { user_id, status: 'active' },
+        { $set: { status: 'inactive', ended_at: new Date().toISOString() } }
+      ).catch(() => {});
+      await upsertNotification(base44, {
+        user_id, title: '⏸️ Hesabınız askıya alındı',
+        body: `Askıya alma nedeni: ${reason || 'Belirtilmedi'}`,
+        type: 'suspended'
+      });
+      await logSecurity(base44, 'user_suspended', target, `${reason || ''} | ${description || ''}`, 'warning');
+      await base44.asServiceRole.entities.AdminLog.create({
+        admin_id: me.id, admin_name: adminName,
+        action: 'Kullanıcı askıya alındı', target: target.email || user_id,
+        details: `${reason || ''}${description ? ' | ' + description : ''}`
+      }).catch(() => {});
+      return Response.json({ ok: true });
+    }
+
+    if (action === 'unsuspend_user') {
+      await base44.asServiceRole.entities.User.update(user_id, {
+        is_suspended: false,
+        suspend_reason: '',
+        suspend_description: '',
+        suspended_at: '',
+        suspended_by: '',
+        membership_status: 'active',
+      });
+      await upsertNotification(base44, {
+        user_id, title: '✅ Askıya alma kaldırıldı',
+        body: 'Hesabınız tekrar aktif edildi.',
+        type: 'info'
+      });
+      await base44.asServiceRole.entities.AdminLog.create({
+        admin_id: me.id, admin_name: adminName,
+        action: 'Askıya alma kaldırıldı', target: target.email || user_id
+      }).catch(() => {});
+      return Response.json({ ok: true });
+    }
+
     if (action === 'unban_user') {
       await base44.asServiceRole.entities.User.update(user_id, {
         is_banned: false,
@@ -215,6 +266,11 @@ export default async function(req) {
         ban_description: '',
         banned_at: '',
         banned_by: '',
+        is_suspended: false,
+        suspend_reason: '',
+        suspend_description: '',
+        suspended_at: '',
+        suspended_by: '',
         membership_status: 'active',
       });
       await upsertNotification(base44, {
