@@ -18,6 +18,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
   const [buffering, setBuffering] = useState(false);
   const hideTimer = useRef(null);
   const lastSyncRef = useRef(0);
+  const userPlaybackActionRef = useRef(false);
 
   const fmt = (s) => {
     if (!isFinite(s)) return '0:00';
@@ -30,8 +31,10 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     if (!isOwner) return;
     const v = videoRef.current; if (!v) return;
     await resumeAudio();
+    userPlaybackActionRef.current = true;
     if (v.paused) {
       v.play().catch((error) => {
+        userPlaybackActionRef.current = false;
         if (error?.name !== 'AbortError') console.error('[Video] Oynatma başlatılamadı', error);
       });
     } else {
@@ -108,8 +111,17 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     setCurrent(v.currentTime);
   };
 
-  const handlePlay = () => { setPlaying(true); setBuffering(false); if (isOwner && onPlayPause) onPlayPause(true); };
-  const handlePause = () => { setPlaying(false); if (isOwner && onPlayPause) onPlayPause(false); };
+  const handlePlay = () => {
+    setPlaying(true);
+    setBuffering(false);
+    if (isOwner && userPlaybackActionRef.current && onPlayPause) onPlayPause(true);
+    userPlaybackActionRef.current = false;
+  };
+  const handlePause = () => {
+    setPlaying(false);
+    if (isOwner && userPlaybackActionRef.current && onPlayPause) onPlayPause(false);
+    userPlaybackActionRef.current = false;
+  };
 
   const toggleFullscreen = () => {
     const el = fullscreenRef?.current || containerRef.current;

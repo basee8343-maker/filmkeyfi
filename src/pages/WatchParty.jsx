@@ -67,6 +67,7 @@ export default function WatchParty() {
   const lastUpdateRef = useRef(0);
   const lastSyncRef = useRef({ is_playing: false, current_time: 0 });
   const prevMovieIdRef = useRef(null);
+  const adminPauseAppliedRef = useRef(null);
   const playerWrapRef = useRef(null);
   const touchStart = useRef({ x: 0, y: 0 });
   const seenRoomMessagesRef = useRef(new Set());
@@ -102,8 +103,10 @@ export default function WatchParty() {
   const [presenceMap, setPresenceMap] = useState({});
   const hasMembership = membershipActive(user);
   const isOwner = user?.id === room?.owner_id;
-  const isMod = user?.role === 'admin' || user?.role === 'moderator';
+  const isAdminPlayback = user?.role === 'admin';
+  const isMod = isAdminPlayback || user?.role === 'moderator';
   const canMod = isOwner || isMod || (room?.room_moderators || []).includes(user?.id);
+  const canControlPlayback = canMod && (isAdminPlayback || !room?.playback_admin_locked);
 
   useEffect(() => {
     if (ul || !user) return;
@@ -113,11 +116,24 @@ export default function WatchParty() {
         const r = res.data?.room;
         if (!r) { setLoading(false); return; }
         setRoom(r);
+        lastSyncRef.current = { is_playing: r.is_playing, current_time: r.current_time || 0 };
         setSyncState({ is_playing: r.is_playing, current_time: r.current_time, last_sync: r.last_sync });
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, [id, ul, user?.id, hasMembership]);
+
+  // Admin odaya girdiğinde videoyu yalnızca bir kez durdurup kontrolü kilitler.
+  useEffect(() => {
+    if (!isAdminPlayback || !room?.id || adminPauseAppliedRef.current === room.id) return;
+    adminPauseAppliedRef.current = room.id;
+    base44.entities.Room.update(room.id, {
+      is_playing: false,
+      playback_admin_locked: true,
+      playback_admin_id: user.id,
+      last_sync: new Date().toISOString(),
+    }).catch(() => {});
+  }, [isAdminPlayback, room?.id, user?.id]);
 
   // Film değiştiğinde yeni filmi yükle (ilk yükleme dahil)
   useEffect(() => {
@@ -513,7 +529,14 @@ export default function WatchParty() {
     await base44.entities.Room.update(id, { ...patch, last_sync: new Date().toISOString() }).catch(() => {});
   }, [canMod, id]);
 
-  const onPlayPause = useCallback((playing) => updateRoom({ is_playing: playing }, true), [updateRoom]);
+  const onPlayPause = useCallback((playing) => {
+    const playbackPatch = { is_playing: playing };
+    if (isAdminPlayback) {
+      playbackPatch.playback_admin_locked = !playing;
+      playbackPatch.playback_admin_id = playing ? '' : user.id;
+    }
+    updateRoom(playbackPatch, true);
+  }, [updateRoom, isAdminPlayback, user?.id]);
   const onTimeUpdate = useCallback((t) => updateRoom({ current_time: t }), [updateRoom]);
   const onSeek = useCallback((t) => updateRoom({ current_time: t, is_playing: true }, true), [updateRoom]);
 
@@ -697,7 +720,7 @@ export default function WatchParty() {
           );
         })()}
         <div className={`room-video-stage flex min-w-0 flex-1 items-center justify-center bg-black ${chatOpen || directOpen ? 'room-video-panel-open' : ''}`}>
-          {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={canMod} isTimeSource={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} onEnded={() => setMoviePickerOpen(true)} fullscreenRef={playerWrapRef} watermark={user} /> :
+          {src ? <VideoPlayer src={src} title={room.movie_title} syncState={syncState} isOwner={canControlPlayback} isTimeSource={isOwner} onPlayPause={onPlayPause} onTimeUpdate={onTimeUpdate} onSeek={onSeek} onEnded={() => setMoviePickerOpen(true)} fullscreenRef={playerWrapRef} watermark={user} /> :
             <div className="text-muted-foreground text-sm p-6 text-center">Video kaynağı yok</div>}
         </div>
 
