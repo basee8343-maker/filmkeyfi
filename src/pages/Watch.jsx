@@ -19,8 +19,10 @@ export default function Watch() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.entities.Movie.get(id).then(async (m) => {
+    base44.entities.Movie.filter({ id }, '-created_date', 1).then(async (matches) => {
+      const m = matches[0] || null;
       setMovie(m);
+      if (!m) { setLoading(false); return; }
       let ep = null;
       if (epId) {
         const eps = await base44.entities.Episode.filter({ series_id: id }, 'season', 100).catch(() => []);
