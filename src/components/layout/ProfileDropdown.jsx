@@ -118,6 +118,17 @@ export default function ProfileDropdown() {
 
               <div className="my-0.5 border-t border-white/10" />
 
+              {user?.role === 'admin' && (
+                <Link to="/admin" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
+                  <Shield className="w-5 h-5 text-purple-400 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white">Yönetim Paneli</p>
+                    <p className="text-xs text-white/50">Admin kontrol paneli</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-white/30 shrink-0" />
+                </Link>
+              )}
+
               <Link to="/profil" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors relative">
                   <div className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-purple-500" />
                   <User className="w-5 h-5 text-white/70 shrink-0" />
