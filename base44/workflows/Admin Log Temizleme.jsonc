@@ -1,0 +1,44 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 3 * * *",
+      "one_time_date": null,
+      "timezone": "Europe/Istanbul",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "admin_log_cleanup",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "cleanup": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "cleanup-admin-logs"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Eski loglar\u0131 sil",
+            "description": "1 g\u00fcnden eski g\u00fcvenlik ve aktivite kay\u0131tlar\u0131"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Admin Log Temizleme",
+  "description": "G\u00fcvenlik olaylar\u0131 ve son aktiviteler kay\u0131tlar\u0131n\u0131 1 g\u00fcnden eski olanlar\u0131 her g\u00fcn siler"
+}
