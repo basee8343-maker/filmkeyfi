@@ -76,6 +76,10 @@
       "type": "boolean",
       "default": false
     },
+    "requires_approval": {
+      "type": "boolean",
+      "default": true
+    },
     "room_moderators": {
       "type": "array",
       "items": {
