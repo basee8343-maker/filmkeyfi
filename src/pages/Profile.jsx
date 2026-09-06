@@ -10,6 +10,7 @@ import ProfileInfoCard from '@/components/profile/ProfileInfoCard';
 import ProfileMovieGrid from '@/components/profile/ProfileMovieGrid';
 import ProfileSettings from '@/components/profile/ProfileSettings';
 import ProfileTabs from '@/components/profile/ProfileTabs';
+import { findProtectedName } from '@/lib/protectedNames';
 
 export default function Profile() {
   const { user, reload, setUser } = useCurrentUser(); const { toast } = useToast(); const location = useLocation(); const navigate = useNavigate();
@@ -31,6 +32,8 @@ export default function Profile() {
   };
   const save = async () => {
     if (saving || uploading) return;
+    const blocked = findProtectedName(form.username);
+    if (blocked) return toast({ title: 'Kullanıcı adı reddedildi', description: `'${blocked}' gibi yetki/rol kelimeleri kullanıcı adında kullanılamaz. Lütfen başka bir ad seçin.`, variant: 'destructive' });
     setSaving(true);
     try {
       const { data } = await base44.functions.invoke('update-profile', { username: form.username, phone: form.phone, avatar: form.avatar });

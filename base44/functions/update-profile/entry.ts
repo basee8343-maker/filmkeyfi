@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sanitizeText, validateUrl, rateLimit } from '../../shared/security.ts';
 import { resolveProfileFrame } from '../../shared/profileFrames.ts';
+import { findProtectedName } from '../../shared/protectedNames.ts';
 
 export default async function(req) {
   try {
@@ -19,6 +20,8 @@ export default async function(req) {
       const u = sanitizeText(username, 40);
       if (u) {
         if (u.length < 3) return Response.json({ error: 'Kullanıcı adı en az 3 karakter olmalı.' }, { status: 400 });
+        const blocked = findProtectedName(u);
+        if (blocked) return Response.json({ error: `'${blocked}' gibi yetki/rol içeren kelimeler kullanıcı adında kullanılamaz.` }, { status: 400 });
         const existing = await base44.asServiceRole.entities.User.filter({ username: u }, '-created_date', 5);
         if (existing.some((x) => x.id !== user.id)) {
           return Response.json({ error: 'Bu kullanıcı adı zaten kullanımda. Başka bir ad deneyin.' }, { status: 409 });
