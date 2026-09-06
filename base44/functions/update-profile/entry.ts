@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { sanitizeText, validateUrl, rateLimit, safeErrorResponse } from '../../shared/security.ts';
+import { sanitizeText, validateUrl, rateLimit } from '../../shared/security.ts';
 import { resolveProfileFrame } from '../../shared/profileFrames.ts';
 
 export default async function(req) {
@@ -13,8 +13,6 @@ export default async function(req) {
     // Rate limit: 10 güncelleme / dakika
     const rl = await rateLimit(base44, 'profile:' + user.id, user.id, 10, 60000);
     if (!rl.allowed) return Response.json({ error: 'çok hızlı güncelleme' }, { status: 429 });
-
-    const me = await base44.asServiceRole.entities.User.get(user.id);
 
     const updates = {};
     if (username !== undefined) {
@@ -35,7 +33,9 @@ export default async function(req) {
     }
     if (profile_frame !== undefined) {
       const frame = String(profile_frame || '');
-      const unlocked = me.unlocked_profile_frames || [];
+      // Sadece çerçeve değişimi gerektiğinde kullanıcı kaydını çek
+      const me = await base44.asServiceRole.entities.User.get(user.id).catch(() => null);
+      const unlocked = (me && me.unlocked_profile_frames) || [];
       const frameDef = await resolveProfileFrame(base44, frame);
       if (frame && (!frameDef || !unlocked.includes(frame))) return Response.json({ error: 'Bu çerçeve hesabınızda açık değil.' }, { status: 403 });
       updates.profile_frame = frame;
@@ -60,6 +60,7 @@ export default async function(req) {
     }
     return Response.json({ ok: true });
   } catch (e) {
-    return safeErrorResponse(e);
+    console.error('[update-profile error]', e?.message || String(e), e?.stack || '');
+    return Response.json({ error: e?.message || 'Profil güncellenemedi. Lütfen tekrar deneyin.' }, { status: 500 });
   }
 }
