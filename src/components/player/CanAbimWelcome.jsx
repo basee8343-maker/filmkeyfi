@@ -13,10 +13,10 @@ export default function CanAbimWelcome({ onDone }) {
     <div className={`pointer-events-none fixed inset-0 z-[90] flex items-end justify-center pb-[20vh] ${exiting ? 'opacity-0 transition-opacity duration-500' : 'animate-[can-abim-fade_.35s_ease-out]'}`}>
       <div className="absolute inset-0 bg-blue-500/5 animate-[can-abim-flash_1.35s_infinite]" />
       <LightningStrike side="left" />
-      <LightningStrike side="right" delay={0.28} />
-      <LightningStrike side="top" delay={0.55} />
-      <LightningStrike side="bottom" delay={0.82} />
-      <button type="button" onClick={dismiss} className="pointer-events-auto relative border-0 bg-transparent p-0" aria-label="Karşılamayı kapat">
+      <LightningStrike side="right" />
+      <LightningStrike side="top" />
+      <LightningStrike side="bottom" />
+      <button type="button" onClick={dismiss} className="pointer-events-auto relative z-10 border-0 bg-transparent p-0" aria-label="Karşılamayı kapat">
         <div className="absolute inset-2 rounded-full bg-blue-500/25 blur-3xl animate-pulse" />
         <Image src={SPLASH_IMAGE} alt="Can Abim - Kral Turgay" originWidth={1024} originHeight={1536} className="relative w-[76vw] max-w-[340px] animate-[can-abim-pop_.8s_cubic-bezier(.34,1.56,.64,1)]" fittingType="fit" draggable={false} />
       </button>
