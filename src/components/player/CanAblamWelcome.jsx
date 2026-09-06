@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const SPLASH_IMAGE = 'https://base44.app/api/apps/6a77d66e4da6de214628ee62/files/mp/public/6a77d66e4da6de214628ee62/b26b96daa_can-ablam-temiz-flood.png';
+const SPLASH_IMAGE = 'https://base44.app/api/apps/6a77d66e4da6de214628ee62/files/mp/public/6a77d66e4da6de214628ee62/8855fad83_can-ablam-temiz3.png';
 
 /**
  * "Can Ablam" rolündeki kullanıcı odaya girince görünen, etrafında animasyonlu
