@@ -116,7 +116,7 @@ export default function AdminPaymentSettings() {
           <h2 className="text-lg font-bold">Paket Seçimi & Ödeme Zorunluluğu</h2>
           <p className="text-sm text-muted-foreground mt-1">Aktif olduğunda yeni üyeler paket seçip ödeme yapmalı ve admin onayından geçmelidir. Kapalı olduğunda üyeler direkt siteye girebilir, paket seçimi ve admin onayı devre dışı kalır.</p>
         </div>
-        <button onClick={togglePaymentRequired} className={`relative w-14 h-7 rounded-full transition-colors shrink-0 ${paymentRequired ? 'bg-primary' : 'bg-secondary border border-border'}`}>
+        <button onClick={togglePaymentRequired} className={`relative w-14 h-7 rounded-full overflow-hidden transition-colors shrink-0 ${paymentRequired ? 'bg-primary' : 'bg-secondary border border-border'}`}>
           <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${paymentRequired ? 'translate-x-7' : 'translate-x-0'}`} />
         </button>
       </div>
@@ -213,7 +213,7 @@ export default function AdminPaymentSettings() {
                       <p className="text-[10px] text-muted-foreground">Son Güncelleme: {s.updated || '—'}</p>
                     </div>
                     <div className="flex items-center justify-between">
-                      <button type="button" onClick={() => toggleActive(p.id)} className={`relative w-10 h-5 rounded-full transition-colors ${s.active ? 'bg-primary' : 'bg-secondary border border-border'}`}>
+                      <button type="button" onClick={() => toggleActive(p.id)} className={`relative w-10 h-5 rounded-full overflow-hidden transition-colors ${s.active ? 'bg-primary' : 'bg-secondary border border-border'}`}>
                         <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${s.active ? 'translate-x-5' : 'translate-x-0'}`} />
                       </button>
                       <button onClick={() => setSelected(p.id)} className="text-xs px-2 py-1 rounded-lg border border-border hover:bg-secondary flex items-center gap-1">

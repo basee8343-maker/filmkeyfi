@@ -35,12 +35,12 @@ export default function RoomSettingsContent({ room, canMod, participants, roomMo
         <button onClick={onVoice} className={`w-full flex items-center gap-3 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${room.voice_enabled ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-red-500/40 bg-red-500/10 text-red-400'}`}>
           {room.voice_enabled ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
           <span className="flex-1 text-left">{room.voice_enabled ? 'Sesli Sohbet: Açık' : 'Sesli Sohbet: Kapalı'}</span>
-          <span className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ${room.voice_enabled ? 'bg-green-500' : 'bg-red-500'}`}><span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${room.voice_enabled ? 'translate-x-5' : 'translate-x-0.5'}`} /></span>
+          <span className={`w-10 h-5 rounded-full relative overflow-hidden transition-colors shrink-0 ${room.voice_enabled ? 'bg-green-500' : 'bg-red-500'}`}><span className={`absolute top-0.5 left-0 w-4 h-4 rounded-full bg-white transition-transform ${room.voice_enabled ? 'translate-x-5' : 'translate-x-0.5'}`} /></span>
         </button>
         <button onClick={onChat} className={`w-full flex items-center gap-3 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${room.chat_enabled ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-red-500/40 bg-red-500/10 text-red-400'}`}>
           {room.chat_enabled ? <MessageSquare className="w-4 h-4" /> : <MessageSquareOff className="w-4 h-4" />}
           <span className="flex-1 text-left">{room.chat_enabled ? 'Sohbet: Açık' : 'Sohbet: Kapalı'}</span>
-          <span className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ${room.chat_enabled ? 'bg-green-500' : 'bg-red-500'}`}><span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${room.chat_enabled ? 'translate-x-5' : 'translate-x-0.5'}`} /></span>
+          <span className={`w-10 h-5 rounded-full relative overflow-hidden transition-colors shrink-0 ${room.chat_enabled ? 'bg-green-500' : 'bg-red-500'}`}><span className={`absolute top-0.5 left-0 w-4 h-4 rounded-full bg-white transition-transform ${room.chat_enabled ? 'translate-x-5' : 'translate-x-0.5'}`} /></span>
         </button>
         {room.is_personal && (
           <>
@@ -51,7 +51,7 @@ export default function RoomSettingsContent({ room, canMod, participants, roomMo
               <button onClick={onToggleApproval} className={`w-full flex items-center gap-3 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${room.requires_approval === false ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-amber-500/40 bg-amber-500/10 text-amber-400'}`}>
                 {room.requires_approval === false ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                 <span className="flex-1 text-left">{room.requires_approval === false ? 'Onay Gerekmez (Serbest Giriş)' : 'Onay Gerekli (Manuel Onay)'}</span>
-                <span className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ${room.requires_approval === false ? 'bg-green-500' : 'bg-amber-500'}`}><span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${room.requires_approval === false ? 'translate-x-5' : 'translate-x-0.5'}`} /></span>
+                <span className={`w-10 h-5 rounded-full relative overflow-hidden transition-colors shrink-0 ${room.requires_approval === false ? 'bg-green-500' : 'bg-amber-500'}`}><span className={`absolute top-0.5 left-0 w-4 h-4 rounded-full bg-white transition-transform ${room.requires_approval === false ? 'translate-x-5' : 'translate-x-0.5'}`} /></span>
               </button>
             )}
           </>
