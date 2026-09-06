@@ -46,7 +46,7 @@ export default async function(req) {
     const room = await base44.asServiceRole.entities.Room.create({
       name, movie_id, movie_title: movie_title || '',
       owner_id: user.id, owner_name,
-      password: hashed,
+      password: hashed ? 'protected' : '',
       room_number,
       max_users: mu,
       chat_enabled: chat_enabled !== false,
@@ -57,6 +57,9 @@ export default async function(req) {
       recent_participants: [],
       participants: [{ user_id: user.id, name: owner_name, avatar: user.avatar || '', joined_at: new Date().toISOString(), muted: false, speaking: false }]
     });
+    if (hashed) {
+      await base44.asServiceRole.entities.RoomSecret.create({ room_id: room.id, password_hash: hashed });
+    }
     await base44.asServiceRole.entities.RoomMessage.create({
       room_id: room.id, user_id: user.id, user_name: owner_name,
       text: `${owner_name} odaya katıldı.`, type: 'system'

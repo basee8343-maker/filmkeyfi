@@ -7,8 +7,8 @@ export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
     const admin = await base44.auth.me();
-    if (!admin || (admin.role !== 'admin' && admin.role !== 'moderator')) {
-      return Response.json({ error: 'Yetkisiz — sadece admin/moderator' }, { status: 403 });
+    if (!admin || admin.role !== 'admin') {
+      return Response.json({ error: 'Yetkisiz — sadece admin' }, { status: 403 });
     }
 
     const body = await req.json().catch(() => ({}));

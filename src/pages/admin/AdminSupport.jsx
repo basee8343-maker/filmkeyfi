@@ -104,7 +104,7 @@ export default function AdminSupport() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {messages.map((m) => <div key={m.id} className={`flex ${m.sender === 'admin' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm overflow-hidden ${m.sender === 'admin' ? 'bg-accent text-accent-foreground' : 'bg-secondary'}`}>{m.file_url && <img src={m.file_url} alt="foto" className="rounded-lg max-w-full max-h-48 object-cover mb-1" />}{m.text && m.text !== '📷 Fotoğraf' && <p>{m.text}</p>}</div></div>)}
+              {messages.map((m) => <div key={m.id} className={`flex ${m.user_id !== m.owner_id ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm overflow-hidden ${m.user_id !== m.owner_id ? 'bg-accent text-accent-foreground' : 'bg-secondary'}`}>{m.file_url && <img src={m.file_url} alt="foto" className="rounded-lg max-w-full max-h-48 object-cover mb-1" />}{m.text && m.text !== '📷 Fotoğraf' && <p>{m.text}</p>}</div></div>)}
               <div ref={endRef} />
             </div>
             <form onSubmit={send} className="p-3 border-t border-border flex items-center gap-2">

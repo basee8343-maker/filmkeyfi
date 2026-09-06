@@ -47,7 +47,8 @@ export default async function(req) {
     if (room.status === 'closed') return Response.json({ error: 'closed' }, { status: 403 });
 
     if (action === 'get') {
-      return Response.json({ room });
+      const canSeeModeration = room.owner_id === user.id || user.role === 'admin' || user.role === 'moderator';
+      return Response.json({ room: { ...room, password: room.password ? 'protected' : '', banned_users: canSeeModeration ? (room.banned_users || []) : [] } });
     }
 
     const me = await base44.entities.User.get(user.id);
@@ -98,7 +99,9 @@ export default async function(req) {
       const participants = room.participants || [];
       const already = participants.some((p) => p.user_id === user.id);
       if (!already && room.password && !isOwner && !isMod) {
-        const [salt, hash] = room.password.split(':');
+        const secrets = await base44.asServiceRole.entities.RoomSecret.filter({ room_id }, '-created_date', 1).catch(() => []);
+        const storedHash = secrets[0]?.password_hash || '';
+        const [salt, hash] = storedHash.split(':');
         if (!password || !salt || hash !== await sha256Hex(salt, password)) {
           await base44.asServiceRole.entities.SecurityLog.create({
             action: 'room_password_failed', user_id: user.id, user_email: user.email,
@@ -236,12 +239,15 @@ export default async function(req) {
     if (action === 'set-password') {
       if (!isOwner && !isMod) return Response.json({ error: 'yetkisiz' }, { status: 403 });
       if (!password) {
+        await base44.asServiceRole.entities.RoomSecret.deleteMany({ room_id }).catch(() => {});
         await base44.asServiceRole.entities.Room.update(room_id, { password: '' });
         return Response.json({ ok: true });
       }
       const salt = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
       const hash = await sha256Hex(salt, password);
-      await base44.asServiceRole.entities.Room.update(room_id, { password: `${salt}:${hash}` });
+      await base44.asServiceRole.entities.RoomSecret.deleteMany({ room_id }).catch(() => {});
+      await base44.asServiceRole.entities.RoomSecret.create({ room_id, password_hash: `${salt}:${hash}` });
+      await base44.asServiceRole.entities.Room.update(room_id, { password: 'protected' });
       return Response.json({ ok: true });
     }
 

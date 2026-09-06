@@ -5,7 +5,6 @@ import { useToast } from '@/components/ui/use-toast';
 import { MessageCircle, Send, Image as ImageIcon, Headset, X } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import { statusLabel } from '@/lib/supportStatus';
-import { upsertNotification } from '@/lib/upsertNotification';
 
 const CATS = ['Genel', 'Teknik Sorun', 'Üyelik', 'Ödeme', 'İçerik Talebi', 'Diğer'];
 
@@ -68,7 +67,6 @@ export default function Support() {
     try {
       const t = await base44.entities.SupportTicket.create({ user_id: user.id, user_name: user.username || user.full_name, subject: form.subject, category: form.category, status: 'new' });
       const msg = await base44.entities.SupportMessage.create({ ticket_id: t.id, owner_id: user.id, user_id: user.id, sender: 'user', text: form.message });
-      await upsertNotification({ user_id: 'admin', title: 'Yeni destek talebi', body: `${user.username}: ${form.subject}`, type: 'support' });
       // Admin'e realtime + web push bildirimi
       base44.functions.invoke('admin-notify', {
         event: 'support',
@@ -154,8 +152,8 @@ export default function Support() {
               <div className="px-4 py-3 border-b border-border"><p className="font-semibold">{active.subject}</p><p className="text-xs text-muted-foreground">{active.category}</p></div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2">
                 {messages.map((m) => (
-                  <div key={m.id} className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm overflow-hidden ${m.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
+                  <div key={m.id} className={`flex ${m.user_id === m.owner_id ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm overflow-hidden ${m.user_id === m.owner_id ? 'bg-primary text-primary-foreground' : 'bg-secondary'}`}>
                       {m.file_url && <Image src={m.file_url} alt="foto" className="rounded-lg max-w-full max-h-48 object-cover mb-1 cursor-pointer" fittingType="fit" onClick={() => setLightbox(m.file_url)} />}
                       {m.text && <p>{m.text}</p>}
                     </div>
