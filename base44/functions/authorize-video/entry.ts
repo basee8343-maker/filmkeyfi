@@ -14,7 +14,7 @@ export default async function(req) {
     const rl = await rateLimit(base44, 'video:' + user.id, user.id, 30, 60000);
     if (!rl.allowed) return Response.json({ error: 'çok fazla istek' }, { status: 429 });
 
-    const me = await base44.asServiceRole.entities.User.get(user.id);
+    const me = user;
     // Admin/moderator her zaman erişebilir
     if (me.role === 'admin' || me.role === 'moderator') {
       // yetki kontrolünü atla, videoyu döndür
@@ -52,7 +52,7 @@ export default async function(req) {
       });
       url = signed.signed_url;
     } else {
-      url = movie.video_url || movie.hls_url || movie.external_url || '';
+      url = movie.hls_url || movie.external_url || movie.video_url || '';
     }
 
     if (!url) return Response.json({ error: 'video kaynağı yok' }, { status: 404 });
