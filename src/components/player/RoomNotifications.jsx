@@ -17,9 +17,9 @@ export default function RoomNotifications({ participants, currentUserId, profile
     if (initializedRef.current) {
       const joined = list.filter((p) => !prevIds.has(p.user_id) && p.user_id !== currentUserId);
       const left = prev.filter((p) => !currIds.has(p.user_id) && p.user_id !== currentUserId);
-      // Çerçeveli kullanıcılar için normal "katıldı" bildirimini gizle — onlarda özel frame giriş kartı çıkar.
+      // Çerçeveli kullanıcılar için normal "katıldı/ayrıldı" bildirimini gizle — onlarda özel frame giriş/çıkış kartı çıkar.
       joined.forEach((p) => { if (!(profiles[p.user_id] || {}).profile_frame) addNotif(p, 'join'); });
-      left.forEach((p) => addNotif(p, 'leave'));
+      left.forEach((p) => { if (!(profiles[p.user_id] || {}).profile_frame) addNotif(p, 'leave'); });
     }
 
     prevRef.current = list;
