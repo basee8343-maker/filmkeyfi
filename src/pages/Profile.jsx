@@ -39,7 +39,7 @@ export default function Profile() {
   if (!user) return <div className="p-6">Yükleniyor...</div>;
   const expired = user.membership_end && new Date(user.membership_end) < new Date();
   return <div className="mx-auto max-w-3xl px-4 py-7 sm:px-6">
-    <ProfileHeader user={user} pkg={pkg} expired={expired} editing={editing} avatar={form.avatar} onAvatar={onAvatar} />
+    <ProfileHeader user={user} pkg={pkg} expired={expired} editing={editing} avatar={form.avatar} onAvatar={onAvatar} onUpdated={reload} />
     <MembershipNotice user={user} expired={expired} onRenew={renew} />
     <ProfileTabs active={tab} onChange={(nextTab) => { setTab(nextTab); navigate(nextTab === 'settings' ? '/profil?tab=settings' : '/profil', { replace: true }); }} />
     {tab === 'info' && <ProfileInfoCard user={user} pkg={pkg} editing={editing} form={form} setForm={setForm} onSave={save} onEdit={() => setEditing(true)} onCancel={() => setEditing(false)} />}
