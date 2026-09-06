@@ -29,8 +29,8 @@ export default function MovieCard({ movie, className = '' }) {
 
   return (
     <Link to={`/izle/${movie.id}`} className={`group block w-full rounded-xl overflow-hidden bg-[#16161e] border border-white/5 text-white transition-all duration-300 hover:scale-[1.02] hover:border-purple-500/30 ${className}`}>
-      <div className="relative aspect-[2/3] overflow-hidden bg-black">
-        <Image src={movie.poster} alt={movie.title} className="w-full h-full" fittingType="fill" />
+      <div className="relative aspect-[600/900] overflow-hidden bg-black">
+        <Image src={movie.poster} alt={movie.title} className="w-full h-full" fittingType="fill" originWidth={600} originHeight={900} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
         {movie.quality && <span className="absolute top-2 left-2 text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-600/90 text-white">{movie.quality}</span>}
         {movie.imdb && (
