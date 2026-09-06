@@ -80,11 +80,11 @@ export default function Friends() {
 
   if (view === 'chat') {
     const friendId = selected?.user1_id === user.id ? selected?.user2_id : selected?.user1_id;
-    return <div className="max-w-3xl mx-auto sm:p-4"><ChatPanel key={selected?.id} conversation={selected} userId={user.id} onBack={() => switchView('chats')} online={isOnline(friendId)} getLastSeen={getLastSeen} /></div>;
+    return <div className="mx-auto w-full min-w-0 max-w-5xl sm:p-4"><ChatPanel key={selected?.id} conversation={selected} userId={user.id} onBack={() => switchView('chats')} online={isOnline(friendId)} getLastSeen={getLastSeen} /></div>;
   }
 
   return (
-    <div className="max-w-3xl mx-auto min-h-[calc(100vh-8rem)] bg-[#0a0a0f] text-white">
+    <div className="mx-auto min-h-[calc(100dvh-8rem)] w-full min-w-0 max-w-5xl bg-[#0a0a0f] text-white">
       <header className="px-4 py-5">
         <h1 className="text-2xl font-extrabold">Arkadaşlar</h1>
         <p className="text-sm text-gray-400 mt-1">Sohbet ve arkadaşlarını yönet.</p>

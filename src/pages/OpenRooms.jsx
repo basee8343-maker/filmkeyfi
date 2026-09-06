@@ -119,7 +119,7 @@ export default function OpenRooms() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white px-4 py-6 max-w-3xl mx-auto">
+    <div className="mx-auto min-h-screen w-full max-w-5xl bg-[#0a0a0f] px-3 py-5 text-white sm:px-6 sm:py-7">
       <div className="mb-1 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold">Odalar</h1>

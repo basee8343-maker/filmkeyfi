@@ -56,7 +56,7 @@ export default function Watch() {
   if (!movie) return <p className="p-6">İçerik bulunamadı.</p>;
 
   return (
-    <div className="px-4 sm:px-6 py-4">
+    <div className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 lg:px-8">
       <div className="flex items-center justify-between mb-3">
         <Link to={`/izle/${id}`} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="w-4 h-4" /> Geri</Link>
       </div>

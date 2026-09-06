@@ -224,12 +224,12 @@ export default function AppLayout() {
     return <MessageRealtimeProvider userId={user?.id}><div className="min-h-screen bg-background"><RoutePreloader /><RoleCelebrationOverlay /><Outlet /></div></MessageRealtimeProvider>;
   }
   return (
-    <MessageRealtimeProvider userId={user?.id}><div className="min-h-screen bg-background">
+    <MessageRealtimeProvider userId={user?.id}><div className="min-h-screen w-full min-w-0 overflow-x-clip bg-background">
       <RoutePreloader />
       <RoleCelebrationOverlay />
       <WhatsNewModal />
       <Navbar />
-      <main className="pt-[calc(4rem+max(env(safe-area-inset-top),1.5rem))] pb-20 lg:pt-16 lg:pb-8 max-w-[1600px] mx-auto" style={{ touchAction: 'pan-y' }}>
+      <main className="mx-auto w-full min-w-0 max-w-[1600px] overflow-x-clip pt-[calc(4rem+max(env(safe-area-inset-top),1.5rem))] pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pt-16 lg:pb-8" style={{ touchAction: 'pan-y' }}>
         <Outlet />
       </main>
       <BottomNav />

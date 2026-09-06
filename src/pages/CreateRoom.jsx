@@ -59,7 +59,7 @@ export default function CreateRoom() {
   ];
 
   return (
-    <div className="px-4 sm:px-6 py-6 max-w-2xl mx-auto text-white">
+    <div className="mx-auto w-full max-w-3xl px-3 py-5 text-white sm:px-6 sm:py-7">
       {/* Hero Panel */}
       <div className="relative rounded-2xl overflow-hidden mb-6 p-5" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.15), rgba(219,39,119,0.08))', border: '1px solid rgba(168,85,247,0.2)' }}>
         <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full blur-2xl opacity-30" style={{ background: 'radial-gradient(circle, #7c3aed, transparent 70%)' }} />
@@ -116,7 +116,7 @@ export default function CreateRoom() {
         </div>
 
         {/* Advanced Options */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
           <div>
             <label className="text-sm font-medium block mb-1.5 text-gray-300">Şifre (opsiyonel)</label>
             <div className="relative">
@@ -138,7 +138,7 @@ export default function CreateRoom() {
         {Number(form.max_users) > 100 && <p className="text-xs text-amber-500 -mt-1">⚠️ Yüksek kapasite: çok sayıda katılımcı oda performansını etkileyebilir.</p>}
 
         {/* Toggle Cards */}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 gap-2 min-[360px]:grid-cols-3">
           {toggleCards.map(({ key, icon: Icon, label }) => {
             const active = form[key];
             return (

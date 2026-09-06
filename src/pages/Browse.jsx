@@ -32,7 +32,7 @@ export default function Browse({ type, title }) {
   const subtitle = type === 'movie' ? 'Binlerce film arasından seçim yap' : 'Binlerce dizi arasından seçim yap';
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] px-4 py-5 text-white max-w-3xl mx-auto">
+    <div className="mx-auto min-h-screen w-full max-w-7xl bg-[#0a0a0f] px-3 py-5 text-white sm:px-5 lg:px-8">
       <h1 className="text-2xl font-extrabold">{title}</h1>
       <p className="text-sm text-gray-400 mt-1 mb-4">{subtitle}</p>
 
@@ -65,7 +65,7 @@ export default function Browse({ type, title }) {
 
       {loading ? <SkeletonRow /> :
         filtered.length === 0 ? <EmptyState icon={Film} title="İçerik bulunamadı" description="Bu kategoride henüz içerik yok." /> :
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filtered.map((m) => <MovieCard key={m.id} movie={m} />)}
         </div>}
     </div>
