@@ -131,7 +131,8 @@ export default function WatchParty() {
       return;
     }
     // Özel oda: sahip/admin değilse onay sisteminden geç
-    if (room.is_personal && room.owner_id !== user.id && !isModerator(user)) {
+    // requires_approval kapalıysa doğrudan katıl.
+    if (room.is_personal && room.requires_approval !== false && room.owner_id !== user.id && !isModerator(user)) {
       base44.functions.invoke('room-presence', { action: 'request-join', room_id: id })
         .then((res) => {
           if (res.data?.approved) {
@@ -516,6 +517,14 @@ export default function WatchParty() {
     catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
   };
 
+  const toggleApproval = async () => {
+    if (!isOwner && !isMod) { toast({ title: 'Yetkiniz yok', variant: 'destructive' }); return; }
+    try {
+      await base44.functions.invoke('room-presence', { action: 'toggle-approval', room_id: id });
+      toast({ title: room.requires_approval === false ? 'Onay gerektirme açıldı' : 'Serbest giriş açıldı' });
+    } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
+  };
+
   const savePassword = async (override) => {
     if (!canMod) return;
     const pw = (override !== undefined ? override : pwSetInput).trim();
@@ -665,7 +674,7 @@ export default function WatchParty() {
             onTouchStart={(e) => { touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }; }}
             onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - touchStart.current.x; const dy = e.changedTouches[0].clientY - touchStart.current.y; if (dx > 80 && dx > Math.abs(dy) * 1.5) setChatOpen(false); }}
           >
-            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onDirect={() => { setDirectTarget(null); setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} onDirectUser={openDirectMessage} directUnread={directUnread} ownerId={room?.owner_id} roomModerators={room?.room_moderators || []} participants={room?.participants || []} recentParticipants={room?.recent_participants || []} viewerProfiles={viewerProfiles} presenceMap={presenceMap} onProfileCard={openUserProfile} onToggleChat={toggleChat} settingsProps={{ room, canMod, participants: room?.participants || [], roomModerators: room?.room_moderators || [], onAssignMod: assignMod, onRemoveMod: removeMod, roomName: roomNameEdit, setRoomName: setRoomNameEdit, onSaveName: saveRoomName, password: pwSetInput, setPassword: setPwSetInput, passwordOpen: showPwSet, setPasswordOpen: setShowPwSet, onVoice: toggleVoice, onChat: toggleChat, onHidden: toggleHidden, onPassword: () => savePassword(), onRemovePassword: () => setShowPwRemoveConfirm(true), onUnban: unbanUser, onPickMovie: () => setMoviePickerOpen(true), onDeleteRoom: deleteRoom }} />
+            <ChatOverlay roomId={id} chatEnabled={chatEnabled} isOwner={canMod} isAdmin={isMod} onClose={() => setChatOpen(false)} autoDeleteMinutes={autoDeleteMinutes} countdownText={countdownText} onSetAutoDelete={setAutoDelete} voice={voice} voiceEnabled={room.voice_enabled} onDirect={() => { setDirectTarget(null); setDirectOpen(!directOpen); setChatOpen(false); setShowViewers(false); setShowSettings(false); }} onDirectUser={openDirectMessage} directUnread={directUnread} ownerId={room?.owner_id} roomModerators={room?.room_moderators || []} participants={room?.participants || []} recentParticipants={room?.recent_participants || []} viewerProfiles={viewerProfiles} presenceMap={presenceMap} onProfileCard={openUserProfile} onToggleChat={toggleChat} settingsProps={{ room, canMod, participants: room?.participants || [], roomModerators: room?.room_moderators || [], onAssignMod: assignMod, onRemoveMod: removeMod, roomName: roomNameEdit, setRoomName: setRoomNameEdit, onSaveName: saveRoomName, password: pwSetInput, setPassword: setPwSetInput, passwordOpen: showPwSet, setPasswordOpen: setShowPwSet, onVoice: toggleVoice, onChat: toggleChat, onHidden: toggleHidden, onPassword: () => savePassword(), onRemovePassword: () => setShowPwRemoveConfirm(true), onUnban: unbanUser, onPickMovie: () => setMoviePickerOpen(true), onDeleteRoom: deleteRoom, onToggleApproval: toggleApproval }} />
           </div>
         )}
 
@@ -705,7 +714,7 @@ export default function WatchParty() {
             </div>
           </div>
         )}
-        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} participants={room.participants || []} roomModerators={room.room_moderators || []} onAssignMod={assignMod} onRemoveMod={removeMod} roomName={roomNameEdit} setRoomName={setRoomNameEdit} onSaveName={saveRoomName} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} onDeleteRoom={deleteRoom} />
+        <RoomSettingsMenu open={showSettings} onClose={() => setShowSettings(false)} room={room} canMod={canMod} participants={room.participants || []} roomModerators={room.room_moderators || []} onAssignMod={assignMod} onRemoveMod={removeMod} roomName={roomNameEdit} setRoomName={setRoomNameEdit} onSaveName={saveRoomName} password={pwSetInput} setPassword={setPwSetInput} passwordOpen={showPwSet} setPasswordOpen={setShowPwSet} onVoice={toggleVoice} onChat={toggleChat} onHidden={toggleHidden} onPassword={() => savePassword()} onRemovePassword={() => setShowPwRemoveConfirm(true)} onUnban={unbanUser} onPickMovie={() => { setMoviePickerOpen(true); setShowSettings(false); }} onDeleteRoom={deleteRoom} onToggleApproval={toggleApproval} />
       </div>
 
       <LiveKitDebugPanel voice={voice} />

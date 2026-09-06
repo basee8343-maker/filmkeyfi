@@ -3,7 +3,7 @@ import { Eye, EyeOff, Instagram, Lock, MessageCircle, MessageSquare, MessageSqua
 import { useToast } from '@/components/ui/use-toast';
 import { base44 } from '@/api/base44Client';
 
-export default function RoomSettingsContent({ room, canMod, participants, roomModerators, onAssignMod, onRemoveMod, roomName, setRoomName, onSaveName, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie, onDeleteRoom }) {
+export default function RoomSettingsContent({ room, canMod, participants, roomModerators, onAssignMod, onRemoveMod, roomName, setRoomName, onSaveName, password, setPassword, passwordOpen, setPasswordOpen, onVoice, onChat, onHidden, onPassword, onRemovePassword, onUnban, onPickMovie, onDeleteRoom, onToggleApproval }) {
   const { toast } = useToast();
   const [showBanned, setShowBanned] = useState(false);
   const [showMods, setShowMods] = useState(false);
@@ -47,6 +47,13 @@ export default function RoomSettingsContent({ room, canMod, participants, roomMo
             <button onClick={onHidden} className={button}>{room.hidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />} {room.hidden ? 'Odayı görünür yap' : 'Odayı gizle'}</button>
             <button onClick={() => room.password ? onRemovePassword() : setPasswordOpen(!passwordOpen)} className={button}>{room.password ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />} {room.password ? 'Şifreyi kaldır' : 'Şifre koy'}</button>
             {passwordOpen && !room.password && <div className="flex gap-2"><input value={password} onChange={(e) => setPassword(e.target.value)} type="password" placeholder="Oda şifresi" className="min-w-0 flex-1 rounded-lg bg-secondary px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring" /><button onClick={onPassword} disabled={!password.trim()} className="rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground disabled:opacity-50">KAYDET</button></div>}
+            {onToggleApproval && (
+              <button onClick={onToggleApproval} className={`w-full flex items-center gap-3 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${room.requires_approval === false ? 'border-green-500/40 bg-green-500/10 text-green-400' : 'border-amber-500/40 bg-amber-500/10 text-amber-400'}`}>
+                {room.requires_approval === false ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                <span className="flex-1 text-left">{room.requires_approval === false ? 'Onay Gerekmez (Serbest Giriş)' : 'Onay Gerekli (Manuel Onay)'}</span>
+                <span className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ${room.requires_approval === false ? 'bg-green-500' : 'bg-amber-500'}`}><span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${room.requires_approval === false ? 'translate-x-5' : 'translate-x-0.5'}`} /></span>
+              </button>
+            )}
           </>
         )}
         <button onClick={() => setShowBanned(!showBanned)} className={button}><UserX className="w-4 h-4 text-red-400" /> Atılan Kullanıcılar ({bannedUsers.length})</button>

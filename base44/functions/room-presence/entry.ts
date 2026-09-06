@@ -38,7 +38,7 @@ export default async function(req) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json();
     const { action, room_id, password, target_id } = body || {};
-    if (!room_id || !['get', 'join', 'leave', 'kick', 'ban', 'unban', 'set-password', 'set-name', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat', 'change-movie', 'assign-mod', 'remove-mod', 'delete-room', 'request-join', 'approve-join', 'reject-join'].includes(action)) {
+    if (!room_id || !['get', 'join', 'leave', 'kick', 'ban', 'unban', 'set-password', 'set-name', 'toggle-hidden', 'toggle-voice', 'toggle-mute', 'toggle-chat', 'toggle-approval', 'change-movie', 'assign-mod', 'remove-mod', 'delete-room', 'request-join', 'approve-join', 'reject-join'].includes(action)) {
       return Response.json({ error: 'invalid request' }, { status: 400 });
     }
     const name = user.username || user.full_name || 'Kullanıcı';
@@ -82,7 +82,8 @@ export default async function(req) {
         }
       }
       // Kişisel oda: sadece onaylı istek sahipleri girebilir (admin/mod hariç)
-      if (room.is_personal && !isOwner && !isMod) {
+      // requires_approval kapalıysa doğrudan giriş yapılabilir.
+      if (room.is_personal && room.requires_approval !== false && !isOwner && !isMod) {
         const approvedReq = await base44.asServiceRole.entities.RoomJoinRequest.filter({ room_id, user_id: user.id, status: 'approved' }, '-created_date', 1).catch(() => []);
         const hasApproved = approvedReq && approvedReq.length > 0;
         if (!hasApproved) {
@@ -267,6 +268,25 @@ export default async function(req) {
       if (!canModRoom) return Response.json({ error: 'yetkisiz' }, { status: 403 });
       await base44.asServiceRole.entities.Room.update(room_id, { chat_enabled: !room.chat_enabled });
       return Response.json({ ok: true, chat_enabled: !room.chat_enabled });
+    }
+
+    if (action === 'toggle-approval') {
+      if (!isOwner && !isMod) return Response.json({ error: 'yetkisiz' }, { status: 403 });
+      const next = room.requires_approval === false;
+      await base44.asServiceRole.entities.Room.update(room_id, { requires_approval: next });
+      // Onay kapatılırsa bekleyen tüm istekleri otomatik onayla ve bildirim gönder
+      if (next === false) {
+        const pending = await base44.asServiceRole.entities.RoomJoinRequest.filter({ room_id, status: 'pending' }, '-created_date', 100).catch(() => []);
+        for (const req of pending) {
+          await base44.asServiceRole.entities.RoomJoinRequest.update(req.id, { status: 'approved' }).catch(() => {});
+          await upsertNotification(base44, {
+            user_id: req.user_id, title: 'Oda isteği onaylandı',
+            body: `${room.name || 'Oda'} sahibi katılım isteğinizi onayladı.`, type: 'room_join_approved', link: `/oda/${room_id}`,
+            ref_id: room_id
+          }).catch(() => {});
+        }
+      }
+      return Response.json({ ok: true, requires_approval: next });
     }
 
     if (action === 'toggle-mute') {
