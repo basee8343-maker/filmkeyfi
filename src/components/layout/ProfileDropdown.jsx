@@ -110,28 +110,6 @@ export default function ProfileDropdown() {
                   <ChevronRight className="w-4 h-4 text-white/30 shrink-0" />
                 </Link>
 
-              {isActive && user?.role !== 'admin' && (
-                <Link to="/listem" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
-                  <Settings className="w-5 h-5 text-white/70 shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-white">Listem</p>
-                    <p className="text-xs text-white/50">İzleme listenizi yönetin</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-white/30 shrink-0" />
-                </Link>
-              )}
-
-              {user?.role !== 'admin' && (
-              <Link to="/güvenlik-protokolü" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
-                <Shield className="w-5 h-5 text-white/70 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white">Güvenlik Protokolü</p>
-                  <p className="text-xs text-white/50">Hesabınızın güvenliğini artırın</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-white/30 shrink-0" />
-              </Link>
-              )}
-
               {!isActive && (
                 <Link to="/abonelik" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-primary/10 transition-colors">
                   <Settings className="w-5 h-5 text-primary shrink-0" />
