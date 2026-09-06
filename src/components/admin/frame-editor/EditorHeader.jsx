@@ -1,0 +1,3 @@
+export default function EditorHeader({ onBack, onUndo, canUndo }) {
+  return <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-3"><button onClick={onBack} className="min-h-11 rounded-lg px-3 text-base font-bold">← Geri</button><strong className="text-base">PNG</strong><button onClick={onUndo} disabled={!canUndo} className="min-h-11 rounded-lg px-3 text-base font-bold disabled:opacity-35">↶ Geri Al</button></header>;
+}

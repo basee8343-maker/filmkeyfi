@@ -1,0 +1,12 @@
+import { useRef } from 'react';
+import { viewportTransform } from '@/lib/renderFrameEditor';
+
+export default function useEditorGestures(canvasRef, editor) {
+  const pointers = useRef(new Map()), pinch = useRef(null), lastTap = useRef(0), usedPinch = useRef(false);
+  const point = (event) => { const rect = canvasRef.current.getBoundingClientRect(); return { x: event.clientX - rect.left, y: event.clientY - rect.top }; };
+  const imagePoint = (p) => { const t = viewportTransform(canvasRef.current, editor.image, editor.zoom, editor.pan); return { x: Math.max(0, Math.min(editor.image.width - 1, Math.floor((p.x - t.x) / t.scale))), y: Math.max(0, Math.min(editor.image.height - 1, Math.floor((p.y - t.y) / t.scale))) }; };
+  const down = (event) => { event.currentTarget.setPointerCapture(event.pointerId); const p = point(event); pointers.current.set(event.pointerId, p); editor.setTouch(p); if (pointers.current.size === 2) { usedPinch.current = true; const [a, b] = [...pointers.current.values()]; pinch.current = { distance: Math.hypot(a.x - b.x, a.y - b.y), zoom: editor.zoom, mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, pan: editor.pan }; } else if (['manual', 'eraser'].includes(editor.tool)) { const ip = imagePoint(p); editor.paintAt(ip.x, ip.y); } };
+  const move = (event) => { if (!pointers.current.has(event.pointerId)) return; const p = point(event); pointers.current.set(event.pointerId, p); editor.setTouch(p); if (pointers.current.size === 2) { const [a, b] = [...pointers.current.values()], distance = Math.hypot(a.x - b.x, a.y - b.y), mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; editor.setZoom(Math.max(1, Math.min(8, pinch.current.zoom * distance / pinch.current.distance))); editor.setPan({ x: pinch.current.pan.x + mid.x - pinch.current.mid.x, y: pinch.current.pan.y + mid.y - pinch.current.mid.y }); } else if (['manual', 'eraser'].includes(editor.tool)) { const ip = imagePoint(p); editor.paintAt(ip.x, ip.y); } };
+  const up = (event) => { const p = pointers.current.get(event.pointerId); if (pointers.current.size === 1 && p && !['manual', 'eraser'].includes(editor.tool)) { const ip = imagePoint(p); editor.selectAt(ip.x, ip.y); } pointers.current.delete(event.pointerId); editor.setTouch(null); const now = Date.now(); if (!usedPinch.current && now - lastTap.current < 280) editor.setZoom(editor.zoom > 1 ? 1 : 2); if (!usedPinch.current) lastTap.current = now; if (!pointers.current.size) usedPinch.current = false; };
+  return { onPointerDown: down, onPointerMove: move, onPointerUp: up, onPointerCancel: up };
+}
