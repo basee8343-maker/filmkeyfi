@@ -28,6 +28,7 @@ import XpAvatar from '@/components/xp/XpAvatar';
 import UserProfile from '@/pages/UserProfile';
 import SubscriptionPrompt from '@/components/SubscriptionPrompt';
 import AdminRoomWelcome from '@/components/admin/AdminWelcomeSplash';
+import CanAblamWelcome from '@/components/player/CanAblamWelcome';
 
 export default function WatchParty() {
   const { id } = useParams();
@@ -75,6 +76,7 @@ export default function WatchParty() {
 
   const [roomNameEdit, setRoomNameEdit] = useState('');
   const [showAdminWelcome, setShowAdminWelcome] = useState(false);
+  const [showCanAblamWelcome, setShowCanAblamWelcome] = useState(false);
   const profileTarget = new URLSearchParams(location.search).get('profile');
   const openUserProfile = (userId) => {
     if (!userId) return;
@@ -118,18 +120,22 @@ export default function WatchParty() {
   // Oda adını düzenleme alanını odadan başlat
   useEffect(() => { setRoomNameEdit(room?.name || ''); }, [room?.name]);
 
-  // Yönetici odaya girince karşılama görselini tüm kullanıcılara göster
+  // Yönetici / Can Ablam odaya girince karşılama görselini tüm kullanıcılara göster
   useEffect(() => {
     base44.entities.RoomMessage.filter({ room_id: id }, '-created_date', 20)
       .then((items) => {
-        const recent = items.find((m) => (m.text || '').includes('{{ADMIN_WELCOME}}') && Date.now() - new Date(m.created_date).getTime() < 10000);
-        if (recent) setShowAdminWelcome(true);
+        const now = Date.now();
+        const adminRecent = items.find((m) => (m.text || '').includes('{{ADMIN_WELCOME}}') && now - new Date(m.created_date).getTime() < 10000);
+        if (adminRecent) setShowAdminWelcome(true);
+        const cabRecent = items.find((m) => (m.text || '').includes('{{CAN_ABLAM_WELCOME}}') && now - new Date(m.created_date).getTime() < 10000);
+        if (cabRecent) setShowCanAblamWelcome(true);
       })
       .catch(() => {});
     const unsub = base44.entities.RoomMessage.subscribe((ev) => {
-      if (ev.type === 'create' && ev.data?.room_id === id && (ev.data?.text || '').includes('{{ADMIN_WELCOME}}')) {
-        setShowAdminWelcome(true);
-      }
+      if (ev.type !== 'create' || ev.data?.room_id !== id) return;
+      const txt = ev.data?.text || '';
+      if (txt.includes('{{ADMIN_WELCOME}}')) setShowAdminWelcome(true);
+      if (txt.includes('{{CAN_ABLAM_WELCOME}}')) setShowCanAblamWelcome(true);
     });
     return unsub;
   }, [id]);
@@ -746,6 +752,7 @@ export default function WatchParty() {
 
       <MoviePickerSheet open={moviePickerOpen} onClose={() => setMoviePickerOpen(false)} onSelect={changeMovie} currentMovieId={movie?.id} />
       {showAdminWelcome && <AdminRoomWelcome onDone={() => setShowAdminWelcome(false)} />}
+      {showCanAblamWelcome && <CanAblamWelcome onDone={() => setShowCanAblamWelcome(false)} />}
       {profileTarget && <UserProfile userId={profileTarget} roomIdOverride={id} onBack={closeUserProfile} onMessage={(userId) => { closeUserProfile(); openDirectMessage(userId); }} embedded />}
     </div>
   );

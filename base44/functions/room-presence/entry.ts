@@ -140,6 +140,13 @@ export default async function(req) {
           text: '{{ADMIN_WELCOME}}', type: 'system'
         });
       }
+      // Can Ablam rolündeki kullanıcı girince kalpli karşılama görseli göster
+      if (me.display_role === 'can_ablam') {
+        await base44.asServiceRole.entities.RoomMessage.create({
+          room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
+          text: '{{CAN_ABLAM_WELCOME}}', type: 'system'
+        });
+      }
       await updatePresenceRoom(base44, user.id, room_id);
       return Response.json({ ok: true });
     }
