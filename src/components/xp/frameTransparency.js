@@ -117,6 +117,13 @@ export function makePreparedTransparent(src, opening) {
   return task;
 }
 
+export function clearFrameCaches() {
+  cache.clear();
+  resolvedCache.clear();
+  metricsCache.clear();
+  preparedCache.clear();
+}
+
 export function makeTransparentFrame(src, crop) {
   const cacheKey = frameCacheKey(src, crop);
   if (resolvedCache.has(cacheKey)) return Promise.resolve(resolvedCache.get(cacheKey));

@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { applyUserXp, userXpKey, xpConfigKey } from '@/components/xp/xpCache';
+import { clearFrameCaches } from '@/components/xp/frameTransparency';
 
 // XP, çerçeve ve ayar değişikliklerini tüm uygulamaya gerçek zamanlı yayar.
 export default function XpProvider({ children }) {
@@ -11,7 +12,9 @@ export default function XpProvider({ children }) {
       if (event.type === 'delete') queryClient.invalidateQueries({ queryKey: userXpKey });
       else applyUserXp(queryClient, event.data);
     });
-    const applyXpFrame = (event) => queryClient.setQueriesData({ queryKey: xpConfigKey }, (current) => {
+    const applyXpFrame = (event) => {
+      clearFrameCaches();
+      queryClient.setQueriesData({ queryKey: xpConfigKey }, (current) => {
       if (!current) return current;
       let frames;
       if (event.type === 'delete') frames = current.frames.filter((f) => f.id !== event.data.id);
@@ -22,6 +25,7 @@ export default function XpProvider({ children }) {
       }
       return { ...current, frames };
     });
+    };
     const applyXpSettings = (event) => queryClient.setQueriesData({ queryKey: xpConfigKey }, (current) => current ? { ...current, settings: event.type === 'delete' ? current.settings : { ...current.settings, ...event.data } } : current);
     const offFrames = base44.entities.XpFrame.subscribe(applyXpFrame);
     const offSettings = base44.entities.XpSettings.subscribe(applyXpSettings);
