@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import { Send, X, Search, Ban, Trash2, ShieldOff, ShieldCheck, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { upsertNotification } from '@/lib/upsertNotification';
 
 const LOGIN_IMAGE = 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/a38a234ce_generated_image.png';
 
@@ -54,7 +55,16 @@ export default function LiveChatButton() {
         }
       }
       if (ev.type === 'update') setTickets((p) => p.map((t) => t.id === ev.data.id ? { ...t, ...ev.data } : t));
-      if (ev.type === 'delete') setTickets((p) => p.filter((t) => t.id !== ev.data.id));
+      if (ev.type === 'delete') {
+        setTickets((p) => p.filter((t) => t.id !== ev.data.id));
+        setUnreadTickets((current) => { const next = { ...current }; delete next[ev.data.id]; return next; });
+        setActive((current) => {
+          if (current?.id !== ev.data.id) return current;
+          setMessages([]);
+          setSelectedUser(null);
+          return null;
+        });
+      }
     });
     return unsub;
   }, []);
@@ -134,6 +144,33 @@ export default function LiveChatButton() {
       setMessages([]);
       toast({ title: 'Mesajlar silindi' });
     } catch { toast({ title: 'Silinemedi', variant: 'destructive' }); }
+    setActing(false);
+  };
+
+  const closeConversation = async () => {
+    if (!active || acting) return;
+    if (!confirm('Konu kapatılsın ve görüşme iki taraftan tamamen silinsin mi?')) return;
+    const closingTicket = active;
+    setActing(true);
+    try {
+      await upsertNotification({
+        user_id: closingTicket.user_id,
+        title: 'Konuşma kapandı',
+        body: closingTicket.subject,
+        type: 'support',
+        link: '/destek'
+      });
+      await base44.entities.SupportMessage.deleteMany({ ticket_id: closingTicket.id });
+      await base44.entities.SupportTicket.delete(closingTicket.id);
+      setTickets((current) => current.filter((ticket) => ticket.id !== closingTicket.id));
+      setUnreadTickets((current) => { const next = { ...current }; delete next[closingTicket.id]; return next; });
+      setMessages([]);
+      setSelectedUser(null);
+      setActive(null);
+      toast({ title: 'Konu kapandı ve görüşme silindi' });
+    } catch {
+      toast({ title: 'Görüşme kapatılamadı', variant: 'destructive' });
+    }
     setActing(false);
   };
 
@@ -270,7 +307,10 @@ export default function LiveChatButton() {
                   </button>
                   <div className="px-3 py-1.5 border-b border-[#2a2a2a] flex items-center justify-between gap-2">
                     <p className="text-[10px] text-white/40 truncate">{active.subject}</p>
-                    <button onClick={clearMessages} disabled={acting} className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300 shrink-0 disabled:opacity-50"><Trash2 className="w-3 h-3" />Temizle</button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button onClick={clearMessages} disabled={acting} className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300 disabled:opacity-50"><Trash2 className="w-3 h-3" />Temizle</button>
+                      <button onClick={closeConversation} disabled={acting} className="rounded bg-amber-500/15 px-2 py-1 text-[10px] font-semibold text-amber-400 hover:bg-amber-500/25 disabled:opacity-50">Konu Kapandı</button>
+                    </div>
                   </div>
                   <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
                     {messages.map((m) => (

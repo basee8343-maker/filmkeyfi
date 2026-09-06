@@ -67,10 +67,12 @@ export default function AdminSupport() {
   const setStatus = async (s) => { await base44.entities.SupportTicket.update(active.id, { status: s }); load(); };
 
   const closeAndClear = async () => {
-    await base44.entities.SupportMessage.deleteMany({ ticket_id: active.id }).catch(() => {});
-    await base44.entities.SupportTicket.update(active.id, { status: 'closed' }).catch(() => {});
-    await upsertNotification({ user_id: active.user_id, title: 'Destek talebiniz kapatıldı', body: active.subject, type: 'support' });
-    setMessages([]); setConfirm(null); load(); toast({ title: 'Sohbet kapatıldı, mesajlar silindi' });
+    const closingTicket = active;
+    await upsertNotification({ user_id: closingTicket.user_id, title: 'Konuşma kapandı', body: closingTicket.subject, type: 'support', link: '/destek' });
+    await base44.entities.SupportMessage.deleteMany({ ticket_id: closingTicket.id }).catch(() => {});
+    await base44.entities.SupportTicket.delete(closingTicket.id).catch(() => {});
+    setTickets((current) => current.filter((ticket) => ticket.id !== closingTicket.id));
+    setMessages([]); setActive(null); setConfirm(null); toast({ title: 'Konu kapandı ve görüşme iki taraftan silindi' });
   };
 
   const delTicket = async () => {
@@ -116,7 +118,7 @@ export default function AdminSupport() {
       </div>
       <ConfirmDialog open={!!confirm} onOpenChange={(o) => !o && setConfirm(null)}
         title={confirm === 'close' ? 'Sohbeti kapat ve mesajları sil?' : 'Talebi tamamen sil?'}
-        description={confirm === 'close' ? 'Kullanıcının mesajları silinecek ve talep kapatılacak.' : 'Talep ve tüm mesajlar kalıcı olarak silinecek.'}
+        description={confirm === 'close' ? 'Kullanıcıya konuşmanın kapandığı bildirilecek; profil, talep ve tüm mesajlar iki taraftan anında silinecek.' : 'Talep ve tüm mesajlar kalıcı olarak silinecek.'}
         onConfirm={confirm === 'close' ? closeAndClear : delTicket} />
     </div>
   );
