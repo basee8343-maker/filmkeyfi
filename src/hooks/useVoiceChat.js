@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Room, RoomEvent, Track } from 'livekit-client';
 import { base44 } from '@/api/base44Client';
+import { createVoiceOutput, unlockVoicePlayback } from '@/lib/voicePlayback';
 
 const initialDebug = { participantCount: 0, remoteParticipants: 0, remoteTracks: 0, playback: 'hazır' };
 const friendlyMicError = (error) => {
@@ -52,19 +53,13 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   const attachRemoteAudio = useCallback((track) => {
     if (track.kind !== Track.Kind.Audio) return;
     if ([...audioElementsRef.current].some((element) => element.dataset.livekitTrack === track.sid)) return;
-    const element = track.attach();
-    element.autoplay = true;
-    element.playsInline = true;
-    element.setAttribute('playsinline', 'true');
+    const element = createVoiceOutput(track, roomId);
     element.dataset.livekitVoice = roomId;
     element.dataset.livekitTrack = track.sid;
-    element.style.display = 'none';
     element.muted = deafenedRef.current;
-    document.body.appendChild(element);
     audioElementsRef.current.add(element);
-    // Anında oynatmayı dene — önceki etkileşim ses bağlamını açtıysa ses anında çalar.
-    roomRef.current?.startAudio().catch(() => {});
-    element.play().then(() => {
+    // Mikrofon izninden bağımsız, önceden açılmış kalıcı ses kanalından oynat.
+    Promise.all([roomRef.current?.startAudio(), element.play(), unlockVoicePlayback()]).then(() => {
       setAudioBlocked(false);
       setError('');
     }).catch(() => {
@@ -76,8 +71,11 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
 
   const retryAudio = useCallback(async () => {
     try {
-      await roomRef.current?.startAudio();
-      await Promise.all([...audioElementsRef.current].map((element) => element.play()));
+      await Promise.all([
+        roomRef.current?.startAudio(),
+        unlockVoicePlayback(),
+        ...[...audioElementsRef.current].map((element) => element.play()),
+      ]);
       setAudioBlocked(false);
       setError('');
       refreshState();
@@ -99,7 +97,12 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       refreshState();
     };
     const onUnsubscribed = (track) => {
-      track.detach().forEach((element) => { audioElementsRef.current.delete(element); element.remove(); });
+      audioElementsRef.current.forEach((element) => {
+        if (element.dataset.livekitTrack !== track.sid) return;
+        audioElementsRef.current.delete(element);
+        element.remove();
+      });
+      track.detach().forEach((element) => element.remove());
       refreshState();
     };
     const onDisconnected = () => { setConnectionState('disconnected'); setError('🌐 Bağlantı yeniden kuruluyor.'); };

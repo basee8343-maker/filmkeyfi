@@ -16,6 +16,7 @@ import RoomLevelProvider from '@/components/levels/RoomLevelProvider';
 import XpProvider from '@/components/xp/XpProvider';
 import { FrameCatalogProvider } from '@/lib/FrameCatalogContext';
 import { Navigate } from 'react-router-dom';
+import '@/lib/voicePlayback';
 
 const Home = lazy(() => import('@/pages/Home'));
 const Browse = lazy(() => import('@/pages/Browse'));
