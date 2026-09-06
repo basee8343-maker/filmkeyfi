@@ -34,7 +34,7 @@ export default async function(req) {
     if (profile_frame !== undefined) {
       const frame = String(profile_frame || '');
       // Sadece çerçeve değişimi gerektiğinde kullanıcı kaydını çek
-      const me = await base44.asServiceRole.entities.User.get(user.id).catch(() => null);
+      const me = await base44.entities.User.get(user.id).catch(() => null);
       const unlocked = (me && me.unlocked_profile_frames) || [];
       const frameDef = await resolveProfileFrame(base44, frame);
       if (frame && (!frameDef || !unlocked.includes(frame))) return Response.json({ error: 'Bu çerçeve hesabınızda açık değil.' }, { status: 403 });
@@ -56,7 +56,7 @@ export default async function(req) {
       updates.profile_frame_entrance_enabled = !!profile_frame_entrance_enabled;
     }
     if (Object.keys(updates).length > 0) {
-      await base44.asServiceRole.entities.User.update(user.id, updates);
+      await base44.entities.User.update(user.id, updates);
     }
     return Response.json({ ok: true });
   } catch (e) {
