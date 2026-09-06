@@ -1,7 +1,8 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ProfileDropdown from '@/components/layout/ProfileDropdown';
+import SearchSuggestions from '@/components/search/SearchSuggestions';
 
 const links = [
   { label: 'Ana Sayfa', path: '/' },
@@ -16,6 +17,10 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [q, setQ] = useState('');
+
+  useEffect(() => {
+    setQ(location.pathname === '/ara' ? new URLSearchParams(location.search).get('q') || '' : '');
+  }, [location.pathname, location.search]);
 
   const submit = (e) => {
     e.preventDefault();
@@ -53,10 +58,11 @@ export default function Navbar() {
             ))}
           </nav>
 
-        <form onSubmit={submit} className="hidden md:flex items-center ml-auto bg-white/5 rounded-full px-3 py-1.5 w-44 lg:w-64 focus-within:ring-2 focus-within:ring-purple-500/30">
+        <form onSubmit={submit} className="relative hidden md:flex items-center ml-auto bg-white/5 rounded-full px-3 py-1.5 w-44 lg:w-64 focus-within:ring-2 focus-within:ring-purple-500/30">
             <Search className="w-4 h-4 text-white/40 shrink-0" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Film, dizi ara..."
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Film, dizi ara..." autoComplete="off"
               className="bg-transparent outline-none px-2 text-sm w-full placeholder:text-white/40 text-white" />
+            <SearchSuggestions query={q} onSelect={() => setQ('')} />
           </form>
 
         <div className="flex items-center gap-2 ml-auto md:ml-2">

@@ -21,7 +21,8 @@ export default function MovieDetail() {
 
   useEffect(() => {
     setLoading(true);
-    base44.entities.Movie.get(id).then(async (m) => {
+    base44.entities.Movie.filter({ id }, '-created_date', 1).then(async (matches) => {
+      const m = matches[0] || null;
       setMovie(m);
       if (m) {
         base44.entities.Movie.update(id, { views: (m.views || 0) + 1 }).catch(() => {});
