@@ -2,16 +2,19 @@ import { Image } from '@/components/ui/image';
 
 export const ACCOUNT_STATES = {
   deleted: {
+    status: 'deleted',
     image: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/0665aaba3_generated_image.png',
     name: 'Silinmiş Hesap',
     message: 'Bu hesap yönetici tarafından silinmiştir.'
   },
   banned: {
+    status: 'banned',
     image: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/63e635ef8_generated_image.png',
     name: 'Engellenmiş Hesap',
     message: 'Bu hesap yönetici tarafından engellenmiştir.'
   },
   suspended: {
+    status: 'suspended',
     image: 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/d59dc5667_generated_image.png',
     name: 'Askıya Alınmış Hesap',
     message: 'Bu hesap yönetici tarafından askıya alınmıştır.'
