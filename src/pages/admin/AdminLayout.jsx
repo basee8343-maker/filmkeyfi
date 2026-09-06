@@ -187,11 +187,11 @@ export default function AdminLayout() {
       {open && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setOpen(false)} />}
       <div className="flex-1 min-w-0 overflow-x-hidden"
         onTouchStart={(e) => { touchX.current = e.touches[0].clientX; touchY.current = e.touches[0].clientY; }}
-        onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); const dy = e.changedTouches[0].clientY - (touchY.current ?? 0); if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 80) setOpen(true); else if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx < -80) setOpen(false); }}>
+        onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); const dy = e.changedTouches[0].clientY - (touchY.current ?? 0); if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 80 && (touchX.current ?? 999) < 30) setOpen(true); else if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx < -80) setOpen(false); }}>
         <header className="lg:hidden sticky top-0 z-20 border-b border-purple-500/10 min-h-14 flex items-center px-4 pb-2 pt-[max(env(safe-area-inset-top),0.75rem)] bg-[#111116]/95 backdrop-blur"
           style={{ touchAction: 'pan-y' }}
           onTouchStart={(e) => { touchX.current = e.touches[0].clientX; touchY.current = e.touches[0].clientY; }}
-          onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); const dy = e.changedTouches[0].clientY - (touchY.current ?? 0); if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 80) setOpen(true); else if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx < -80) setOpen(false); }}>
+          onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); const dy = e.changedTouches[0].clientY - (touchY.current ?? 0); if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 80 && (touchX.current ?? 999) < 30) setOpen(true); else if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx < -80) setOpen(false); }}>
           <button onClick={() => setOpen(true)}><Menu className="w-6 h-6 text-white" /></button>
           <span className="ml-1 hidden min-[390px]:block font-bold text-white whitespace-nowrap">Admin Panel</span>
           <div className="ml-auto flex min-w-0 items-center gap-1">

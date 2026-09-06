@@ -234,8 +234,8 @@ export default function PaymentMethodsManager() {
 
 function ToggleSwitch({ checked, onChange }) {
   return (
-    <button type="button" onClick={onChange} className="w-11 h-6 rounded-full relative transition-colors shrink-0" style={{ background: checked ? '#22c55e' : '#ef4444' }}>
-      <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform" style={{ transform: `translateX(${checked ? 22 : 2}px)` }} />
+    <button type="button" onClick={onChange} className="w-11 h-6 rounded-full relative overflow-hidden transition-colors shrink-0" style={{ background: checked ? '#22c55e' : '#ef4444' }}>
+      <span className="absolute top-0.5 left-0 w-5 h-5 rounded-full bg-white transition-transform" style={{ transform: `translateX(${checked ? 22 : 2}px)` }} />
     </button>
   );
 }
