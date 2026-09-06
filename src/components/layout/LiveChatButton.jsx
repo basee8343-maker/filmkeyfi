@@ -68,21 +68,26 @@ export default function LiveChatButton() {
     return unsub;
   }, [active?.id]);
 
-  // Kullanıcı arama
+  // Kullanıcı arama — ID (member_id) veya isim
   const doSearch = async (q) => {
-    if (!q.trim()) { setResults([]); return; }
+    const qt = q.trim();
+    if (!qt) { setResults([]); return; }
     setSearching(true);
     try {
       const all = await base44.entities.User.list('-created_date', 500);
-      const ql = q.toLowerCase();
-      const matched = all.filter((u) =>
-        (u.member_id || '').includes(q) ||
-        (u.username || '').toLowerCase().includes(ql) ||
-        (u.full_name || '').toLowerCase().includes(ql) ||
-        (u.email || '').toLowerCase().includes(ql)
-      );
+      const ql = qt.toLowerCase();
+      const matched = all.filter((u) => {
+        const mid = String(u.member_id || '').trim();
+        return mid.includes(qt) ||
+          (u.username || '').toLowerCase().includes(ql) ||
+          (u.full_name || '').toLowerCase().includes(ql) ||
+          (u.email || '').toLowerCase().includes(ql);
+      });
       setResults(matched.slice(0, 20));
-    } catch {}
+    } catch (e) {
+      toast({ title: 'Arama başarısız', variant: 'destructive' });
+      setResults([]);
+    }
     setSearching(false);
   };
 
@@ -102,6 +107,19 @@ export default function LiveChatButton() {
     base44.entities.SupportMessage.create({ ticket_id: active.id, owner_id: active.user_id, user_id: user.id, sender: 'admin', text: text.trim() }).catch(() => {});
     base44.entities.SupportTicket.update(active.id, { status: 'answered' }).catch(() => {});
     setText('');
+  };
+
+  // Görüşmedeki tüm mesajları anlık sil (admin + kullanıcı tarafı)
+  const clearMessages = async () => {
+    if (!active) return;
+    if (!confirm('Bu görüşmedeki tüm mesajlar silinsin mi?')) return;
+    setActing(true);
+    try {
+      await base44.entities.SupportMessage.deleteMany({ ticket_id: active.id });
+      setMessages([]);
+      toast({ title: 'Mesajlar silindi' });
+    } catch { toast({ title: 'Silinemedi', variant: 'destructive' }); }
+    setActing(false);
   };
 
   const ban = async (u) => {
@@ -201,7 +219,7 @@ export default function LiveChatButton() {
 
           <div className="flex h-full min-h-0">
             {/* Sol kolon: arama yoksa talepler, arama varsa kullanıcı sonuçları */}
-            <div className="w-28 shrink-0 border-r border-[#2a2a2a] overflow-y-auto">
+            <div className="w-32 shrink-0 border-r border-[#2a2a2a] overflow-y-auto">
               {isSearching ? (
                 searching ? <p className="p-3 text-xs text-white/30 text-center">Aranıyor...</p> :
                 results.length === 0 ? <p className="p-3 text-xs text-white/30 text-center">Sonuç yok</p> :
@@ -233,7 +251,10 @@ export default function LiveChatButton() {
                 <div className="flex-1 flex items-center justify-center text-xs text-white/30 px-3 text-center">Sol taraftan kullanıcı seçin</div>
               ) : active ? (
                 <>
-                  <div className="px-3 py-2 border-b border-[#2a2a2a]"><p className="text-xs font-bold text-white truncate">{active.subject}</p><p className="text-[10px] text-white/40">{active.user_name}</p></div>
+                  <div className="px-3 py-2 border-b border-[#2a2a2a] flex items-center justify-between gap-2">
+                    <div className="min-w-0"><p className="text-xs font-bold text-white truncate">{active.subject}</p><p className="text-[10px] text-white/40">{active.user_name}</p></div>
+                    <button onClick={clearMessages} disabled={acting} className="flex items-center gap-1 text-[10px] text-red-400 hover:text-red-300 shrink-0 disabled:opacity-50"><Trash2 className="w-3 h-3" />Temizle</button>
+                  </div>
                   <div className="flex-1 overflow-y-auto p-2 space-y-1.5">
                     {messages.map((m) => (
                       <div key={m.id} className={`flex ${m.user_id !== m.owner_id ? 'justify-end' : 'justify-start'}`}>
