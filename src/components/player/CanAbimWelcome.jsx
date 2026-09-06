@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Image } from '@/components/ui/image';
 import LightningStrike from '@/components/player/LightningStrike';
 
-const SPLASH_IMAGE = 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/0b1e2843f_generated_image.png';
+const SPLASH_IMAGE = 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/f80f8a3ee_generated_image.png';
 
 export default function CanAbimWelcome({ onDone }) {
   const [exiting, setExiting] = useState(false);
