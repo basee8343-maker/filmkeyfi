@@ -1,18 +1,14 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { Play, Pause, Maximize, Minimize, Settings, Rewind, FastForward } from 'lucide-react';
 import VolumeSlider from './VolumeSlider';
+import useMediaVolume from './useMediaVolume';
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onSeek, onEnded, onControlsChange, syncState, isOwner, isTimeSource, subtitles, fullscreenRef, watermark, controlsRaised = false }) {
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [playing, setPlaying] = useState(false);
-  const [volume, setVolume] = useState(() => {
-    const saved = Number(localStorage.getItem('filmkeyfi_player_volume'));
-    return Number.isFinite(saved) && saved > 0 && saved <= 1 ? saved : 1;
-  });
-  const [muted, setMuted] = useState(() => localStorage.getItem('filmkeyfi_player_muted') === 'true');
-  const previousVolumeRef = useRef(volume || 1);
+  const { volume, muted, setVolumePercent, toggleMute, applyCurrentVolume } = useMediaVolume(videoRef);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -22,17 +18,6 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
   const [buffering, setBuffering] = useState(false);
   const hideTimer = useRef(null);
   const lastSyncRef = useRef(0);
-
-  // Ses, ilerleme zamanından tamamen bağımsızdır ve kaynak değişimlerinde korunur.
-  useEffect(() => {
-    const video = videoRef.current;
-    if (video) {
-      video.volume = volume;
-      video.muted = muted || volume === 0;
-    }
-    if (volume > 0) localStorage.setItem('filmkeyfi_player_volume', String(volume));
-    localStorage.setItem('filmkeyfi_player_muted', String(muted || volume === 0));
-  }, [volume, muted]);
 
   const fmt = (s) => {
     if (!isFinite(s)) return '0:00';
@@ -108,8 +93,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     const v = videoRef.current; if (!v) return;
     setDuration(v.duration);
     v.playbackRate = speed;
-    v.volume = volume;
-    v.muted = muted;
+    applyCurrentVolume();
     // initial sync for participants (and admin)
     if (!isTimeSource && syncState) {
       const target = syncState.current_time || 0;
@@ -149,32 +133,6 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     return () => { document.removeEventListener('fullscreenchange', h); v?.removeEventListener('webkitendfullscreen', endFs); };
   }, []);
 
-  const changeVolume = useCallback((percent) => {
-    const next = Math.min(1, Math.max(0, Number(percent) / 100));
-    const video = videoRef.current;
-    if (next > 0) previousVolumeRef.current = next;
-    if (video) {
-      video.volume = next;
-      video.muted = next === 0;
-    }
-    setVolume(next);
-    setMuted(next === 0);
-  }, []);
-
-  const toggleMute = useCallback(() => {
-    const video = videoRef.current;
-    if (muted || volume === 0) {
-      const restored = previousVolumeRef.current > 0 ? previousVolumeRef.current : 1;
-      if (video) { video.volume = restored; video.muted = false; }
-      setVolume(restored);
-      setMuted(false);
-      return;
-    }
-    previousVolumeRef.current = volume;
-    if (video) video.muted = true;
-    setMuted(true);
-  }, [muted, volume]);
-
   const moveBar = (e) => {
     if (!isOwner) return;
     const v = videoRef.current; if (!v || !v.duration) return;
@@ -197,7 +155,6 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
       style={{ touchAction: isOwner ? 'manipulation' : 'none' }}>
       <video ref={videoRef} src={src} className="w-full h-full object-contain"
         onLoadedMetadata={onLoaded} onTimeUpdate={onTime} onPlay={handlePlay} onPause={handlePause}
-        onVolumeChange={() => { const video = videoRef.current; if (!video) return; setVolume(video.volume); setMuted(video.muted || video.volume === 0); if (video.volume > 0) previousVolumeRef.current = video.volume; }}
         onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onEnded={onEnded}
         crossOrigin="anonymous" preload="metadata" playsInline controls={false} disablePictureInPicture={!isOwner} />
 
@@ -228,7 +185,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
           {isOwner && <button onClick={togglePlay} className="p-2 hover:bg-white/10 rounded-lg">{playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}</button>}
           {isOwner && <button onClick={() => skip(-10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn geri"><Rewind className="w-5 h-5" /></button>}
           {isOwner && <button onClick={() => skip(10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn ileri"><FastForward className="w-5 h-5" /></button>}
-          <VolumeSlider volume={volume} muted={muted} onChange={changeVolume} onToggleMute={toggleMute} />
+          <VolumeSlider volume={volume} muted={muted} onChange={setVolumePercent} onToggleMute={toggleMute} />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             {isOwner && (
               <div className="relative">

@@ -16,6 +16,7 @@ export default function VolumeSlider({ volume, muted, onChange, onToggleMute }) 
         step="1"
         value={percent}
         onInput={(event) => onChange(Number(event.currentTarget.value))}
+        onChange={(event) => onChange(Number(event.currentTarget.value))}
         className="h-8 w-14 cursor-pointer accent-primary min-[390px]:w-20 landscape:w-24 sm:w-28"
         style={{ touchAction: 'none' }}
         aria-label="Ses seviyesi"
