@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Users, Lock, Loader2, Shield, Star, DoorOpen, Search, SlidersHorizontal } from 'lucide-react';
+import { Users, Lock, Loader2, Shield, Star, DoorOpen, Search, SlidersHorizontal, Plus } from 'lucide-react';
 import { Image } from '@/components/ui/image';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 
@@ -121,13 +121,18 @@ export default function OpenRooms() {
           <h1 className="text-2xl font-extrabold">Odalar</h1>
           <p className="text-sm text-gray-400 mt-1">Aktif Watch Party odalarına katıl.</p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#16161e] border border-white/5">
-          <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.2)' }}>
-            <DoorOpen className="w-4 h-4 text-purple-400" />
-          </span>
-          <span className="text-sm font-bold">{activeCount}</span>
-          <span className="text-xs text-gray-400">Aktif Oda</span>
-          <span className="w-2 h-2 rounded-full bg-green-400" />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#16161e] border border-white/5">
+            <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.2)' }}>
+              <DoorOpen className="w-4 h-4 text-purple-400" />
+            </span>
+            <span className="text-sm font-bold">{activeCount}</span>
+            <span className="text-xs text-gray-400">Aktif Oda</span>
+            <span className="w-2 h-2 rounded-full bg-green-400" />
+          </div>
+          <Link to="/oda-kur" className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white active:scale-95 transition-transform" style={{ background: 'linear-gradient(135deg, #7c3aed, #db2777)' }}>
+            <Plus className="w-4 h-4" /> Oda Kur
+          </Link>
         </div>
       </div>
 
