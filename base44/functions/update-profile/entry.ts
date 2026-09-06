@@ -19,7 +19,7 @@ export default async function(req) {
       const u = sanitizeText(username, 40);
       if (u) {
         if (u.length < 3) return Response.json({ error: 'Kullanıcı adı en az 3 karakter olmalı.' }, { status: 400 });
-        const existing = await base44.entities.User.filter({ username: u }, '-created_date', 5).catch(() => []);
+        const existing = await base44.asServiceRole.entities.User.filter({ username: u }, '-created_date', 5).catch(() => []);
         if (existing.some((x) => x.id !== user.id)) {
           return Response.json({ error: 'Bu kullanıcı adı zaten kullanımda. Başka bir ad deneyin.' }, { status: 409 });
         }
