@@ -49,7 +49,38 @@ export const getFrameMetrics = (src, crop) => metricsCache.get(frameCacheKey(src
 
 // Hazır çerçeveler için: açıklık koordinatlarını kullanarak orta daireyi şeffaf yap.
 // opening = [x, y, w, h] normalize (0-1) koordinatlar. Görsel boyutu değişmez, kırpılmaz.
-const preparedCacheKey = (src, opening) => `prep|${src}|${opening ? opening.join(',') : 'none'}`;
+const preparedCacheKey = (src, opening) => `prep2|${src}|${opening ? opening.join(',') : 'none'}`;
+
+// Görselin dış kenarlarından başlayarak koyu/uniform arka planı flood-fill ile şeffaflaştırır.
+// Sadece kenarlardan bağlantılı olan arka plan silinir — çerçeve tasarımına dokunulmaz.
+function clearOuterBackground(data, width, height) {
+  const corners = [[0, 0], [width - 1, 0], [0, height - 1], [width - 1, height - 1]];
+  const samples = corners.map(([x, y]) => rgbAt(data, y * width + x));
+  const base = samples[0];
+  // Köşeler birbirinden çok farklıysa gerçek bir düz arka plan yok — dokunma.
+  if (samples.some((sample) => distance(sample, base) > 40)) return;
+  const tolerance = 62;
+  const visited = new Uint8Array(width * height);
+  const stack = [];
+  const push = (x, y) => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    const index = y * width + x;
+    if (visited[index]) return;
+    visited[index] = 1;
+    stack.push(index);
+  };
+  for (let x = 0; x < width; x++) { push(x, 0); push(x, height - 1); }
+  for (let y = 0; y < height; y++) { push(0, y); push(width - 1, y); }
+  while (stack.length) {
+    const index = stack.pop();
+    if (data[index * 4 + 3] === 0) continue;
+    if (distance(rgbAt(data, index), base) > tolerance) continue;
+    data[index * 4 + 3] = 0;
+    const x = index % width;
+    const y = (index - x) / width;
+    push(x + 1, y); push(x - 1, y); push(x, y + 1); push(x, y - 1);
+  }
+}
 const preparedCache = new Map();
 export const getPreparedTransparent = (src, opening) => preparedCache.get(preparedCacheKey(src, opening)) || '';
 export function makePreparedTransparent(src, opening) {
@@ -64,6 +95,9 @@ export function makePreparedTransparent(src, opening) {
       canvas.height = image.naturalHeight;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(image, 0, 0);
+      const frameData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      clearOuterBackground(frameData.data, canvas.width, canvas.height);
+      ctx.putImageData(frameData, 0, 0);
       if (opening) {
         const cx = (opening[0] + opening[2] / 2) * canvas.width;
         const cy = (opening[1] + opening[3] / 2) * canvas.height;
