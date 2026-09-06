@@ -35,7 +35,13 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
   const togglePlay = useCallback(() => {
     if (!isOwner) return;
     const v = videoRef.current; if (!v) return;
-    if (v.paused) { v.play(); } else { v.pause(); }
+    if (v.paused) {
+      v.play().catch((error) => {
+        if (error?.name !== 'AbortError') console.error('[Video] Oynatma başlatılamadı', error);
+      });
+    } else {
+      v.pause();
+    }
   }, [isOwner]);
 
   const seekTo = useCallback((t) => {
@@ -113,13 +119,17 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
 
   const toggleFullscreen = () => {
     const el = fullscreenRef?.current || containerRef.current;
+    let operation;
     if (!document.fullscreenElement) {
-      if (el?.requestFullscreen) el.requestFullscreen();
-      else if (el?.webkitRequestFullscreen) el.webkitRequestFullscreen();
-      else if (videoRef.current?.webkitEnterFullscreen) videoRef.current.webkitEnterFullscreen();
+      if (el?.requestFullscreen) operation = el.requestFullscreen();
+      else if (el?.webkitRequestFullscreen) operation = el.webkitRequestFullscreen();
+      else if (videoRef.current?.webkitEnterFullscreen) operation = videoRef.current.webkitEnterFullscreen();
     } else {
-      document.exitFullscreen?.();
+      operation = document.exitFullscreen?.();
     }
+    operation?.catch?.((error) => {
+      if (error?.name !== 'AbortError') console.error('[Video] Tam ekran işlemi başarısız', error);
+    });
   };
   useEffect(() => {
     const h = () => setFullscreen(!!document.fullscreenElement);

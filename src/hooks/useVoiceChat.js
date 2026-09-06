@@ -128,8 +128,10 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
         setAudioBlocked(!room.canPlaybackAudio);
         refreshState();
       } catch (connectError) {
+        if (cancelled || connectError?.name === 'AbortError') return;
         console.error('[LiveKit] Connection failed', connectError);
-        if (!cancelled) { setConnectionState('disconnected'); setError('🌐 Ses bağlantısı kurulamadı.'); }
+        setConnectionState('disconnected');
+        setError('🌐 Ses bağlantısı kurulamadı.');
       }
     })();
 
