@@ -4,7 +4,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useFrameCatalog } from '@/lib/FrameCatalogContext';
 import { Image } from '@/components/ui/image';
 import PreparedFrameImage from '@/components/xp/PreparedFrameImage';
-import { Minus, Plus, Upload, Save, RotateCcw, Move } from 'lucide-react';
+import { Minus, Plus, Upload, Save, RotateCcw, Move, ChevronDown, X } from 'lucide-react';
 
 // Profil fotoğrafını çerçeve içinde sürükleyerek kaydırma ve yakınlaştırma aracı.
 // `targetUserId` verilirse admin modu (başka kullanıcının profilini düzenler), yoksa kendi profili.
@@ -20,6 +20,7 @@ export default function AvatarPositioner({ user, targetUserId, onSaved }) {
   const [panY, setPanY] = useState(user.profile_avatar_y || 0);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [open, setOpen] = useState(true);
   const windowRef = useRef(null);
   const drag = useRef({ active: false, startX: 0, startY: 0, origX: 0, origY: 0, width: 1 });
 
@@ -68,8 +69,15 @@ export default function AvatarPositioner({ user, targetUserId, onSaved }) {
   const reset = () => { setScale(100); setPanX(0); setPanY(0); };
 
   return <section className="rounded-2xl border border-border bg-card p-5">
-    <div className="mb-3 flex items-center justify-between gap-2"><div><h2 className="font-bold">Fotoğraf Konumlandırma{isAdmin ? ' (Admin)' : ''}</h2><p className="text-xs text-muted-foreground">Sürükleyerek kaydır, yakınlaştır ile mükemmel yeri bul.</p></div><button onClick={reset} className="rounded-lg bg-secondary px-3 py-2 text-xs font-semibold flex items-center gap-1"><RotateCcw className="w-3.5 h-3.5" />Sıfırla</button></div>
-    <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+    <div className="flex items-center justify-between gap-2">
+      <button onClick={() => setOpen((o) => !o)} className="flex items-center gap-1 font-bold"><ChevronDown className={`w-4 h-4 transition-transform ${open ? '' : '-rotate-90'}`} />Fotoğraf Konumlandırma{isAdmin ? ' (Admin)' : ''}</button>
+      <div className="flex items-center gap-2">
+        <button onClick={reset} className="rounded-lg bg-secondary px-3 py-2 text-xs font-semibold flex items-center gap-1"><RotateCcw className="w-3.5 h-3.5" />Sıfırla</button>
+        <button onClick={() => setOpen((o) => !o)} className="rounded-lg bg-secondary p-2 text-muted-foreground" aria-label={open ? 'Kapat' : 'Aç'}><X className="w-4 h-4" /></button>
+      </div>
+    </div>
+    {open && <><p className="mt-1 text-xs text-muted-foreground">Sürükleyerek kaydır, yakınlaştır ile mükemmel yeri bul.</p>
+    <div className="mt-3 flex flex-col items-center gap-4 sm:flex-row sm:items-start">
       <div className="relative h-56 w-56 shrink-0 select-none" style={{ touchAction: 'none' }}>
         <div ref={windowRef} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} className="absolute cursor-grab overflow-hidden rounded-full ring-1 ring-border/30 active:cursor-grabbing" style={{ left: `${left * 100}%`, top: `${top * 100}%`, width: `${diameter * 100}%`, height: `${diameter * 100}%` }}>
           {avatar ? <div className="h-full w-full" style={{ transform: `scale(${scale / 100}) translate(${panX}%, ${panY}%)` }}><Image src={avatar} alt="Profil" className="h-full w-full object-cover" fittingType="fill" /></div>
@@ -96,6 +104,6 @@ export default function AvatarPositioner({ user, targetUserId, onSaved }) {
         </div>
         <button onClick={save} disabled={saving} className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50 flex items-center justify-center gap-2"><Save className="w-4 h-4" />{saving ? 'Kaydediliyor...' : 'Konumu Kaydet'}</button>
       </div>
-    </div>
+    </div></>}
   </section>;
 }
