@@ -4,7 +4,7 @@ import MovieCard from '@/components/movie/MovieCard';
 export default function ContentRow({ title, movies, to }) {
   if (!movies?.length) return null;
   return (
-    <section className="mb-8">
+    <section className="content-row mb-8">
       <div className="flex items-center justify-between px-4 sm:px-6 mb-3">
         <h2 className="text-lg sm:text-xl font-bold text-white">{title}</h2>
         {to && <Link to={to} className="text-sm text-gray-400 hover:text-purple-400">Tümü →</Link>}

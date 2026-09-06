@@ -24,18 +24,9 @@ export default function RoutePreloader() {
       if (anchor?.origin === window.location.origin) preload(anchor.pathname);
     };
     document.addEventListener('pointerdown', onIntent, { passive: true });
-    document.addEventListener('pointerover', onIntent, { passive: true });
-
-    const warm = () => ['/filmler', '/acik-odalar', '/oda-kur', '/arkadaslar'].forEach(preload);
-    const idleId = window.requestIdleCallback
-      ? window.requestIdleCallback(warm, { timeout: 2000 })
-      : window.setTimeout(warm, 1200);
 
     return () => {
       document.removeEventListener('pointerdown', onIntent);
-      document.removeEventListener('pointerover', onIntent);
-      window.cancelIdleCallback?.(idleId);
-      window.clearTimeout(idleId);
     };
   }, []);
 

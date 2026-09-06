@@ -40,8 +40,8 @@ export default function Navbar() {
           backgroundSize: '40px 40px',
         }} />
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-8 -left-10 w-32 h-32 rounded-full blur-3xl opacity-25 animate-pulse" style={{ background: 'radial-gradient(circle, #7c3aed, transparent 70%)' }} />
-        <div className="absolute -top-4 right-20 w-24 h-24 rounded-full blur-3xl opacity-15 animate-pulse" style={{ background: 'radial-gradient(circle, #ec4899, transparent 70%)', animationDelay: '1s' }} />
+        <div className="absolute -top-8 -left-10 hidden sm:block w-32 h-32 rounded-full blur-3xl opacity-25" style={{ background: 'radial-gradient(circle, #7c3aed, transparent 70%)' }} />
+        <div className="absolute -top-4 right-20 hidden sm:block w-24 h-24 rounded-full blur-3xl opacity-15" style={{ background: 'radial-gradient(circle, #ec4899, transparent 70%)' }} />
       </div>
 
       <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 h-16 flex items-center gap-4">

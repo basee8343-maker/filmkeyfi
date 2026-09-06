@@ -171,6 +171,7 @@
   }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .content-row { content-visibility: auto; contain-intrinsic-size: auto 190px; }
   @keyframes slide-down { from { transform: translateY(-100%); } to { transform: translateY(0); } }
   .animate-slide-down { animation: slide-down 0.25s ease-out; }
   .cinema-shadow { box-shadow: 0 20px 60px -15px rgba(0,0,0,0.7); }

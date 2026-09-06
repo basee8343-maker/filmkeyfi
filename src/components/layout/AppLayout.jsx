@@ -49,7 +49,7 @@ export default function AppLayout() {
     }
   }, [loading, user, pathname, isRoom, publicSettings?.payment_available, publicSettings?.payment_required]);
 
-  // Tek noktadan anlık durum kontrolü — 3sn'de bir tek me() çağrısıyla:
+  // Tek noktadan yedek durum kontrolü — anlık işlemler realtime, güvenlik doğrulaması 30 saniyede bir:
   // ban/askıya alma/silme + abonelik onayı + cihaz/session + bakım modu
   const wasInactiveRef = useRef(false);
   useEffect(() => {
@@ -90,9 +90,9 @@ export default function AppLayout() {
             return;
           }
         }
-        // Bakım modu — 6sn'de bir kontrol (her 2. tick)
+        // Bakım modu — iki dakikada bir kontrol; anlık kullanıcı yaptırımları realtime ile gelir
         tick++;
-        if (tick % 2 === 0 && u?.role !== 'admin') {
+        if (tick % 4 === 0 && u?.role !== 'admin') {
           const ps = await base44.functions.invoke('public-settings', {}).catch(() => null);
           const s = ps?.data || ps;
           if (s?.maintenance_mode) {
@@ -109,7 +109,7 @@ export default function AppLayout() {
       }
     };
     check();
-    const id = setInterval(check, 3000);
+    const id = setInterval(check, 30000);
     return () => clearInterval(id);
   }, [user?.id]);
 

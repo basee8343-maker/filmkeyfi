@@ -16,6 +16,7 @@ export default function LiveChatButton() {
   const [text, setText] = useState('');
   const [badge, setBadge] = useState(0);
   const [pulse, setPulse] = useState(false);
+  const [unreadTickets, setUnreadTickets] = useState({});
   const endRef = useRef(null);
   const seenIds = useRef(new Set());
 
@@ -58,20 +59,29 @@ export default function LiveChatButton() {
     return unsub;
   }, []);
 
-  // Aktif talep için mesajlar
+  // Aktif talep mesajları + diğer talepler için kişi bazlı okunmamış işareti
   useEffect(() => {
     if (!active) return;
     base44.entities.SupportMessage.filter({ ticket_id: active.id }, 'created_date', 100)
       .then((m) => { setMessages(m); setTimeout(() => endRef.current?.scrollIntoView(), 50); })
       .catch(() => {});
     const unsub = base44.entities.SupportMessage.subscribe((ev) => {
-      if (ev.type === 'create' && ev.data?.ticket_id === active.id) {
+      if (ev.type !== 'create') return;
+      const incoming = ev.data?.sender === 'user';
+      const isVisibleThread = open && ev.data?.ticket_id === active.id && !selectedUser && !isSearching;
+      if (ev.data?.ticket_id === active.id) {
         setMessages((p) => p.some((m) => m.id === ev.data.id) ? p : [...p, ev.data]);
         setTimeout(() => endRef.current?.scrollIntoView(), 50);
       }
+      if (incoming && !isVisibleThread) {
+        setUnreadTickets((current) => ({ ...current, [ev.data.ticket_id]: (current[ev.data.ticket_id] || 0) + 1 }));
+        setBadge((count) => count + 1);
+        setPulse(true);
+        setTimeout(() => setPulse(false), 6000);
+      }
     });
     return unsub;
-  }, [active?.id]);
+  }, [active?.id, open, selectedUser, isSearching]);
 
   // Kullanıcı arama — ID (member_id) veya isim
   const doSearch = async (q) => {
@@ -300,9 +310,23 @@ export default function LiveChatButton() {
               ) : (
                 tickets.length === 0 ? <p className="p-3 text-xs text-white/30 text-center">Talep yok</p> :
                 tickets.map((t) => (
-                  <button key={t.id} onClick={() => { setActive(t); setSelectedUser(null); }} className={`w-full text-left p-2 border-b border-[#2a2a2a] hover:bg-white/5 ${active?.id === t.id && !selectedUser ? 'bg-purple-500/20' : ''}`}>
-                    <p className="text-xs font-semibold text-white truncate">{t.user_name}</p>
-                    <p className="text-[10px] text-white/40 truncate">{t.subject}</p>
+                  <button
+                    key={t.id}
+                    onClick={() => {
+                      setActive(t);
+                      setSelectedUser(null);
+                      setBadge((count) => Math.max(0, count - (unreadTickets[t.id] || 0)));
+                      setUnreadTickets((current) => { const next = { ...current }; delete next[t.id]; return next; });
+                    }}
+                    className={`relative w-full text-left p-2 border-b border-[#2a2a2a] hover:bg-white/5 ${active?.id === t.id && !selectedUser ? 'bg-purple-500/20' : ''}`}
+                  >
+                    <p className="pr-5 text-xs font-semibold text-white truncate">{t.user_name}</p>
+                    <p className="pr-5 text-[10px] text-white/40 truncate">{t.subject}</p>
+                    {unreadTickets[t.id] > 0 && (
+                      <span className="absolute right-2 top-1/2 flex h-4 min-w-4 -translate-y-1/2 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                        {unreadTickets[t.id] > 9 ? '9+' : unreadTickets[t.id]}
+                      </span>
+                    )}
                   </button>
                 ))
               )}

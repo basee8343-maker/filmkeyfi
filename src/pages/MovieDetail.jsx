@@ -20,17 +20,20 @@ export default function MovieDetail() {
   const [similar, setSimilar] = useState([]);
 
   useEffect(() => {
+    let active = true;
     setLoading(true);
-    base44.entities.Movie.filter({ id }, '-created_date', 1).then(async (matches) => {
-      const m = matches[0] || null;
-      setMovie(m);
-      if (m) {
-        base44.entities.Movie.update(id, { views: (m.views || 0) + 1 }).catch(() => {});
-        const sim = await base44.entities.Movie.filter({ published: true, category: m.category }, '-views', 12).catch(() => []);
-        setSimilar(sim.filter((s) => s.id !== id).slice(0, 10));
-      }
+    setSimilar([]);
+    base44.entities.Movie.get(id).then((m) => {
+      if (!active) return;
+      setMovie(m || null);
       setLoading(false);
-    }).catch(() => setLoading(false));
+      if (!m) return;
+      base44.entities.Movie.update(id, { views: (m.views || 0) + 1 }).catch(() => {});
+      base44.entities.Movie.filter({ published: true, category: m.category }, '-views', 12)
+        .then((items) => { if (active) setSimilar(items.filter((item) => item.id !== id).slice(0, 10)); })
+        .catch(() => {});
+    }).catch(() => { if (active) { setMovie(null); setLoading(false); } });
+    return () => { active = false; };
   }, [id]);
 
   useEffect(() => {

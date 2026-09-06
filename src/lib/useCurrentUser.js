@@ -1,30 +1,51 @@
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 
+let cachedUser = null;
+let loadingUser = true;
+let loadPromise = null;
+let userSubscription = null;
+const listeners = new Set();
+
+const publish = () => listeners.forEach((listener) => listener({ user: cachedUser, loading: loadingUser }));
+
+const connectRealtime = () => {
+  if (userSubscription || !cachedUser?.id) return;
+  userSubscription = base44.entities.User.subscribe((event) => {
+    if (event.type === 'update' && event.data?.id === cachedUser?.id) {
+      cachedUser = { ...cachedUser, ...event.data };
+      publish();
+    }
+  });
+};
+
+const loadUser = (force = false) => {
+  if (loadPromise && !force) return loadPromise;
+  loadingUser = true;
+  publish();
+  loadPromise = base44.auth.me()
+    .then((user) => { cachedUser = user; connectRealtime(); return user; })
+    .catch(() => { cachedUser = null; return null; })
+    .finally(() => { loadingUser = false; loadPromise = null; publish(); });
+  return loadPromise;
+};
+
 export function useCurrentUser() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [state, setState] = useState({ user: cachedUser, loading: loadingUser });
+
   useEffect(() => {
-    let active = true;
-    base44.auth.me()
-      .then((u) => active && setUser(u))
-      .catch(() => active && setUser(null))
-      .finally(() => active && setLoading(false));
-    return () => { active = false; };
+    listeners.add(setState);
+    if (loadingUser && !loadPromise) loadUser();
+    else setState({ user: cachedUser, loading: loadingUser });
+    return () => listeners.delete(setState);
   }, []);
 
-  // Real-time: admin panelden abonelik durumu değiştiğinde anında güncelle
-  useEffect(() => {
-    if (!user?.id) return;
-    const unsub = base44.entities.User.subscribe((ev) => {
-      if (ev.type === 'update' && ev.data?.id === user.id) {
-        setUser((prev) => prev ? { ...prev, ...ev.data } : prev);
-      }
-    });
-    return unsub;
-  }, [user?.id]);
+  const setUser = (next) => {
+    cachedUser = typeof next === 'function' ? next(cachedUser) : next;
+    publish();
+  };
 
-  return { user, loading, setUser, reload: () => base44.auth.me().then(setUser) };
+  return { ...state, setUser, reload: () => loadUser(true) };
 }
 
 export function membershipActive(user) {
