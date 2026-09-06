@@ -19,6 +19,10 @@ export default function Subscription() {
   const [error, setError] = useState('');
   const [ibanCopied, setIbanCopied] = useState(false);
   const [refCopied, setRefCopied] = useState(false);
+  const [shopierRedirecting, setShopierRedirecting] = useState(false);
+
+  const shopierMethod = (Array.isArray(methods) ? methods : []).find((m) => m.provider_key === 'shopier');
+  const shopierAvailable = !!shopierMethod;
 
   const loadMethods = async () => {
     try {
@@ -122,6 +126,38 @@ export default function Subscription() {
       setError(e.response?.data?.error || e.message || 'Ödeme oluşturulamadı');
     }
     setPaying(false);
+  };
+
+  const payShopier = async () => {
+    if (!selectedPlan) return;
+    setShopierRedirecting(true);
+    setError('');
+    try {
+      const res = await base44.functions.invoke('payment-service', { action: 'create_shopier_payment', plan_id: selectedPlan.id });
+      const data = res.data || res;
+      if (data.endpoint && data.args) {
+        // Shopier API formunu oluştur ve gönder
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = data.endpoint;
+        Object.entries(data.args).forEach(([key, value]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = String(value);
+          form.appendChild(input);
+        });
+        document.body.appendChild(form);
+        form.submit();
+      } else if (data.redirect_url) {
+        window.location.href = data.redirect_url;
+      } else {
+        setError('Shopier ödeme başlatılamadı.');
+      }
+    } catch (e) {
+      setError(e.response?.data?.error || e.message || 'Shopier ödeme başlatılamadı');
+      setShopierRedirecting(false);
+    }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]"><div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>;
@@ -277,7 +313,20 @@ export default function Subscription() {
               </div>
             )}
 
-            {selectedMethod?.type === 'card' && (
+            {selectedMethod?.provider_key === 'shopier' && (
+              <div className="mt-4 bg-purple-500/10 border border-purple-500/30 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <CreditCard className="w-5 h-5 text-purple-400" />
+                  <h4 className="font-bold text-white">Shopier ile Güvenli Ödeme</h4>
+                </div>
+                <p className="text-sm text-gray-300 mb-3">Kredi/Banka Kartı ile ödemenizi Shopier güvenli ödeme ağ geçidi üzerinden tamamlayın. Ödeme onaylandıktan sonra aboneliğiniz otomatik aktifleşir.</p>
+                <button onClick={payShopier} disabled={shopierRedirecting} className="w-full py-3 rounded-lg text-sm font-bold text-white disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>
+                  {shopierRedirecting ? <><Loader2 className="w-4 h-4 animate-spin" /> Shopier'a yönlendiriliyor...</> : <><CreditCard className="w-4 h-4" /> Shopier ile Öde</>}
+                </button>
+              </div>
+            )}
+
+            {selectedMethod?.type === 'card' && selectedMethod?.provider_key !== 'shopier' && (
               <div className="mt-4 bg-purple-500/10 border border-purple-500/30 rounded-xl p-4 text-center">
                 <CreditCard className="w-8 h-8 text-purple-400 mx-auto mb-2" />
                 <p className="text-sm text-gray-300">Kart ödeme entegrasyonu hazırlanıyor. Şu anda banka transferini kullanabilirsiniz.</p>

@@ -175,6 +175,116 @@ export default async function(req) {
       return Response.json({ data: { success: true } });
     }
 
+    // === SHOPIER ÖDEMESİ BAŞLAT (SubscriptionPlan ile) ===
+    if (action === 'create_shopier_payment') {
+      const planId = String(body.plan_id || '');
+      if (!planId) return Response.json({ error: 'Paket seçilmedi' }, { status: 400 });
+
+      const plan = await base44.asServiceRole.entities.SubscriptionPlan.get(planId).catch(() => null);
+      if (!plan || !plan.active) return Response.json({ error: 'Geçersiz veya pasif paket' }, { status: 400 });
+
+      // Admin/moderator ödeme yapamaz
+      if (user.role === 'admin' || user.role === 'moderator') {
+        return Response.json({ error: 'yetkili kullanıcılar ödeme yapamaz' }, { status: 403 });
+      }
+
+      // Aynı paket için bekleyen Shopier ödemesi var mı kontrol et
+      const existing = await base44.asServiceRole.entities.Payment.filter({
+        user_id: user.id, plan_id: planId, status: 'pending', provider: 'shopier'
+      }, '-created_date', 5);
+      if (existing && existing.length > 0) {
+        // Mevcut ödemeyle devam et — aynı formu tekrar oluştur
+        const existingPayment = existing[0];
+      }
+
+      // Shopier yapılandırmasını kontrol et
+      const configs = await base44.asServiceRole.entities.AppConfig.list(100).catch(() => []);
+      const getCfg = (key, fallback = '') => configs.find((c) => c.key === key)?.value ?? fallback;
+      const apiKey = getCfg('shopier_api_key');
+      const secret = getCfg('shopier_secret');
+      const websiteIndex = getCfg('shopier_website_index', '1');
+      if (!apiKey || !secret) {
+        return Response.json({ error: 'Shopier ödeme ayarları eksik. Lütfen daha sonra tekrar deneyin.' }, { status: 503 });
+      }
+
+      const me = await base44.asServiceRole.entities.User.get(user.id).catch(() => user);
+
+      // İşlem numarası oluştur
+      const orderId = 'FK' + Date.now() + Math.floor(Math.random() * 1000);
+
+      // Pending ödeme kaydı oluştur
+      const payment = await base44.asServiceRole.entities.Payment.create({
+        user_id: user.id,
+        user_name: me.username || me.full_name || user.email,
+        user_email: user.email,
+        plan_id: plan.id,
+        plan_name: plan.name,
+        package_name: plan.name,
+        amount: plan.price,
+        payment_method: 'shopier',
+        payment_method_name: 'Shopier',
+        provider: 'shopier',
+        shopier_order_id: orderId,
+        status: 'pending',
+        currency: 'TRY',
+      });
+
+      // Shopier API form parametreleri oluştur
+      const SHOPIER_ENDPOINT = 'https://www.shopier.com/ShowProduct/api_pay4.php';
+      const randomNr = Math.floor(Math.random() * 1000000).toString();
+      const buyerName = (me.username || me.full_name || '').split(' ')[0] || 'Kullanıcı';
+      const buyerSurname = (me.username || me.full_name || '').split(' ').slice(1).join(' ') || ' ';
+      const accountAge = me.created_date
+        ? Math.max(1, Math.floor((Date.now() - new Date(me.created_date).getTime()) / 86400000))
+        : 1;
+
+      const args = {
+        API_key: apiKey,
+        website_index: websiteIndex,
+        platform_order_id: orderId,
+        product_name: plan.name,
+        product_type: 1,
+        buyer_name: buyerName,
+        buyer_surname: buyerSurname,
+        buyer_email: user.email,
+        buyer_account_age: accountAge.toString(),
+        buyer_id_nr: user.id,
+        buyer_phone: me.phone || '',
+        billing_address: ' ',
+        billing_city: ' ',
+        billing_country: 'TR',
+        billing_postcode: ' ',
+        shipping_address: ' ',
+        shipping_city: ' ',
+        shipping_country: 'TR',
+        shipping_postcode: ' ',
+        total_order_value: plan.price.toString(),
+        currency: '0',
+        platform: '0',
+        is_in_frame: '0',
+        current_language: '0',
+        modul_version: '1.0.8',
+        random_nr: randomNr,
+      };
+
+      const data = args.random_nr + args.platform_order_id + args.total_order_value + args.currency;
+      const keyData = new TextEncoder().encode(secret);
+      const msgData = new TextEncoder().encode(data);
+      const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+      const sigBuf = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+      args.signature = btoa(String.fromCharCode(...new Uint8Array(sigBuf)));
+
+      return Response.json({
+        data: {
+          endpoint: SHOPIER_ENDPOINT,
+          args,
+          order_id: orderId,
+          payment_id: payment.id,
+          plan: { name: plan.name, price: plan.price, duration_days: plan.duration_days },
+        }
+      });
+    }
+
     // === KULLANICININ AKTİF ABONELİĞİNİ GETİR ===
     if (action === 'get_my_subscription') {
       const subs = await base44.asServiceRole.entities.Subscription.filter(

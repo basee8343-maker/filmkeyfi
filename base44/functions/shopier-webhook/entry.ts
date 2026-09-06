@@ -237,21 +237,33 @@ export default async function (req) {
     // --- BAŞARILI ÖDEME — ABONELİĞİ AKTİF ET ---
     log('payment_success', { payment_id: payment.id, user_id: payment.user_id, amount: payment.amount, api_verify: apiVerify.source });
 
-    // Ürünü bul (süre ve plan adı için)
+    // Ürünü bul (süre ve plan adı için) — önce Package, sonra SubscriptionPlan
     let product = null;
+    let subscriptionPlan = null;
     if (payment.product_id) {
       product = await base44.asServiceRole.entities.Package.get(payment.product_id).catch(() => null);
       log('product_lookup', { by: 'product_id', product_id: payment.product_id, found: !!product });
     }
+    // SubscriptionPlan ile ödeme (abonelik sayfasından gelen Shopier ödemesi)
+    if (!product && payment.plan_id) {
+      subscriptionPlan = await base44.asServiceRole.entities.SubscriptionPlan.get(payment.plan_id).catch(() => null);
+      log('plan_lookup', { by: 'plan_id', plan_id: payment.plan_id, found: !!subscriptionPlan });
+    }
     // Eğer product_id yoksa veya ürün bulunamadıysa, miktar ile eşleştir
-    if (!product && amount > 0) {
+    if (!product && !subscriptionPlan && amount > 0) {
       const products = await base44.asServiceRole.entities.Package.filter({ active: true }).catch(() => []);
       product = products.find((p) => Math.abs((p.price || 0) - amount) < 0.01) || null;
       log('product_lookup', { by: 'amount', amount, found: !!product, product_name: product?.name });
     }
+    // SubscriptionPlan ile miktar eşleştirme fallback
+    if (!product && !subscriptionPlan && amount > 0) {
+      const plans = await base44.asServiceRole.entities.SubscriptionPlan.filter({ active: true }).catch(() => []);
+      subscriptionPlan = plans.find((p) => Math.abs((p.price || 0) - amount) < 0.01) || null;
+      log('plan_lookup', { by: 'amount', amount, found: !!subscriptionPlan, plan_name: subscriptionPlan?.name });
+    }
 
-    const durationDays = product?.duration_days || 30;
-    const planName = product?.name || payment.package_name || 'Abonelik';
+    const durationDays = product?.duration_days || subscriptionPlan?.duration_days || 30;
+    const planName = product?.name || subscriptionPlan?.name || payment.package_name || payment.plan_name || 'Abonelik';
     log('product_resolved', { product_id: product?.id, product_name: planName, duration_days: durationDays });
 
     // Kullanıcıyı getir (mevcut abonelik durumunu kontrol etmek için)

@@ -20,6 +20,12 @@
     "plan_name": {
       "type": "string"
     },
+    "product_id": {
+      "type": "string"
+    },
+    "package_name": {
+      "type": "string"
+    },
     "amount": {
       "type": "number"
     },
@@ -29,16 +35,30 @@
     "payment_method_name": {
       "type": "string"
     },
+    "provider": {
+      "type": "string",
+      "default": ""
+    },
+    "shopier_order_id": {
+      "type": "string",
+      "default": ""
+    },
     "status": {
       "type": "string",
       "enum": [
         "pending",
         "approved",
-        "rejected"
+        "rejected",
+        "completed",
+        "failed",
+        "cancelled"
       ],
       "default": "pending"
     },
     "transaction_id": {
+      "type": "string"
+    },
+    "payment_id": {
       "type": "string"
     },
     "bank_name": {
@@ -62,6 +82,10 @@
     },
     "approved_by": {
       "type": "string"
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "subscription_id": {
       "type": "string"

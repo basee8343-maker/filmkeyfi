@@ -18,7 +18,10 @@ export default function PaymentHistory() {
     const map = {
       pending: { text: 'Bekliyor', icon: Clock, cls: 'text-amber-400 bg-amber-500/10' },
       approved: { text: 'Onaylandı', icon: Check, cls: 'text-green-400 bg-green-500/10' },
+      completed: { text: 'Tamamlandı', icon: Check, cls: 'text-green-400 bg-green-500/10' },
       rejected: { text: 'Reddedildi', icon: X, cls: 'text-red-400 bg-red-500/10' },
+      failed: { text: 'Başarısız', icon: X, cls: 'text-red-400 bg-red-500/10' },
+      cancelled: { text: 'İptal Edildi', icon: X, cls: 'text-gray-400 bg-gray-500/10' },
     };
     const m = map[s] || map.pending;
     const Icon = m.icon;
