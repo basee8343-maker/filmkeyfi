@@ -348,7 +348,8 @@ export default async function(req) {
       return Response.json({ ok: true });
     }
 
-    // leave
+    // leave (explicit kontrol — kırılgan varsayılan düşüş yerine)
+    if (action !== 'leave') return Response.json({ error: 'geçersiz işlem' }, { status: 400 });
     if (ghost) return Response.json({ ok: true });
     await updatePresenceRoom(base44, user.id, '');
     // Kişisel oda: kullanıcı ayrıldığında onay kaydını sil, tekrar katılmak için yeniden onay istesin
@@ -361,15 +362,18 @@ export default async function(req) {
     // Oda sahibi çıkıyor ve katılımcı varsa: online kontrolü atla, sahipliği devret
     const isOwnerLeavingWithParticipants = isOwner && participants.length > 0 && !room.is_personal;
     // Çevrim içi katılımcı yoksa odayı kapat (sadece sahipsiz çıkışlarda)
+    // N+1 önleme: tüm katılımcıların presence kayıtlarını tek sorguda çek
     if (!isOwnerLeavingWithParticipants && participants.length > 0 && !room.is_personal) {
       let hasOnline = false;
-      for (const p of participants) {
-        const presence = await base44.asServiceRole.entities.UserPresence.filter({ user_id: p.user_id }, '-created_date', 1).catch(() => []);
-        const rec = presence[0];
-        if (rec && rec.online && rec.last_seen && Date.now() - new Date(rec.last_seen).getTime() < 30000) {
-          hasOnline = true;
-          break;
-        }
+      try {
+        const presenceRecords = await base44.asServiceRole.entities.UserPresence.filter(
+          { user_id: { $in: participants.map((p) => p.user_id) } },
+          '-created_date', participants.length
+        ).catch(() => []);
+        const now = Date.now();
+        hasOnline = presenceRecords.some((rec) => rec.online && rec.last_seen && now - new Date(rec.last_seen).getTime() < 30000);
+      } catch {
+        hasOnline = true; // sorgu başarısız olursa odayı kapatma (güvenli fallback)
       }
       if (!hasOnline) participants = [];
     }

@@ -37,8 +37,8 @@ export const AuthProvider = ({ children }) => {
       });
       
       try {
-        const publicSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
-        setAppPublicSettings(publicSettings);
+        const appSettings = await appClient.get(`/prod/public-settings/by-id/${appParams.appId}`);
+        setAppPublicSettings(appSettings);
 
         // Uygulama seviyesi ayarları yükle (bakım modu, kayıt izni, tema)
         try {

@@ -87,7 +87,8 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
     };
     refresh();
     const unsub = base44.entities.RoomTyping.subscribe((ev) => { if (ev.data?.room_id === roomId) refresh(); });
-    const poll = setInterval(refresh, 1000);
+    // Realtime zaten var; polling sadece fallback olarak 5sn'de bir (1sn çok sık)
+    const poll = setInterval(refresh, 5000);
     return () => { unsub(); clearInterval(poll); if (myTypingIdRef.current) { base44.entities.RoomTyping.delete(myTypingIdRef.current).catch(() => {}); myTypingIdRef.current = null; } };
   }, [roomId, user?.id]);
 

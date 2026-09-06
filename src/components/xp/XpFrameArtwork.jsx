@@ -1,7 +1,19 @@
 import XpFrameDecorations from '@/components/xp/XpFrameDecorations';
 
-export default function XpFrameArtwork({ type = 'starter', colors, glow, animated }) {
+// Admin tarafından yüklenen gerçek görsel varsa onu kullanır; yoksa SVG fallback çizer.
+export default function XpFrameArtwork({ type = 'starter', colors, glow, animated, imageUrl }) {
   const uid = `xp-${type}`;
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt=""
+        aria-hidden="true"
+        className={`w-full h-full object-contain ${animated ? 'xp-frame-asset' : ''}`}
+        style={{ pointerEvents: 'none' }}
+      />
+    );
+  }
   return (
     <svg viewBox="0 0 100 100" role="presentation" aria-hidden="true" className={`w-full h-full overflow-visible ${animated ? 'xp-frame-asset' : ''}`}>
       <defs>

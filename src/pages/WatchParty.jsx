@@ -278,7 +278,7 @@ export default function WatchParty() {
     }
   }, [room?.participants, user?.id]);
 
-  // Atılma tespiti yedeği — 3sn polling (realtime kaçırsa diye)
+  // Atılma tespiti yedeği — 15sn polling (realtime kaçırsa diye, düşük sıklık)
   useEffect(() => {
     if (!user || joinCount === 0 || !room || room.owner_id === user.id || ghostRef.current) return;
     const intervalId = setInterval(async () => {
@@ -295,7 +295,7 @@ export default function WatchParty() {
           navigate('/');
         }
       } catch {}
-    }, 3000);
+    }, 15000);
     return () => clearInterval(intervalId);
   }, [user?.id, room?.id, joinCount, isMod, ghostRef.current]);
 
@@ -305,19 +305,19 @@ export default function WatchParty() {
   useEffect(() => {
     if (!participantIdsKey) return;
     const ids = participantIdsKey.split(',');
-    Promise.all(ids.map((uid) => base44.functions.invoke('user-profile', { user_id: uid }).then((response) => response.data).catch(() => null)))
-      .then((profiles) => {
-        const map = {};
-        ids.forEach((uid, i) => { if (profiles[i]) map[uid] = profiles[i]; });
-        setViewerProfiles(map);
-      });
+    // N+1 önleme: tüm profilleri tek batch çağrısıyla getir
+    base44.functions.invoke('user-profile', { user_ids: ids })
+      .then((response) => { const map = response.data || {}; setViewerProfiles(map); })
+      .catch(() => { setViewerProfiles({}); });
   }, [participantIdsKey]);
 
   useEffect(() => {
     if (!participantIdsKey) return;
     const ids = participantIdsKey.split(',');
-    Promise.all(ids.map((uid) => base44.entities.UserPresence.filter({ user_id: uid }, '-created_date', 1).then((r) => [uid, r[0]]).catch(() => [uid, null])))
-      .then((entries) => { const map = {}; entries.forEach(([uid, rec]) => { if (rec) map[uid] = rec; }); setPresenceMap(map); });
+    // N+1 önleme: tek filter çağrısıyla tüm presence kayıtları
+    base44.entities.UserPresence.filter({ user_id: { $in: ids } }, '-created_date', ids.length)
+      .then((records) => { const map = {}; records.forEach((rec) => { if (rec) map[rec.user_id] = rec; }); setPresenceMap(map); })
+      .catch(() => {});
     const unsub = base44.entities.UserPresence.subscribe((ev) => {
       if (ev.type !== 'create' && ev.type !== 'update') return;
       if (!ids.includes(ev.data.user_id)) return;
