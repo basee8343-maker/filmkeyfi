@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import useFrameEditor from '@/hooks/useFrameEditor';
 import { useFrameCatalog } from '@/lib/FrameCatalogContext';
 import { useToast } from '@/components/ui/use-toast';
@@ -8,13 +8,14 @@ import EditorToolbar from './EditorToolbar';
 import SelectionPanel from './SelectionPanel';
 import EditorActions from './EditorActions';
 
-export default function MobileFrameEditor({ onClose, onSave, saveLabel = 'Kataloğa Kaydet', requireOpening = true, namePlaceholder = 'Çerçeve adı' }) {
+export default function MobileFrameEditor({ onClose, onSave, saveLabel = 'Kataloğa Kaydet', requireOpening = true, namePlaceholder = 'Çerçeve adı', existingFrame }) {
   const editor = useFrameEditor(), { refreshFrames } = useFrameCatalog(), { toast } = useToast(), [saving, setSaving] = useState(false);
+  useEffect(() => { if (existingFrame?.image_url) editor.loadFromUrl(existingFrame.image_url, existingFrame.name, existingFrame.opening).catch(() => toast({ title: 'Görsel yüklenemedi', variant: 'destructive' })); }, [existingFrame?.image_url]);
   const save = async () => {
     if (!editor.name.trim()) return toast({ title: 'Çerçeve adı gerekli', variant: 'destructive' });
     if (requireOpening && !editor.opening) return toast({ title: 'Önce profil alanını seçip şeffaflaştırın', variant: 'destructive' });
     setSaving(true);
-    try { const file = await editor.makeFile(); await onSave({ name: editor.name.trim(), file, opening: editor.opening }); await refreshFrames(); onClose(); }
+    try { const file = await editor.makeFile(); await onSave({ name: editor.name.trim(), file, opening: editor.opening, id: existingFrame?.id }); await refreshFrames(); onClose(); }
     catch (error) { toast({ title: 'Kaydedilemedi', description: error.message, variant: 'destructive' }); }
     finally { setSaving(false); }
   };

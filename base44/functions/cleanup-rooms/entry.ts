@@ -23,7 +23,7 @@ export default async function(req) {
       if (room.is_personal) continue; // Kişisel odaları kapatma
       const participants = room.participants || [];
       if (participants.length === 0) {
-        await base44.asServiceRole.entities.Room.update(room.id, { status: 'closed', is_playing: false });
+        await base44.asServiceRole.entities.Room.update(room.id, { status: 'closed', is_playing: false, recent_participants: [] });
         closedCount++;
         continue;
       }
@@ -40,7 +40,7 @@ export default async function(req) {
 
       if (onlineParticipantIds.length === 0) {
         // Çevrim içi kimse yok — odayı kapat
-        await base44.asServiceRole.entities.Room.update(room.id, { status: 'closed', is_playing: false });
+        await base44.asServiceRole.entities.Room.update(room.id, { status: 'closed', is_playing: false, recent_participants: [] });
         closedCount++;
       } else {
         // Oda sahibi çevrim dışı mı? Çevrim içi katılımcıya devret

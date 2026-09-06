@@ -8,6 +8,7 @@ export default function useFrameEditor() {
   const [softness, setSoftness] = useState(0), [feather, setFeather] = useState(1), [touch, setTouch] = useState(null), [applied, setApplied] = useState(false);
   const undoImage = useRef(null), lastBounds = useRef(null);
   const load = async (file) => { const next = await readPng(file); setImage(next); setSelection(new Uint8Array(next.width * next.height)); setName(file.name.replace(/\.[^.]+$/, '')); setZoom(1); setPan({ x: 0, y: 0 }); setApplied(false); };
+  const loadFromUrl = async (url, name, opening) => { const res = await fetch(url); const blob = await res.blob(); const file = new File([blob], (name || 'cerceve') + '.png', { type: blob.type || 'image/png' }); await load(file); if (opening) { lastBounds.current = opening; setApplied(true); } };
   const selectAt = (x, y) => {
     if (!image || !selection || tool === 'manual' || tool === 'eraser') return;
     const found = tool === 'color' ? colorSelection(image, x, y, tolerance) : connectedSelection(image, x, y, tolerance);
@@ -19,5 +20,5 @@ export default function useFrameEditor() {
   const undo = () => { if (!undoImage.current) return; setImage(undoImage.current); undoImage.current = null; setApplied(false); };
   const makeFile = () => imageDataFile(image, name);
   const resetSelection = () => selection && setSelection(new Uint8Array(selection.length));
-  return { image, selection, name, setName, tool, setTool, mode, setMode, tolerance, setTolerance, brush, setBrush, zoom, setZoom, pan, setPan, showMask, setShowMask, maskView, setMaskView, softness, setSoftness, feather, setFeather, touch, setTouch, applied, opening: lastBounds.current, load, selectAt, paintAt, resize, apply, undo, makeFile, resetSelection };
+  return { image, selection, name, setName, tool, setTool, mode, setMode, tolerance, setTolerance, brush, setBrush, zoom, setZoom, pan, setPan, showMask, setShowMask, maskView, setMaskView, softness, setSoftness, feather, setFeather, touch, setTouch, applied, opening: lastBounds.current, load, loadFromUrl, selectAt, paintAt, resize, apply, undo, makeFile, resetSelection };
 }

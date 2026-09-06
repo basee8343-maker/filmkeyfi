@@ -350,24 +350,32 @@ export default function WatchParty() {
 
   useEffect(() => {
     if (!user?.id) return;
-    let hiddenAt = null;
-    const onVisibilityChange = async () => {
-      if (!joinedRef.current) return;
-      if (document.visibilityState === 'hidden') {
-        hiddenAt = Date.now();
-      } else if (document.visibilityState === 'visible' && hiddenAt) {
-        const awayTime = Date.now() - hiddenAt;
-        hiddenAt = null;
-        if (awayTime > 60000) {
-          joinedRef.current = false;
-          try { await base44.functions.invoke('room-presence', { action: 'leave', room_id: id }); } catch {}
-          toast({ title: '1 dakikadan fazla çevrim dışı olduğunuz için odadan ayrıldınız', variant: 'destructive' });
-          navigate('/');
-        }
-      }
+    let kickTimer = null;
+    const startKick = () => {
+      if (!joinedRef.current || kickTimer) return;
+      kickTimer = setTimeout(async () => {
+        if (!joinedRef.current) return;
+        joinedRef.current = false;
+        try { await base44.functions.invoke('room-presence', { action: 'leave', room_id: id }); } catch {}
+        toast({ title: '1 dakika çevrim dışı olduğunuz için odadan ayrıldınız', variant: 'destructive' });
+        navigate('/');
+      }, 60000);
+    };
+    const cancelKick = () => { if (kickTimer) { clearTimeout(kickTimer); kickTimer = null; } };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' || !navigator.onLine) startKick();
+      else cancelKick();
     };
     document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('online', cancelKick);
+    window.addEventListener('offline', startKick);
+    if (document.visibilityState === 'hidden' || !navigator.onLine) startKick();
+    return () => {
+      cancelKick();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('online', cancelKick);
+      window.removeEventListener('offline', startKick);
+    };
   }, [user?.id, id, navigate]);
 
   const presenceMapRef = useRef({});
