@@ -154,10 +154,10 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     <div ref={containerRef} className="relative w-full h-full bg-black overflow-hidden group select-none"
       onMouseMove={showCtrl} onClick={showCtrl} onPointerDown={resumeAudio}
       style={{ touchAction: isOwner ? 'manipulation' : 'none' }}>
-      <video key={src} ref={videoRef} src={src} className="w-full h-full object-contain"
+      <video key={src} ref={videoRef} crossOrigin="anonymous" src={src} className="w-full h-full object-contain"
         onLoadedMetadata={onLoaded} onTimeUpdate={onTime} onPlay={handlePlay} onPause={handlePause}
         onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onEnded={onEnded}
-        crossOrigin="anonymous" preload="metadata" playsInline controls={false} disablePictureInPicture={!isOwner} />
+        preload="metadata" playsInline controls={false} disablePictureInPicture={!isOwner} />
 
       {buffering && <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}
       {audioError && <div className="absolute left-3 right-3 top-14 z-50 rounded-lg border border-amber-500/60 bg-black/90 px-3 py-2 text-center text-xs text-amber-300">Ses sistemi: {audioError} (native kontrol kullanılıyor)</div>}
@@ -190,9 +190,9 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
           <div
             className="relative z-[80] pointer-events-auto"
             onClick={(event) => event.stopPropagation()}
-            onPointerDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => { event.stopPropagation(); void resumeAudio(); }}
             onPointerUp={(event) => event.stopPropagation()}
-            onTouchStart={(event) => event.stopPropagation()}
+            onTouchStart={(event) => { event.stopPropagation(); void resumeAudio(); }}
             onTouchEnd={(event) => event.stopPropagation()}
           >
             <VolumeSlider volume={volume} muted={muted} disabled={!!audioError} onChange={setVolumePercent} onToggleMute={toggleMute} />

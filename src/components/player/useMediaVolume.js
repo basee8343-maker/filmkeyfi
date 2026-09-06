@@ -13,8 +13,15 @@ async function supportsMediaCors(video) {
   try { parsed = new URL(url, window.location.href); } catch { return true; }
   if (parsed.origin === window.location.origin) return true;
   try {
-    const response = await fetch(parsed.href, { method: 'HEAD', mode: 'cors', cache: 'no-store' });
-    return response.ok;
+    const response = await fetch(parsed.href, {
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-store',
+      headers: { Range: 'bytes=0-0' },
+    });
+    const allowed = response.ok || response.status === 206;
+    response.body?.cancel().catch(() => {});
+    return allowed;
   } catch {
     return false;
   }
@@ -63,6 +70,7 @@ export default function useMediaVolume(mediaRef, mediaKey) {
 
   const ensureAudioGraph = useCallback(() => {
     const video = mediaRef.current;
+    console.info('[VideoAudio] Video element bulundu:', !!video, '| iOS:', isIOS(), '| PWA:', isPWA(), '| GainNode:', !!gainRef.current);
     if (!video) return Promise.resolve(false);
     if (initPromiseRef.current) return initPromiseRef.current;
 
@@ -105,6 +113,8 @@ export default function useMediaVolume(mediaRef, mediaKey) {
         }
 
         if (context.state === 'suspended') await context.resume();
+        if (context.state !== 'running') throw new Error(`AudioContext başlatılamadı: ${context.state}`);
+        setAudioError(null);
         applyVolume();
         console.info('[VideoAudio] AudioContext state:', context.state,
           '| gain:', gainRef.current?.gain.value,
@@ -113,6 +123,7 @@ export default function useMediaVolume(mediaRef, mediaKey) {
           '| iOS:', isIOS(), '| PWA:', isPWA());
         return true;
       } catch (error) {
+        initPromiseRef.current = null;
         setAudioError(error?.message || String(error));
         console.error('[VideoAudio] Web Audio başlatılamadı:', error);
         // Web Audio başarısız: native fallback'e dön.
@@ -154,6 +165,7 @@ export default function useMediaVolume(mediaRef, mediaKey) {
   // ama AudioContext kapatılmaz. init promise sıfırlanır.
   useEffect(() => {
     initPromiseRef.current = null;
+    setAudioError(null);
     // src değişince eski source'u bırak; yeni video için yeniden bağlanacak.
     if (sourceRef.current) {
       try { sourceRef.current.disconnect(); } catch {}
