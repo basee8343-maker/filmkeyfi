@@ -25,7 +25,9 @@ function profileFrameMeta(user) {
   const automatic = frame.startsWith('lvl_');
   if (!frame || (!automatic && !user?.profile_frame_entrance_enabled)) return '';
   const scale = Math.min(130, Math.max(70, Math.floor(Number(user.profile_frame_scale) || 100)));
-  return `{{PFRAME|${frame}|${scale}}}`;
+  const panX = Math.max(-100, Math.min(100, Math.floor(Number(user.profile_avatar_x) || 0)));
+  const panY = Math.max(-100, Math.min(100, Math.floor(Number(user.profile_avatar_y) || 0)));
+  return `{{PFRAME|${frame}|${scale}|${panX}|${panY}}}`;
 }
 
 export default async function(req) {

@@ -35,7 +35,7 @@ export default function ProfileHeader({ user, pkg, expired, editing, avatar, onA
   return <header className="flex flex-col items-center text-center mb-6">
     <div className="relative mb-4">
       {user.profile_frame ? (
-        <ProfileFrame frame={user.profile_frame} size="lg" avatar={avatar || user.avatar} name={name} frameScale={zoom} />
+        <ProfileFrame frame={user.profile_frame} size="lg" avatar={avatar || user.avatar} name={name} frameScale={zoom} panX={user.profile_avatar_x} panY={user.profile_avatar_y} />
       ) : (
         <XpAvatar avatar={avatar || user.avatar} name={name} frame={xpStats?.frame} size="lg" />
       )}

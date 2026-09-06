@@ -8,7 +8,7 @@ export default async function(req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const body = await req.json();
-    let { username, phone, avatar, full_name, profile_frame, profile_frame_scale } = body || {};
+    let { username, phone, avatar, full_name, profile_frame, profile_frame_scale, profile_avatar_x, profile_avatar_y } = body || {};
 
     // Rate limit: 10 güncelleme / dakika
     const rl = await rateLimit(base44, 'profile:' + user.id, user.id, 10, 60000);
@@ -42,6 +42,14 @@ export default async function(req) {
     if (profile_frame_scale !== undefined) {
       const s = Number(profile_frame_scale);
       if (Number.isInteger(s) && s >= 80 && s <= 180) updates.profile_frame_scale = s;
+    }
+    if (profile_avatar_x !== undefined) {
+      const x = Number(profile_avatar_x);
+      if (Number.isInteger(x) && x >= -100 && x <= 100) updates.profile_avatar_x = x;
+    }
+    if (profile_avatar_y !== undefined) {
+      const y = Number(profile_avatar_y);
+      if (Number.isInteger(y) && y >= -100 && y <= 100) updates.profile_avatar_y = y;
     }
     // Moderator'ün full_name'i kilitli — backend seviyesinde değiştirilemez
     if (full_name !== undefined && me.role !== 'moderator') {
