@@ -68,11 +68,11 @@ export default function Profile() {
   return <div className="mx-auto max-w-3xl px-4 py-7 sm:px-6">
     <ProfileHeader user={user} pkg={pkg} expired={expired} avatar={form.avatar} onAvatar={onAvatar} onUpdated={reload} uploading={uploading} />
     <MembershipNotice user={user} expired={expired} onRenew={renew} />
-    <ProfileTabs active={tab} onChange={(nextTab) => { setTab(nextTab); navigate(nextTab === 'settings' ? '/profil?tab=settings' : '/profil', { replace: true }); }} />
+    <ProfileTabs active={tab} isAdmin={user.role === 'admin'} onChange={(nextTab) => { setTab(nextTab); navigate(nextTab === 'settings' ? '/profil?tab=settings' : '/profil', { replace: true }); }} />
     {tab === 'info' && <ProfileInfoCard user={user} pkg={pkg} editing={editing} form={form} setForm={setForm} onSave={save} onEdit={() => { setForm({ username: user.username || '', full_name: user.full_name || '', phone: user.phone || '', avatar: user.avatar || '' }); setEditing(true); }} onCancel={() => { setForm({ username: user.username || '', full_name: user.full_name || '', phone: user.phone || '', avatar: user.avatar || '' }); setEditing(false); }} onAvatar={onAvatar} uploading={uploading} saving={saving} />}
-    {tab === 'history' && <div>{historyMovies.length > 0 && <button onClick={clearHistory} className="mb-3 flex items-center gap-2 rounded-lg bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground"><Trash2 className="w-4 h-4" />Tümünü Sil</button>}<ProfileMovieGrid movies={historyMovies} empty="Henüz bir şey izlemediniz." /></div>}
-    {tab === 'list' && <ProfileMovieGrid movies={list} empty="Henüz listenize film eklemediniz." />}
-    {tab === 'favs' && <ProfileMovieGrid movies={favs} empty="Henüz favori yok." />}
+    {tab === 'history' && user.role !== 'admin' && <div>{historyMovies.length > 0 && <button onClick={clearHistory} className="mb-3 flex items-center gap-2 rounded-lg bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground"><Trash2 className="w-4 h-4" />Tümünü Sil</button>}<ProfileMovieGrid movies={historyMovies} empty="Henüz bir şey izlemediniz." /></div>}
+    {tab === 'list' && user.role !== 'admin' && <ProfileMovieGrid movies={list} empty="Henüz listenize film eklemediniz." />}
+    {tab === 'favs' && user.role !== 'admin' && <ProfileMovieGrid movies={favs} empty="Henüz favori yok." />}
     {tab === 'settings' && <ProfileSettings user={user} onUpdated={reload} />}
   </div>;
 }
