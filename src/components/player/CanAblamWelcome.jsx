@@ -41,7 +41,7 @@ export default function CanAblamWelcome({ onDone }) {
           <img
             src={SPLASH_IMAGE}
             alt="Can Ablam"
-            className="relative w-[32vw] max-w-[120px] h-auto object-contain"
+            className="relative w-[26vw] max-w-[95px] h-auto object-contain"
             style={{ filter: 'drop-shadow(0 0 16px rgba(255,23,68,0.5))', imageRendering: 'auto' }}
             draggable={false}
           />
