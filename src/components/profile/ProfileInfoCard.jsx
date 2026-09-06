@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { CalendarDays, Mail, Package, Phone, Settings, User, Users, Hash, Copy, Check } from 'lucide-react';
+import AvatarUploadField from '@/components/profile/AvatarUploadField';
 
-export default function ProfileInfoCard({ user, pkg, editing, form, setForm, onSave, onEdit, onCancel }) {
+export default function ProfileInfoCard({ user, pkg, editing, form, setForm, onSave, onEdit, onCancel, onAvatar, uploading, saving }) {
   const [copied, setCopied] = useState(false);
   const copyRef = () => {
     if (user?.payment_reference) {
@@ -11,10 +12,12 @@ export default function ProfileInfoCard({ user, pkg, editing, form, setForm, onS
     }
   };
   if (editing) return <section className="rounded-2xl border border-border bg-card p-5 space-y-4">
+    <AvatarUploadField avatar={form.avatar} name={form.username || form.full_name} uploading={uploading} onChange={onAvatar} />
     <Field label="Kullanıcı Adı" value={form.username} onChange={(username) => setForm({ ...form, username })} />
-    <Field label="Ad Soyad" value={form.full_name} onChange={(full_name) => setForm({ ...form, full_name })} disabled={user.role === 'moderator'} />
+    <Field label="Ad Soyad (hesap bilgisi)" value={form.full_name} disabled />
+    <p className="-mt-2 text-xs text-muted-foreground">Ad soyad hesap tarafından yönetilir; görünen adınızı Kullanıcı Adı alanından değiştirebilirsiniz.</p>
     <Field label="Telefon" value={form.phone} onChange={(phone) => setForm({ ...form, phone })} />
-    <div className="flex gap-2"><button onClick={onSave} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground">Kaydet</button><button onClick={onCancel} className="rounded-lg bg-secondary px-5 py-2.5 text-sm">İptal</button></div>
+    <div className="flex gap-2"><button onClick={onSave} disabled={saving || uploading} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? 'Kaydediliyor...' : 'Kaydet'}</button><button onClick={onCancel} disabled={saving || uploading} className="rounded-lg bg-secondary px-5 py-2.5 text-sm disabled:opacity-50">İptal</button></div>
   </section>;
   const rows = [
     [User, 'Kullanıcı Adı', user.username || '-'], [Users, 'Ad Soyad', user.full_name || '-'], [User, 'Üye No', user.member_id || '-'],
@@ -40,4 +43,4 @@ export default function ProfileInfoCard({ user, pkg, editing, form, setForm, onS
   </section>;
 }
 
-function Field({ label, value, onChange, disabled }) { return <label className="block text-sm text-muted-foreground">{label}<input value={value} onChange={(event) => onChange(event.target.value)} disabled={disabled} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2.5 text-foreground outline-none focus:ring-2 focus:ring-ring disabled:opacity-60" /></label>; }
+function Field({ label, value, onChange, disabled }) { return <label className="block text-sm text-muted-foreground">{label}<input value={value} onChange={(event) => onChange?.(event.target.value)} disabled={disabled} className="mt-1 w-full rounded-lg bg-secondary px-3 py-2.5 text-foreground outline-none focus:ring-2 focus:ring-ring disabled:opacity-60" /></label>; }
