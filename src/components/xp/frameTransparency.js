@@ -47,6 +47,42 @@ const frameCacheKey = (src, crop) => `v3|${src}|${crop ? `${crop.col},${crop.row
 export const getTransparentFrame = (src, crop) => resolvedCache.get(frameCacheKey(src, crop)) || '';
 export const getFrameMetrics = (src, crop) => metricsCache.get(frameCacheKey(src, crop)) || null;
 
+// Hazır çerçeveler için: açıklık koordinatlarını kullanarak orta daireyi şeffaf yap.
+// opening = [x, y, w, h] normalize (0-1) koordinatlar. Görsel boyutu değişmez, kırpılmaz.
+const preparedCacheKey = (src, opening) => `prep|${src}|${opening ? opening.join(',') : 'none'}`;
+const preparedCache = new Map();
+export const getPreparedTransparent = (src, opening) => preparedCache.get(preparedCacheKey(src, opening)) || '';
+export function makePreparedTransparent(src, opening) {
+  const cacheKey = preparedCacheKey(src, opening);
+  if (preparedCache.has(cacheKey)) return Promise.resolve(preparedCache.get(cacheKey));
+  const task = new Promise((resolve, reject) => {
+    const image = new window.Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(image, 0, 0);
+      if (opening) {
+        const cx = (opening[0] + opening[2] / 2) * canvas.width;
+        const cy = (opening[1] + opening[3] / 2) * canvas.height;
+        const r = (Math.min(opening[2], opening[3]) / 2) * Math.min(canvas.width, canvas.height) * 0.98;
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      resolve(canvas.toDataURL('image/png'));
+    };
+    image.onerror = reject;
+    image.src = src;
+  });
+  task.then((url) => preparedCache.set(cacheKey, url));
+  return task;
+}
+
 export function makeTransparentFrame(src, crop) {
   const cacheKey = frameCacheKey(src, crop);
   if (resolvedCache.has(cacheKey)) return Promise.resolve(resolvedCache.get(cacheKey));
