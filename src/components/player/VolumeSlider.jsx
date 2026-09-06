@@ -1,12 +1,12 @@
 import { Volume2, VolumeX } from 'lucide-react';
 
-export default function VolumeSlider({ volume, muted, onChange, onToggleMute }) {
+export default function VolumeSlider({ volume, muted, disabled = false, onChange, onToggleMute }) {
   const percent = muted ? 0 : Math.round(volume * 100);
   const stop = (event) => event.stopPropagation();
 
   return (
-    <div className="flex min-w-0 shrink-0 items-center gap-2" onClick={stop} onPointerDown={stop} onTouchStart={stop}>
-      <button type="button" onClick={onToggleMute} className="rounded-lg p-2 hover:bg-white/10" aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}>
+    <div className={`flex min-w-0 shrink-0 items-center gap-2 ${disabled ? 'opacity-50' : ''}`} onClick={stop} onPointerDown={stop} onTouchStart={stop}>
+      <button type="button" disabled={disabled} onClick={onToggleMute} className="rounded-lg p-2 hover:bg-white/10 disabled:cursor-not-allowed" aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}>
         {muted || percent === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
       </button>
       <input
@@ -15,6 +15,7 @@ export default function VolumeSlider({ volume, muted, onChange, onToggleMute }) 
         max="100"
         step="1"
         value={percent}
+        disabled={disabled}
         onInput={(event) => onChange(Number(event.currentTarget.value))}
         onChange={(event) => onChange(Number(event.currentTarget.value))}
         className="h-8 w-14 cursor-pointer accent-primary min-[390px]:w-20 landscape:w-24 sm:w-28"

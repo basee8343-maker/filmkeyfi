@@ -8,7 +8,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [playing, setPlaying] = useState(false);
-  const { volume, muted, setVolumePercent, toggleMute, applyCurrentVolume } = useMediaVolume(videoRef);
+  const { volume, muted, audioError, setVolumePercent, toggleMute, resumeAudio, applyCurrentVolume } = useMediaVolume(videoRef);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -26,9 +26,10 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     return h > 0 ? `${h}:${String(m % 60).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`;
   };
 
-  const togglePlay = useCallback(() => {
+  const togglePlay = useCallback(async () => {
     if (!isOwner) return;
     const v = videoRef.current; if (!v) return;
+    await resumeAudio();
     if (v.paused) {
       v.play().catch((error) => {
         if (error?.name !== 'AbortError') console.error('[Video] Oynatma başlatılamadı', error);
@@ -36,7 +37,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
     } else {
       v.pause();
     }
-  }, [isOwner]);
+  }, [isOwner, resumeAudio]);
 
   const seekTo = useCallback((t) => {
     const v = videoRef.current; if (!v) return;
@@ -151,7 +152,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-black overflow-hidden group select-none"
-      onMouseMove={showCtrl} onClick={showCtrl}
+      onMouseMove={showCtrl} onClick={showCtrl} onPointerDown={resumeAudio}
       style={{ touchAction: isOwner ? 'manipulation' : 'none' }}>
       <video ref={videoRef} src={src} className="w-full h-full object-contain"
         onLoadedMetadata={onLoaded} onTimeUpdate={onTime} onPlay={handlePlay} onPause={handlePause}
@@ -159,6 +160,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
         crossOrigin="anonymous" preload="metadata" playsInline controls={false} disablePictureInPicture={!isOwner} />
 
       {buffering && <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}
+      {audioError && <div className="absolute left-3 right-3 top-14 z-50 rounded-lg border border-destructive/60 bg-black/90 px-3 py-2 text-center text-xs text-destructive">Ses kontrolü başlatılamadı: {audioError}</div>}
 
       {isOwner && !playing && !buffering && (
         <button onClick={togglePlay} className="absolute inset-0 flex items-center justify-center">
@@ -185,7 +187,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
           {isOwner && <button onClick={togglePlay} className="p-2 hover:bg-white/10 rounded-lg">{playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}</button>}
           {isOwner && <button onClick={() => skip(-10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn geri"><Rewind className="w-5 h-5" /></button>}
           {isOwner && <button onClick={() => skip(10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn ileri"><FastForward className="w-5 h-5" /></button>}
-          <VolumeSlider volume={volume} muted={muted} onChange={setVolumePercent} onToggleMute={toggleMute} />
+          <VolumeSlider volume={volume} muted={muted} disabled={!!audioError} onChange={setVolumePercent} onToggleMute={toggleMute} />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             {isOwner && (
               <div className="relative">
