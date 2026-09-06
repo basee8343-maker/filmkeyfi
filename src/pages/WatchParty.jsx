@@ -16,7 +16,6 @@ import RoomSettingsMenu from '@/components/player/RoomSettingsMenu';
 import LiveKitDebugPanel from '@/components/player/LiveKitDebugPanel';
 import RoomDirectMessages from '@/components/player/RoomDirectMessages';
 import RoomNotifications from '@/components/player/RoomNotifications';
-import RoleEntrance from '@/components/player/RoleEntrance';
 import MoviePickerSheet from '@/components/player/MoviePickerSheet';
 import RoleBadge from '@/components/RoleBadge';
 import ProfileFrame from '@/components/ProfileFrame';
@@ -119,10 +118,21 @@ export default function WatchParty() {
   // Oda adını düzenleme alanını odadan başlat
   useEffect(() => { setRoomNameEdit(room?.name || ''); }, [room?.name]);
 
-  // Yönetici odaya girince karşılama görseli göster
+  // Yönetici odaya girince karşılama görselini tüm kullanıcılara göster
   useEffect(() => {
-    if (joinCount > 0 && user?.role === 'admin') setShowAdminWelcome(true);
-  }, [joinCount, user?.role]);
+    base44.entities.RoomMessage.filter({ room_id: id }, '-created_date', 20)
+      .then((items) => {
+        const recent = items.find((m) => (m.text || '').includes('{{ADMIN_WELCOME}}') && Date.now() - new Date(m.created_date).getTime() < 10000);
+        if (recent) setShowAdminWelcome(true);
+      })
+      .catch(() => {});
+    const unsub = base44.entities.RoomMessage.subscribe((ev) => {
+      if (ev.type === 'create' && ev.data?.room_id === id && (ev.data?.text || '').includes('{{ADMIN_WELCOME}}')) {
+        setShowAdminWelcome(true);
+      }
+    });
+    return unsub;
+  }, [id]);
 
   // Kişisel oda: film yoksa sadece oda sahibine otomatik film seçme panelini aç
   useEffect(() => {
@@ -637,7 +647,6 @@ export default function WatchParty() {
       {/* Tam ekran video + alt kontrol alanı */}
       <div ref={playerWrapRef} className="flex-1 flex min-h-0 relative" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <RoomNotifications participants={room?.participants || []} currentUserId={user?.id} profiles={viewerProfiles} />
-        {user?.role !== 'admin' && <RoleEntrance userId={user?.id} roomId={id} joinTrigger={joinCount} />}
         {joinRequests.length > 0 && (
           <div className="absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] space-y-1.5 max-w-[80%]">
             {joinRequests.map((req) => (

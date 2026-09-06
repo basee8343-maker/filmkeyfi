@@ -246,7 +246,7 @@ export default function ChatOverlay({ roomId, chatEnabled, isOwner, isAdmin, onC
       <div ref={scrollRef} className="flex min-w-0 flex-1 min-h-0 flex-col gap-3 overflow-x-hidden overflow-y-auto overscroll-contain p-3 bg-black" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
         {loading ? <p className="text-center text-sm text-[#888] py-8">Yükleniyor...</p> :
          messages.length === 0 ? <p className="text-center text-sm text-[#888] py-8">Henüz mesaj yok. İlk mesajı sen at! 🍿</p> :
-         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { const lower = (m.text || '').toLowerCase(); const frame = parseFrameMetadata(m.text); const hasRoleEntry = !!frame.frameId || parseRoleMetadata(frame.rest).hasRole; if (lower.includes('katıldı')) return hasRoleEntry; if (lower.includes('ayrıldı') || lower.includes('moderatör')) return false; } return true; }).map((m) => (
+         messages.filter((m) => m.type === 'system' || !blockedUsers.includes(m.user_id)).filter((m) => { if (m.type === 'system') { if ((m.text || '').includes('{{ADMIN_WELCOME}}')) return false; const lower = (m.text || '').toLowerCase(); const frame = parseFrameMetadata(m.text); const hasRoleEntry = !!frame.frameId || parseRoleMetadata(frame.rest).hasRole; if (lower.includes('katıldı')) return hasRoleEntry; if (lower.includes('ayrıldı') || lower.includes('moderatör')) return false; } return true; }).map((m) => (
             <div key={m.id} className={`flex w-full min-w-0 shrink-0 gap-2 group ${m.type === 'system' ? 'justify-center' : ''}`}>
               {m.type === 'system' ? (
                 (() => {
