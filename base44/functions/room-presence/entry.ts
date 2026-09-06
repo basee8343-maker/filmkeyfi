@@ -133,18 +133,18 @@ export default async function(req) {
           text: `${profileMeta}${frameMeta}${roleMeta}${titlePrefix}${entryName}odaya katıldı.`, type: 'system'
         });
       }
-      // Yönetici girişinde tüm kullanıcılara karşılama görseli göster
-      if (isAdmin) {
-        await base44.asServiceRole.entities.RoomMessage.create({
-          room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
-          text: '{{ADMIN_WELCOME}}', type: 'system'
-        });
-      }
       // Can Ablam rolündeki kullanıcı girince kalpli karşılama görseli göster
+      // (yönetici bile olsa bu rol varsa sadece kalp efektini göster)
       if (me.display_role === 'can_ablam') {
         await base44.asServiceRole.entities.RoomMessage.create({
           room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
           text: '{{CAN_ABLAM_WELCOME}}', type: 'system'
+        });
+      } else if (isAdmin) {
+        // Yönetici girişinde tüm kullanıcılara ateş efektli karşılama göster
+        await base44.asServiceRole.entities.RoomMessage.create({
+          room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
+          text: '{{ADMIN_WELCOME}}', type: 'system'
         });
       }
       await updatePresenceRoom(base44, user.id, room_id);
