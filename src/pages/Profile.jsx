@@ -47,8 +47,15 @@ export default function Profile() {
     if (!file) return;
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) return toast({ title: 'PNG, JPG veya WebP seçin', variant: 'destructive' });
     setUploading(true);
-    try { const { file_url } = await base44.integrations.Core.UploadFile({ file }); setForm((current) => ({ ...current, avatar: file_url })); toast({ title: 'Fotoğraf yüklendi', description: 'Değişikliği uygulamak için Kaydet’e dokunun.' }); }
-    catch { toast({ title: 'Yükleme hatası', variant: 'destructive' }); }
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const { data } = await base44.functions.invoke('update-profile', { avatar: file_url });
+      if (!data?.ok || data.profile?.id !== user.id) throw new Error(data?.error || 'Fotoğraf kaydedilemedi.');
+      setForm((current) => ({ ...current, avatar: file_url }));
+      setUser((current) => ({ ...current, avatar: file_url }));
+      toast({ title: 'Profil fotoğrafı güncellendi' });
+    }
+    catch (error) { toast({ title: 'Yükleme hatası', description: error.response?.data?.error || error.message, variant: 'destructive' }); }
     finally { setUploading(false); event.target.value = ''; }
   };
   const clearHistory = async () => { await base44.entities.WatchHistory.deleteMany({ user_id: user.id }); setHistoryMovies([]); toast({ title: 'İzleme geçmişi temizlendi' }); };
@@ -56,7 +63,7 @@ export default function Profile() {
   if (!user) return <div className="p-6">Yükleniyor...</div>;
   const expired = user.membership_end && new Date(user.membership_end) < new Date();
   return <div className="mx-auto max-w-3xl px-4 py-7 sm:px-6">
-    <ProfileHeader user={user} pkg={pkg} expired={expired} editing={editing} avatar={form.avatar} onAvatar={onAvatar} onUpdated={reload} />
+    <ProfileHeader user={user} pkg={pkg} expired={expired} avatar={form.avatar} onAvatar={onAvatar} onUpdated={reload} uploading={uploading} />
     <MembershipNotice user={user} expired={expired} onRenew={renew} />
     <ProfileTabs active={tab} onChange={(nextTab) => { setTab(nextTab); navigate(nextTab === 'settings' ? '/profil?tab=settings' : '/profil', { replace: true }); }} />
     {tab === 'info' && <ProfileInfoCard user={user} pkg={pkg} editing={editing} form={form} setForm={setForm} onSave={save} onEdit={() => { setForm({ username: user.username || '', full_name: user.full_name || '', phone: user.phone || '', avatar: user.avatar || '' }); setEditing(true); }} onCancel={() => { setForm({ username: user.username || '', full_name: user.full_name || '', phone: user.phone || '', avatar: user.avatar || '' }); setEditing(false); }} onAvatar={onAvatar} uploading={uploading} saving={saving} />}

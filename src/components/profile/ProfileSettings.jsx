@@ -7,6 +7,7 @@ import LocationSharing from '@/components/profile/LocationSharing';
 import ProfileFrames from '@/components/profile/ProfileFrames';
 import AvatarPositioner from '@/components/profile/AvatarPositioner';
 import FrameEntranceToggle from '@/components/profile/FrameEntranceToggle';
+import XpFrameSelector from '@/components/profile/XpFrameSelector';
 
 export default function ProfileSettings({ user, onUpdated }) {
   const { toast } = useToast(); const [saving, setSaving] = useState(false); const [form, setForm] = useState({ current: '', next: '', confirm: '' });
@@ -22,6 +23,7 @@ export default function ProfileSettings({ user, onUpdated }) {
     finally { setSaving(false); }
   };
   return <div className="space-y-5">
+    <XpFrameSelector user={user} />
     <ProfileFrames user={user} onUpdated={onUpdated} />
     {user.profile_frame && <AvatarPositioner user={user} onSaved={onUpdated} />}
     {user.profile_frame && <FrameEntranceToggle user={user} onSaved={onUpdated} />}

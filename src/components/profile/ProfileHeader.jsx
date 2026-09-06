@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Camera, Crown, LogOut, Minus, Plus } from 'lucide-react';
+import { Camera, Crown, Loader2, LogOut, Minus, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Image } from '@/components/ui/image';
@@ -13,7 +13,7 @@ import XpAvatar from '@/components/xp/XpAvatar';
 import { daysInApp } from '@/lib/xp';
 import { useToast } from '@/components/ui/use-toast';
 
-export default function ProfileHeader({ user, pkg, expired, editing, avatar, onAvatar, onUpdated }) {
+export default function ProfileHeader({ user, pkg, expired, avatar, onAvatar, onUpdated, uploading }) {
   const { toast } = useToast();
   const [zoom, setZoom] = useState(user.profile_frame_scale || 100);
   const [zoomSaving, setZoomSaving] = useState(false);
@@ -39,7 +39,10 @@ export default function ProfileHeader({ user, pkg, expired, editing, avatar, onA
       ) : (
         <XpAvatar avatar={avatar || user.avatar} name={name} frame={xpStats?.frame} size="lg" />
       )}
-      {editing && <label className="absolute right-1 bottom-1 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer z-10"><Camera className="w-5 h-5" /><input type="file" accept="image/*" className="hidden" onChange={onAvatar} /></label>}
+      <label className="absolute bottom-1 right-1 z-20 flex h-11 w-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
+        {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+        <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={uploading} onChange={onAvatar} />
+      </label>
     </div>
     {user.profile_frame && (
       <div className="mb-3 flex items-center gap-2">

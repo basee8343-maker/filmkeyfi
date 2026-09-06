@@ -16,7 +16,7 @@ export default function AvatarUploadField({ avatar, name, uploading, onChange })
           <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={uploading} onChange={onChange} />
         </label>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">PNG, JPG veya WebP seçin; ardından Kaydet'e dokunun.</p>
+      <p className="mt-2 text-xs text-muted-foreground">PNG, JPG veya WebP seçin; fotoğrafınız anında kaydedilir.</p>
     </div>
   );
 }

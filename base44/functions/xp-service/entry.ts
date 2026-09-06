@@ -22,6 +22,21 @@ export default async function (req) {
       return Response.json({ settings, frames });
     }
 
+    if (action === 'select_frame') {
+      const row = await ensureUserXp(base44, user.id, user.username || user.full_name);
+      const frameId = String(body.frame_id || '');
+      if (!frameId) {
+        const updated = await base44.asServiceRole.entities.UserXp.update(row.id, { manual_frame_id: '' });
+        return Response.json({ user_xp: updated });
+      }
+      const frame = await base44.asServiceRole.entities.XpFrame.get(frameId).catch(() => null);
+      if (!frame || frame.active === false || (frame.min_xp || 0) > Math.max(0, num(row.xp))) {
+        return Response.json({ error: 'Bu XP çerçevesi henüz açık değil.' }, { status: 403 });
+      }
+      const updated = await base44.asServiceRole.entities.UserXp.update(row.id, { manual_frame_id: frameId });
+      return Response.json({ user_xp: updated });
+    }
+
     const me = await base44.asServiceRole.entities.User.get(user.id);
     if (me.role !== 'admin') return Response.json({ error: 'yetkisiz' }, { status: 403 });
 
