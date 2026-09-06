@@ -12,6 +12,9 @@ async function supportsMediaCors(video) {
   let parsed;
   try { parsed = new URL(url, window.location.href); } catch { return true; }
   if (parsed.origin === window.location.origin) return true;
+  // Base44 public media already sends CORS headers. Older iOS Safari can
+  // falsely reject the Range probe, so do not block Web Audio for this host.
+  if (parsed.hostname === 'base44.app' || parsed.hostname.endsWith('.base44.app') || parsed.hostname === 'media.base44.com') return true;
   try {
     const response = await fetch(parsed.href, {
       method: 'GET',
