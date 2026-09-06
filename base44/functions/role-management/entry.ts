@@ -141,12 +141,19 @@ export default async function(req) {
     }
 
     if (action === 'set_frame_display') {
-      const scale = Number(body.scale);
-      if (!Number.isInteger(scale) || scale < 80 || scale > 180) return Response.json({ error: 'Yakınlaştırma 80–180 arasında olmalıdır.' }, { status: 400 });
-      const entranceEnabled = !!body.entrance_enabled;
-      await base44.asServiceRole.entities.User.update(user_id, { profile_frame_scale: scale, profile_frame_entrance_enabled: entranceEnabled });
-      await base44.asServiceRole.entities.AdminLog.create({ admin_id: me.id, admin_name: adminName, action: 'Çerçeve görünümü güncellendi', target: target.email || user_id, details: `%${scale} · giriş ${entranceEnabled ? 'açık' : 'kapalı'}` }).catch(() => {});
-      return Response.json({ ok: true, scale, entrance_enabled: entranceEnabled });
+      const updates: any = {};
+      if (body.scale !== undefined) {
+        const scale = Number(body.scale);
+        if (!Number.isInteger(scale) || scale < 80 || scale > 180) return Response.json({ error: 'Yakınlaştırma 80–180 arasında olmalıdır.' }, { status: 400 });
+        updates.profile_frame_scale = scale;
+      }
+      if (body.entrance_enabled !== undefined) {
+        updates.profile_frame_entrance_enabled = !!body.entrance_enabled;
+      }
+      if (Object.keys(updates).length === 0) return Response.json({ error: 'güncellenecek alan yok' }, { status: 400 });
+      await base44.asServiceRole.entities.User.update(user_id, updates);
+      await base44.asServiceRole.entities.AdminLog.create({ admin_id: me.id, admin_name: adminName, action: 'Çerçeve görünümü güncellendi', target: target.email || user_id, details: Object.entries(updates).map(([k, v]) => `${k}: ${v}`).join(' · ') }).catch(() => {});
+      return Response.json({ ok: true, ...updates });
     }
 
     if (action === 'ban_user') {

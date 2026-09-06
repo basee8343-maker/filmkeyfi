@@ -33,7 +33,7 @@ export default function ProfileFrame({ frame, children, size = 'md', className =
   return (
     <div className={`relative shrink-0 overflow-visible ${frameInfo.sprite ? dims.sprite : dims.avatar} ${className}`} title={frameInfo.label}>
       <div className={`relative mx-auto ${dims.avatar}`}>
-        <div className="absolute inset-0 overflow-hidden rounded-full bg-background" style={{ transform: `scale(${avatarScale}) translate(${px}%, ${py}%)` }}>
+        <div className="absolute inset-0 overflow-hidden rounded-full" style={{ transform: `scale(${avatarScale}) translate(${px}%, ${py}%)` }}>
           {avatar
             ? <Image src={avatar} className="h-full w-full object-cover object-center" fittingType="fill" focalPointX={0.5} focalPointY={0.5} />
             : <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-white">{(name || '?')[0]}</span>}

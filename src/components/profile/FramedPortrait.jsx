@@ -12,7 +12,7 @@ export default function FramedPortrait({ info, avatar, name, size = 'md', classN
   const px = Math.max(-100, Math.min(100, Number(panX) || 0));
   const py = Math.max(-100, Math.min(100, Number(panY) || 0));
   return <div className={`relative isolate shrink-0 ${SIZES[size] || SIZES.md} ${className}`} title={info.label}>
-    <div className="absolute z-0 overflow-hidden rounded-full bg-background" style={{ left: `${left * 100}%`, top: `${top * 100}%`, width: `${diameter * 100}%`, height: `${diameter * 100}%` }}>
+    <div className="absolute z-0 overflow-hidden rounded-full" style={{ left: `${left * 100}%`, top: `${top * 100}%`, width: `${diameter * 100}%`, height: `${diameter * 100}%` }}>
       <div className="h-full w-full" style={{ transform: `scale(${zoom / 100}) translate(${px}%, ${py}%)` }}>
         {avatar ? <Image src={avatar} alt={name || 'Profil fotoğrafı'} className="h-full w-full object-cover object-center" fittingType="fill" focalPointX={0.5} focalPointY={0.5} />
           : <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-primary-foreground">{(name || '?')[0]}</span>}
