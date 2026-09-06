@@ -119,10 +119,10 @@ export default function WatchParty() {
   // Oda adını düzenleme alanını odadan başlat
   useEffect(() => { setRoomNameEdit(room?.name || ''); }, [room?.name]);
 
-  // Yönetici odaya girince karşılama görseli göster
+  // Odaya girince karşılama görseli göster (tüm kullanıcılar)
   useEffect(() => {
-    if (joinCount > 0 && user?.role === 'admin') setShowAdminWelcome(true);
-  }, [joinCount, user?.role]);
+    if (joinCount > 0) setShowAdminWelcome(true);
+  }, [joinCount]);
 
   // Kişisel oda: film yoksa sadece oda sahibine otomatik film seçme panelini aç
   useEffect(() => {
@@ -637,7 +637,7 @@ export default function WatchParty() {
       {/* Tam ekran video + alt kontrol alanı */}
       <div ref={playerWrapRef} className="flex-1 flex min-h-0 relative" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <RoomNotifications participants={room?.participants || []} currentUserId={user?.id} profiles={viewerProfiles} />
-        <RoleEntrance userId={user?.id} roomId={id} joinTrigger={joinCount} />
+        {user?.role !== 'admin' && <RoleEntrance userId={user?.id} roomId={id} joinTrigger={joinCount} />}
         {joinRequests.length > 0 && (
           <div className="absolute top-[max(env(safe-area-inset-top),3.5rem)] left-3 z-[65] space-y-1.5 max-w-[80%]">
             {joinRequests.map((req) => (
