@@ -11,7 +11,14 @@ export default async function(req) {
     // Kullanıcının kişisel odası var mı kontrol et
     const existing = await base44.asServiceRole.entities.Room.filter({
       is_personal: true, owner_id: user.id, status: 'active'
-    }, '-created_date', 1).catch(() => []);
+    }, '-created_date', 10).catch(() => []);
+
+    // Tek kişisel oda kuralı: fazlası varsa kapat
+    if (existing.length > 1) {
+      await Promise.all(existing.slice(1).map((r) =>
+        base44.asServiceRole.entities.Room.update(r.id, { status: 'closed', is_playing: false, recent_participants: [] }).catch(() => {})
+      ));
+    }
 
     if (existing[0]) {
       // Eski odada kod yoksa ekle

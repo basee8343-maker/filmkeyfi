@@ -15,6 +15,7 @@ export default function CreateRoom() {
   const [nameEdited, setNameEdited] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [opening, setOpening] = useState(false);
 
   useEffect(() => {
     base44.entities.Movie.filter({ published: true }, '-views', 100).then(setMovies).catch(() => {});
@@ -39,12 +40,14 @@ export default function CreateRoom() {
   };
 
   const openMyRoom = async () => {
+    if (opening) return;
+    setOpening(true);
     try {
       const res = await base44.functions.invoke('personal-room', {});
       navigate(`/oda/${res.data.id}`);
     } catch (e) {
       toast({ title: 'Oda açılamadı', description: e.response?.data?.error || e.message, variant: 'destructive' });
-    }
+    } finally { setOpening(false); }
   };
 
   const inputCls = "w-full bg-[#16161e] rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-purple-500/40 border border-white/5 placeholder:text-gray-500";
@@ -69,8 +72,8 @@ export default function CreateRoom() {
             <p className="text-sm text-gray-400">Arkadaşlarınla birlikte izlemek için bir Watch Party odası oluştur.</p>
           </div>
         </div>
-        <button onClick={openMyRoom} className="relative mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white active:scale-95 transition-transform" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>
-          <Home className="w-5 h-5" /> Kendi Odamı Aç
+        <button onClick={openMyRoom} disabled={opening} className="relative mt-4 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-white active:scale-95 transition-transform disabled:opacity-60" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>
+          <Home className="w-5 h-5" /> {opening ? 'Açılıyor...' : 'Kendi Odamı Aç'}
         </button>
       </div>
 
