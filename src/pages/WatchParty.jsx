@@ -28,6 +28,7 @@ import RoomLevelBadge from '@/components/levels/RoomLevelBadge';
 import XpAvatar from '@/components/xp/XpAvatar';
 import UserProfile from '@/pages/UserProfile';
 import SubscriptionPrompt from '@/components/SubscriptionPrompt';
+import AdminRoomWelcome from '@/components/admin/AdminWelcomeSplash';
 
 export default function WatchParty() {
   const { id } = useParams();
@@ -74,6 +75,7 @@ export default function WatchParty() {
   const [autoDeleteMinutes, setAutoDeleteMinutes] = useState(0);
 
   const [roomNameEdit, setRoomNameEdit] = useState('');
+  const [showAdminWelcome, setShowAdminWelcome] = useState(false);
   const profileTarget = new URLSearchParams(location.search).get('profile');
   const openUserProfile = (userId) => {
     if (!userId) return;
@@ -116,6 +118,11 @@ export default function WatchParty() {
 
   // Oda adını düzenleme alanını odadan başlat
   useEffect(() => { setRoomNameEdit(room?.name || ''); }, [room?.name]);
+
+  // Yönetici odaya girince karşılama görseli göster
+  useEffect(() => {
+    if (joinCount > 0 && user?.role === 'admin') setShowAdminWelcome(true);
+  }, [joinCount, user?.role]);
 
   // Kişisel oda: film yoksa sadece oda sahibine otomatik film seçme panelini aç
   useEffect(() => {
@@ -729,6 +736,7 @@ export default function WatchParty() {
       />
 
       <MoviePickerSheet open={moviePickerOpen} onClose={() => setMoviePickerOpen(false)} onSelect={changeMovie} currentMovieId={movie?.id} />
+      {showAdminWelcome && <AdminRoomWelcome onDone={() => setShowAdminWelcome(false)} />}
       {profileTarget && <UserProfile userId={profileTarget} roomIdOverride={id} onBack={closeUserProfile} onMessage={(userId) => { closeUserProfile(); openDirectMessage(userId); }} embedded />}
     </div>
   );
