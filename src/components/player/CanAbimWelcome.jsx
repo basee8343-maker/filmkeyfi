@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Image } from '@/components/ui/image';
 import LightningStrike from '@/components/player/LightningStrike';
 
-const SPLASH_IMAGE = 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/281563236_generated_image.png';
+const SPLASH_IMAGE = 'https://base44.app/api/apps/6a77d66e4da6de214628ee62/files/mp/public/6a77d66e4da6de214628ee62/1f6e23d7c_can-abim-gercek-seffaf.png';
 
 export default function CanAbimWelcome({ onDone }) {
   const [exiting, setExiting] = useState(false);
@@ -18,7 +18,7 @@ export default function CanAbimWelcome({ onDone }) {
       <LightningStrike side="bottom" />
       <button type="button" onClick={dismiss} className="pointer-events-auto relative z-10 border-0 bg-transparent p-0" aria-label="Karşılamayı kapat">
         <div className="absolute inset-2 rounded-full bg-blue-500/25 blur-3xl animate-pulse" />
-        <Image src={SPLASH_IMAGE} alt="Can Abim - Kral Turgay" originWidth={1024} originHeight={1536} className="relative w-[76vw] max-w-[340px] animate-[can-abim-pop_.8s_cubic-bezier(.34,1.56,.64,1)]" fittingType="fit" draggable={false} />
+        <Image src={SPLASH_IMAGE} alt="Can Abim - Kral Turgay" originWidth={1024} originHeight={1024} className="relative w-[76vw] max-w-[340px] animate-[can-abim-pop_.8s_cubic-bezier(.34,1.56,.64,1)]" fittingType="fit" draggable={false} />
       </button>
       <style>{`
         @keyframes can-abim-fade { from { opacity: 0 } to { opacity: 1 } }
