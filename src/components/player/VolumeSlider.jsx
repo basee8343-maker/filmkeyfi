@@ -1,12 +1,30 @@
 import { Volume2, VolumeX } from 'lucide-react';
 
-export default function VolumeSlider({ volume, muted, disabled = false, onChange, onToggleMute }) {
+export default function VolumeSlider({ volume, muted, onChange, onToggleMute }) {
   const percent = muted ? 0 : Math.round(volume * 100);
   const stop = (event) => event.stopPropagation();
+  const mute = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onToggleMute();
+  };
+  const finishTouch = (event) => {
+    event.stopPropagation();
+    if (event.target?.type === 'range') event.preventDefault();
+  };
+  const change = (event) => {
+    event.stopPropagation();
+    onChange(Number(event.currentTarget.value));
+  };
 
   return (
-    <div className={`flex min-w-0 shrink-0 items-center gap-2 ${disabled ? 'opacity-50' : ''}`} onClick={stop} onPointerDown={stop} onTouchStart={stop}>
-      <button type="button" disabled={disabled} onClick={onToggleMute} className="rounded-lg p-2 hover:bg-white/10 disabled:cursor-not-allowed" aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}>
+    <div
+      className="relative z-[70] isolate flex min-w-0 shrink-0 items-center gap-2 pointer-events-auto"
+      onClick={stop} onDoubleClick={stop} onMouseDown={stop} onMouseUp={stop}
+      onPointerDown={stop} onPointerUp={stop} onPointerCancel={stop}
+      onTouchStart={stop} onTouchMove={stop} onTouchEnd={finishTouch} onTouchCancel={stop}
+    >
+      <button type="button" onClick={mute} onTouchEnd={mute} className="rounded-lg p-2 hover:bg-white/10" aria-label={muted ? 'Sesi aç' : 'Sesi kapat'}>
         {muted || percent === 0 ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
       </button>
       <input
@@ -15,10 +33,8 @@ export default function VolumeSlider({ volume, muted, disabled = false, onChange
         max="100"
         step="1"
         value={percent}
-        disabled={disabled}
-        onInput={(event) => onChange(Number(event.currentTarget.value))}
-        onChange={(event) => onChange(Number(event.currentTarget.value))}
-        className="h-8 w-14 cursor-pointer accent-primary min-[390px]:w-20 landscape:w-24 sm:w-28"
+        onInput={change}
+        className="relative z-[71] h-8 w-14 cursor-pointer accent-primary pointer-events-auto min-[390px]:w-20 landscape:w-24 sm:w-28"
         style={{ touchAction: 'none' }}
         aria-label="Ses seviyesi"
         aria-valuetext={`%${percent}`}

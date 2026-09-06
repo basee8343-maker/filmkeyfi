@@ -8,7 +8,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
   const videoRef = useRef(null);
   const containerRef = useRef(null);
   const [playing, setPlaying] = useState(false);
-  const { volume, muted, audioError, setVolumePercent, toggleMute, resumeAudio, applyCurrentVolume } = useMediaVolume(videoRef);
+  const { volume, muted, setVolumePercent, toggleMute, resumeAudio, applyCurrentVolume } = useMediaVolume(videoRef, src);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -152,15 +152,14 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-black overflow-hidden group select-none"
-      onMouseMove={showCtrl} onClick={showCtrl} onPointerDown={resumeAudio}
+      onMouseMove={showCtrl} onClick={showCtrl}
       style={{ touchAction: isOwner ? 'manipulation' : 'none' }}>
-      <video ref={videoRef} src={src} className="w-full h-full object-contain"
+      <video key={src} ref={videoRef} src={src} className="w-full h-full object-contain"
         onLoadedMetadata={onLoaded} onTimeUpdate={onTime} onPlay={handlePlay} onPause={handlePause}
         onWaiting={() => setBuffering(true)} onPlaying={() => setBuffering(false)} onEnded={onEnded}
         crossOrigin="anonymous" preload="metadata" playsInline controls={false} disablePictureInPicture={!isOwner} />
 
       {buffering && <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}
-      {audioError && <div className="absolute left-3 right-3 top-14 z-50 rounded-lg border border-destructive/60 bg-black/90 px-3 py-2 text-center text-xs text-destructive">Ses kontrolü başlatılamadı: {audioError}</div>}
 
       {isOwner && !playing && !buffering && (
         <button onClick={togglePlay} className="absolute inset-0 flex items-center justify-center">
@@ -187,7 +186,7 @@ export default function VideoPlayer({ src, title, onTimeUpdate, onPlayPause, onS
           {isOwner && <button onClick={togglePlay} className="p-2 hover:bg-white/10 rounded-lg">{playing ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}</button>}
           {isOwner && <button onClick={() => skip(-10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn geri"><Rewind className="w-5 h-5" /></button>}
           {isOwner && <button onClick={() => skip(10)} className="p-2 hover:bg-white/10 rounded-lg" title="10 sn ileri"><FastForward className="w-5 h-5" /></button>}
-          <VolumeSlider volume={volume} muted={muted} disabled={!!audioError} onChange={setVolumePercent} onToggleMute={toggleMute} />
+          <VolumeSlider volume={volume} muted={muted} onChange={setVolumePercent} onToggleMute={toggleMute} />
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             {isOwner && (
               <div className="relative">
