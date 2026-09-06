@@ -8,7 +8,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import { useTheme } from '@/lib/ThemeContext';
 import { Image } from '@/components/ui/image';
 import AdminNotifBell from '@/components/admin/AdminNotifBell';
-import AdminQuickWidget from '@/components/admin/AdminQuickWidget';
+import LiveChatButton from '@/components/layout/LiveChatButton';
 
 const SIDEBAR_BG = '#111116';
 const SIDEBAR_TEXT = '#e0e0e0';
@@ -193,6 +193,7 @@ export default function AdminLayout() {
           <button onClick={() => setOpen(true)}><Menu className="w-6 h-6 text-white" /></button>
           <span className="ml-1 hidden min-[390px]:block font-bold text-white whitespace-nowrap">Admin Panel</span>
           <div className="ml-auto flex min-w-0 items-center gap-1">
+            <LiveChatButton />
             <ThemeToggle />
             <AdminNotifBell notifGranted={notifGranted} />
             <div className="flex shrink-0 items-center gap-1 rounded-lg bg-[#16161e] p-1">
@@ -207,6 +208,7 @@ export default function AdminLayout() {
         <header className="hidden lg:flex sticky top-0 z-20 border-b border-purple-500/10 h-14 items-center px-6 bg-[#111116]/95 backdrop-blur">
           <span className="font-bold text-white">Admin Panel</span>
           <div className="ml-auto flex items-center gap-3">
+            <LiveChatButton />
             <ThemeToggle />
             <AdminNotifBell notifGranted={notifGranted} />
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#16161e]">
@@ -223,7 +225,6 @@ export default function AdminLayout() {
           <Outlet />
         </div>
       </div>
-      <AdminQuickWidget />
     </div>
   );
 }

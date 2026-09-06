@@ -5,7 +5,6 @@ import Hero from '@/components/movie/Hero';
 import ContentRow from '@/components/movie/ContentRow';
 import CategoryRow from '@/components/movie/CategoryRow';
 import { SkeletonRow } from '@/components/movie/EmptyState';
-import AdminQuickWidget from '@/components/admin/AdminQuickWidget';
 
 
 export default function Home() {
@@ -57,7 +56,6 @@ export default function Home() {
           </>
         )}
       </div>
-      {user?.role === 'admin' && <AdminQuickWidget />}
     </div>
   );
 }
