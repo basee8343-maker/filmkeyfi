@@ -53,7 +53,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     if (track.kind !== Track.Kind.Audio) return;
     if ([...audioElementsRef.current].some((element) => element.dataset.livekitTrack === track.sid)) return;
     const element = track.attach();
-    element.autoplay = false;
+    element.autoplay = true;
     element.playsInline = true;
     element.setAttribute('playsinline', 'true');
     element.dataset.livekitVoice = roomId;
@@ -62,8 +62,15 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     element.muted = deafenedRef.current;
     document.body.appendChild(element);
     audioElementsRef.current.add(element);
-    setAudioBlocked(true);
-    setError('🔊 Sesi başlatmak için ekrana dokunun.');
+    // Anında oynatmayı dene — önceki etkileşim ses bağlamını açtıysa ses anında çalar.
+    roomRef.current?.startAudio().catch(() => {});
+    element.play().then(() => {
+      setAudioBlocked(false);
+      setError('');
+    }).catch(() => {
+      setAudioBlocked(true);
+      setError('🔊 Sesi başlatmak için ekrana dokunun.');
+    });
     refreshState();
   }, [refreshState, roomId]);
 
@@ -125,6 +132,8 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
         if (cancelled) return;
         setConnectionState('connected');
         setError('');
+        // Bağlantı kurulur kurulmaz ses çalmayı dene — önceki etkileşim açtıysa anında çalışır.
+        room.startAudio().catch(() => {});
         setAudioBlocked(!room.canPlaybackAudio);
         refreshState();
       } catch (connectError) {
