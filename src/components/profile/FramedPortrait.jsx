@@ -1,8 +1,10 @@
 import { Image } from '@/components/ui/image';
+import TransparentFrameImage from '@/components/xp/TransparentFrameImage';
 
 const SIZES = { xs: 'h-12 w-12 text-[10px]', sm: 'h-[4.25rem] w-[4.25rem] text-xs', md: 'h-20 w-20 text-sm', lg: 'h-56 w-56 text-3xl' };
 
 // Çerçeve sabit kalır; `scale` profil fotoğrafını yakınlaştırır, `panX`/`panY` kaydırır.
+// Çerçeve görseli TransparentFrameImage ile işlenir — ortası tam şeffaf olur.
 export default function FramedPortrait({ info, avatar, name, size = 'md', className = '', scale = 100, panX = 0, panY = 0 }) {
   const [x, y, width, height] = info.opening;
   const diameter = Math.min(width, height);
@@ -18,6 +20,6 @@ export default function FramedPortrait({ info, avatar, name, size = 'md', classN
           : <span className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary to-accent font-bold text-primary-foreground">{(name || '?')[0]}</span>}
       </div>
     </div>
-    <Image src={info.image_url} alt={info.label} fittingType="fit" className="pointer-events-none absolute inset-0 z-[1] h-full w-full object-contain" />
+    <div className="pointer-events-none absolute inset-0 z-[1] h-full w-full"><TransparentFrameImage src={info.image_url} crop={info.sprite} animated={false} /></div>
   </div>;
 }
