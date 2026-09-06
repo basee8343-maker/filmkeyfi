@@ -15,7 +15,7 @@ export default function ProfileFrameEntrance({ frame, avatar, name, scale, panX,
         <ProfileFrame frame={frame} avatar={avatar} name={name} size="sm" frameScale={scale} panX={panX} panY={panY} />
       </div>
       <div className="mt-2 max-w-[85vw] rounded-lg border-2 border-red-400 bg-red-600 px-3 py-1.5 text-center shadow-[0_4px_14px_rgba(0,0,0,0.5)]">
-        <p className="truncate text-sm font-bold text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.7)' }}>{hideName ? (isEntry ? 'odaya katıldı' : 'odadan ayrıldı') : `${name} ${isEntry ? 'odaya katıldı' : 'odadan ayrıldı'}`}</p>
+        <p className="truncate text-sm font-bold text-white" style={{ textShadow: '0 1px 3px rgba(0,0,0,0.7)' }}>{hideName ? (isEntry ? 'katıldı' : 'ayrıldı') : `${name} ${isEntry ? 'katıldı' : 'ayrıldı'}`}</p>
       </div>
     </div>
   );
