@@ -10,6 +10,6 @@ export default function RoomLevelBadge({ level, profile = false, textOnly = fals
   const value = Math.min(1000, Math.max(1, Math.floor(Number(level) || 1)));
   return <span data-level-tier={getRoomLevelTier(value)} data-level-motion={value % 8} className={`room-level-badge relative isolate inline-flex max-w-full shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-lg border font-bold leading-none ${profile ? 'room-level-profile px-4 py-2.5 text-base' : 'px-2 py-1.5 text-[10px]'}`} aria-label={`Seviye ${value}${value === 1000 ? ', maksimum seviye' : ''}`}>
     {value === 1000 && !textOnly && <Crown className="h-4 w-4 shrink-0" aria-hidden="true" />}
-    <span className="relative">LVL {value}</span>{value === 1000 && <small className="relative text-[9px]">MAX</small>}
+    {value === 1000 ? <span className="relative">LVL MAX</span> : <span className="relative">LVL {value}</span>}
   </span>;
 }
