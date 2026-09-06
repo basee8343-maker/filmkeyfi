@@ -50,7 +50,7 @@ export default async function(req) {
       return Response.json({ room });
     }
 
-    const me = await base44.asServiceRole.entities.User.get(user.id);
+    const me = await base44.entities.User.get(user.id);
     const isAdmin = me.role === 'admin';
     const isMod = isModerator(me);
     const isOwner = room.owner_id === user.id;
