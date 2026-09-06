@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const SPLASH_IMAGE = 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/e09237fa8_generated_image.png';
+const SPLASH_IMAGE = 'https://base44.app/api/apps/6a77d66e4da6de214628ee62/files/mp/public/6a77d66e4da6de214628ee62/827016e04_can-abim-ellipse-clean.png';
 
 /**
  * Can Abim (KRAL TURGAY) odaya girince play tuşunun üstünde, filmi kapatmadan
