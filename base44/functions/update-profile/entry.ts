@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sanitizeText, validateUrl, rateLimit, safeErrorResponse } from '../../shared/security.ts';
-import { FRAME_DEFINITIONS } from '../../shared/roles.ts';
+import { resolveProfileFrame } from '../../shared/profileFrames.ts';
 
 export default async function(req) {
   try {
@@ -36,7 +36,8 @@ export default async function(req) {
     if (profile_frame !== undefined) {
       const frame = String(profile_frame || '');
       const unlocked = me.unlocked_profile_frames || [];
-      if (frame && (!FRAME_DEFINITIONS[frame] || !unlocked.includes(frame))) return Response.json({ error: 'Bu çerçeve hesabınızda açık değil.' }, { status: 403 });
+      const frameDef = await resolveProfileFrame(base44, frame);
+      if (frame && (!frameDef || !unlocked.includes(frame))) return Response.json({ error: 'Bu çerçeve hesabınızda açık değil.' }, { status: 403 });
       updates.profile_frame = frame;
     }
     if (profile_frame_scale !== undefined) {

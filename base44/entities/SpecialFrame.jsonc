@@ -8,6 +8,22 @@
     "image_url": {
       "type": "string"
     },
+    "opening": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "minItems": 4,
+      "maxItems": 4,
+      "default": [
+        0.24,
+        0.24,
+        0.52,
+        0.52
+      ]
+    },
     "theme_color": {
       "type": "string",
       "default": "#ff4500"

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FRAME_DEFINITIONS } from '@/lib/roles';
+import { useFrameCatalog } from '@/lib/FrameCatalogContext';
 import { Image } from '@/components/ui/image';
 import TransparentFrameImage from '@/components/xp/TransparentFrameImage';
 import FramedPortrait from '@/components/profile/FramedPortrait';
@@ -13,7 +13,8 @@ const SIZES = {
 
 export default function ProfileFrame({ frame, children, size = 'md', className = '', avatar, name, frameScale = 100, panX = 0, panY = 0 }) {
   const [frameMetrics, setFrameMetrics] = useState(null);
-  const frameInfo = FRAME_DEFINITIONS[frame];
+  const { frames } = useFrameCatalog();
+  const frameInfo = frames[frame];
   const dims = SIZES[size] || SIZES.md;
   if (frameInfo?.prepared) return <FramedPortrait info={frameInfo} avatar={avatar} name={name} size={size} className={className} scale={frameScale} panX={panX} panY={panY} />;
   if (!frame || !frameInfo?.image_url) return children || (

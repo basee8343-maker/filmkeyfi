@@ -3,10 +3,12 @@ import FramePicker from '@/components/admin/FramePicker';
 import confetti from 'canvas-confetti';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
-import { ROLE_DEFINITIONS, FRAME_DEFINITIONS, BAN_REASONS, getRoleInfo, NAME_EFFECT_OPTIONS, MSG_EFFECT_OPTIONS } from '@/lib/roles';
+import { ROLE_DEFINITIONS, BAN_REASONS, getRoleInfo, NAME_EFFECT_OPTIONS, MSG_EFFECT_OPTIONS } from '@/lib/roles';
+import { useFrameCatalog } from '@/lib/FrameCatalogContext';
 
 export default function RoleFrameManager({ user, onUpdated }) {
   const { toast } = useToast();
+  const { frames } = useFrameCatalog();
   const [showBan, setShowBan] = useState(false);
   const [banReason, setBanReason] = useState('');
   const [banDesc, setBanDesc] = useState('');
@@ -32,7 +34,7 @@ export default function RoleFrameManager({ user, onUpdated }) {
   const assignFrame = async (frame, duration_days = 0, entrance_enabled = false) => {
     try {
       await base44.functions.invoke('role-management', { action: 'assign_frame', user_id: user.id, frame, duration_days, entrance_enabled });
-      toast({ title: frame ? 'Çerçeve atandı' : 'Çerçeve kaldırıldı', description: FRAME_DEFINITIONS[frame]?.label || '' });
+      toast({ title: frame ? 'Çerçeve atandı' : 'Çerçeve kaldırıldı', description: frames[frame]?.label || '' });
       onUpdated();
       return true;
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); return false; }
@@ -42,7 +44,7 @@ export default function RoleFrameManager({ user, onUpdated }) {
     setRemoving(true);
     try {
       await base44.functions.invoke('role-management', { action: 'remove_frame', user_id: user.id });
-      toast({ title: 'Çerçeve geri alındı', description: user.profile_frame ? FRAME_DEFINITIONS[user.profile_frame]?.label || '' : '' });
+      toast({ title: 'Çerçeve geri alındı', description: user.profile_frame ? frames[user.profile_frame]?.label || '' : '' });
       onUpdated();
     } catch (e) { toast({ title: 'İşlem başarısız', description: e.response?.data?.error || e.message, variant: 'destructive' }); }
     finally { setRemoving(false); }

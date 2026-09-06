@@ -13,6 +13,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import { ThemeProvider } from '@/lib/ThemeContext';
 import RoomLevelProvider from '@/components/levels/RoomLevelProvider';
 import XpProvider from '@/components/xp/XpProvider';
+import { FrameCatalogProvider } from '@/lib/FrameCatalogContext';
 import { Navigate } from 'react-router-dom';
 
 const Home = lazy(() => import('@/pages/Home'));
@@ -150,6 +151,7 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
+        <FrameCatalogProvider>
         <RoomLevelProvider>
         <XpProvider>
         <ThemeProvider>
@@ -161,6 +163,7 @@ function App() {
         </ThemeProvider>
         </XpProvider>
         </RoomLevelProvider>
+        </FrameCatalogProvider>
       </QueryClientProvider>
     </AuthProvider>
   )

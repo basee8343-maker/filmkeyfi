@@ -3,6 +3,7 @@ import { safeErrorResponse, logSecurity } from '../../shared/security.ts';
 import { isSiteOwner, FRAME_DEFINITIONS, ROLE_DEFINITIONS } from '../../shared/roles.ts';
 import { upsertNotification } from '../../shared/upsertNotification.ts';
 import { setRoomLevel, validRoomLevel } from '../../shared/roomLevels.ts';
+import { resolveProfileFrame } from '../../shared/profileFrames.ts';
 
 async function removeFromAllRooms(base44, userId, userName) {
   const rooms = await base44.asServiceRole.entities.Room.filter({ status: 'active' }, '-created_date', 200).catch(() => []);
@@ -92,7 +93,8 @@ export default async function(req) {
 
     if (action === 'assign_frame') {
       const { frame, duration_days, entrance_enabled } = body;
-      if (!FRAME_DEFINITIONS[frame] && frame !== '') return Response.json({ error: 'geçersiz çerçeve' }, { status: 400 });
+      const frameDef = await resolveProfileFrame(base44, frame || '');
+      if (!frameDef) return Response.json({ error: 'geçersiz çerçeve' }, { status: 400 });
       const unlocked = frame ? [...new Set([...(target.unlocked_profile_frames || []), frame])] : (target.unlocked_profile_frames || []);
       const updates: any = { profile_frame: frame, unlocked_profile_frames: unlocked, profile_frame_expires_at: null };
       let dd = 0;
@@ -113,7 +115,7 @@ export default async function(req) {
         details: (frame || 'çerçeve kaldırıldı') + expiryNote
       }).catch(() => {});
       if (frame) {
-        const fi = FRAME_DEFINITIONS[frame];
+        const fi = frameDef;
         if (fi) {
           await upsertNotification(base44, {
             user_id, title: `🖼️ Yeni Çerçeveniz: ${fi.label}`,

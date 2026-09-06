@@ -1,17 +1,18 @@
 import { useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
-import { FRAME_DEFINITIONS } from '@/lib/roles';
+import { useFrameCatalog } from '@/lib/FrameCatalogContext';
 import { Image } from '@/components/ui/image';
-import TransparentFrameImage from '@/components/xp/TransparentFrameImage';
+import PreparedFrameImage from '@/components/xp/PreparedFrameImage';
 import { Minus, Plus, Upload, Save, RotateCcw, Move } from 'lucide-react';
 
 // Profil fotoğrafını çerçeve içinde sürükleyerek kaydırma ve yakınlaştırma aracı.
 // `targetUserId` verilirse admin modu (başka kullanıcının profilini düzenler), yoksa kendi profili.
 export default function AvatarPositioner({ user, targetUserId, onSaved }) {
   const { toast } = useToast();
+  const { frames } = useFrameCatalog();
   const frame = user.profile_frame;
-  const info = frame ? FRAME_DEFINITIONS[frame] : null;
+  const info = frame ? frames[frame] : null;
   const isAdmin = !!targetUserId && targetUserId !== user?.id;
   const [avatar, setAvatar] = useState(user.avatar || '');
   const [scale, setScale] = useState(user.profile_frame_scale || 100);
@@ -74,7 +75,7 @@ export default function AvatarPositioner({ user, targetUserId, onSaved }) {
           {avatar ? <div className="h-full w-full" style={{ transform: `scale(${scale / 100}) translate(${panX}%, ${panY}%)` }}><Image src={avatar} alt="Profil" className="h-full w-full object-cover" fittingType="fill" /></div>
           : <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">Fotoğraf yok</div>}
         </div>
-        <div className="pointer-events-none absolute inset-0"><TransparentFrameImage src={info.image_url} crop={info.sprite} animated={false} /></div>
+        <div className="pointer-events-none absolute inset-0"><PreparedFrameImage src={info.image_url} opening={info.opening} /></div>
       </div>
       <div className="w-full max-w-xs space-y-3">
         <label className="flex items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-secondary/30 px-4 py-3 text-sm font-semibold cursor-pointer">
