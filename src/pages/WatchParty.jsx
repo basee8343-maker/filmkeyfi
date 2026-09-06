@@ -168,7 +168,6 @@ export default function WatchParty() {
             base44.functions.invoke('room-presence', { action: 'join', room_id: id })
               .then((r) => {
                 joinedRef.current = true; setVoiceReady(true);
-                navigator.mediaDevices?.getUserMedia({ audio: true }).catch(() => {});
                 setJoinCount((c) => c + 1);
                 if (r.data?.ghost) ghostRef.current = true;
               })
@@ -184,7 +183,6 @@ export default function WatchParty() {
       .then((res) => {
         joinedRef.current = true;
         setVoiceReady(true);
-        navigator.mediaDevices?.getUserMedia({ audio: true }).catch(() => {});
         setJoinCount((c) => c + 1);
         if (res.data?.ghost) ghostRef.current = true;
       })

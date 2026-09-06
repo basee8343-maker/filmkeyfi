@@ -14,7 +14,6 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   const audioElementsRef = useRef(new Set());
   const mutedByModeratorRef = useRef(false);
   const deafenedRef = useRef(false);
-  const autoMicRoomRef = useRef(null);
   const [active, setActive] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [deafened, setDeafened] = useState(false);
@@ -54,7 +53,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     if (track.kind !== Track.Kind.Audio) return;
     if ([...audioElementsRef.current].some((element) => element.dataset.livekitTrack === track.sid)) return;
     const element = track.attach();
-    element.autoplay = true;
+    element.autoplay = false;
     element.playsInline = true;
     element.setAttribute('playsinline', 'true');
     element.dataset.livekitVoice = roomId;
@@ -63,11 +62,8 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     element.muted = deafenedRef.current;
     document.body.appendChild(element);
     audioElementsRef.current.add(element);
-    element.play().then(() => setAudioBlocked(false)).catch((playError) => {
-      console.warn('[LiveKit] Remote audio autoplay blocked', playError);
-      setAudioBlocked(true);
-      setError('🔊 Ses başlatılamadı. Ekrana dokunarak tekrar deneyin.');
-    });
+    setAudioBlocked(true);
+    setError('🔊 Sesi başlatmak için ekrana dokunun.');
     refreshState();
   }, [refreshState, roomId]);
 
@@ -129,7 +125,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
         if (cancelled) return;
         setConnectionState('connected');
         setError('');
-        room.startAudio().catch(() => setAudioBlocked(true));
+        setAudioBlocked(!room.canPlaybackAudio);
         refreshState();
       } catch (connectError) {
         console.error('[LiveKit] Connection failed', connectError);
@@ -140,13 +136,9 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     // Mikrofon izninden bağımsız olarak her kullanıcı etkileşiminde uzak sesi hazır tut.
     // Dinleyici kalıcıdır; sonradan yayınlanan sesler de sayfa değiştirmeden başlar.
     const startAudioOnInteraction = () => { retryAudio(); };
-    const startAudioWhenVisible = () => {
-      if (document.visibilityState === 'visible') retryAudio();
-    };
     document.addEventListener('pointerdown', startAudioOnInteraction, { passive: true });
     document.addEventListener('touchend', startAudioOnInteraction, { passive: true });
     document.addEventListener('keydown', startAudioOnInteraction);
-    document.addEventListener('visibilitychange', startAudioWhenVisible);
 
     return () => {
       cancelled = true;
@@ -159,7 +151,6 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       document.removeEventListener('pointerdown', startAudioOnInteraction);
       document.removeEventListener('touchend', startAudioOnInteraction);
       document.removeEventListener('keydown', startAudioOnInteraction);
-      document.removeEventListener('visibilitychange', startAudioWhenVisible);
       setActive(false);
       setSpeakingIds([]);
       setParticipantMicStates({});
@@ -167,25 +158,6 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
       setDebug(initialDebug);
     };
   }, [attachRemoteAudio, refreshState, retryAudio, roomId, user?.id, everVoiceEnabled]);
-
-  // Odaya ilk bağlantıda izin kabul edilirse mikrofonu otomatik aç; reddedilse bile uzak sesleri dinlet.
-  useEffect(() => {
-    const room = roomRef.current;
-    if (!room || connectionState !== 'connected' || !everVoiceEnabled) return;
-    if (!voiceEnabled) {
-      room.localParticipant.setMicrophoneEnabled(false).then(refreshState).catch(() => {});
-      return;
-    }
-    if (autoMicRoomRef.current === roomId) return;
-    autoMicRoomRef.current = roomId;
-    room.localParticipant.setMicrophoneEnabled(true, { echoCancellation: true, noiseSuppression: true, autoGainControl: true })
-      .then(refreshState)
-      .catch(async (micError) => {
-        await retryAudio();
-        setError(friendlyMicError(micError));
-        refreshState();
-      });
-  }, [voiceEnabled, connectionState, everVoiceEnabled, refreshState, retryAudio, roomId]);
 
   useEffect(() => {
     const moderatorMuted = !!participants?.find((participant) => participant.user_id === user?.id)?.muted;
