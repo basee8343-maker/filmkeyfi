@@ -28,10 +28,10 @@ export default function MoviePickerSheet({ open, onClose, onSelect, currentMovie
             onClick={onClose}
           />
           <motion.div
-            initial={{ y: '-100%' }}
+            initial={{ y: '-105%' }}
             animate={{ y: 0 }}
-            exit={{ y: '-100%' }}
-            transition={{ type: 'spring', damping: 32, stiffness: 320 }}
+            exit={{ y: '-105%' }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={0.15}
