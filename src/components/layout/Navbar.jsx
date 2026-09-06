@@ -3,6 +3,8 @@ import { Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import ProfileDropdown from '@/components/layout/ProfileDropdown';
 import SearchSuggestions from '@/components/search/SearchSuggestions';
+import LiveChatButton from '@/components/layout/LiveChatButton';
+import { useCurrentUser } from '@/lib/useCurrentUser';
 
 const links = [
   { label: 'Ana Sayfa', path: '/' },
@@ -16,6 +18,7 @@ const links = [
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useCurrentUser();
   const [q, setQ] = useState('');
 
   useEffect(() => {
@@ -66,6 +69,7 @@ export default function Navbar() {
           </form>
 
         <div className="flex items-center gap-2 ml-auto md:ml-2">
+          {user?.role === 'admin' && <LiveChatButton />}
           <ProfileDropdown />
         </div>
       </div>
