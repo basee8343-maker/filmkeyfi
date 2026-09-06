@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimit, safeErrorResponse, logSecurity } from '../../shared/security.ts';
 import { isModerator, isSiteOwner, immuneToModeration, getRoleInfo, getRoleLabelOverrides, getSpecialFrameInfo } from '../../shared/roles.ts';
 import { upsertNotification } from '../../shared/upsertNotification.ts';
+import { hasActiveMembership } from '../../shared/membership.ts';
 
 async function sha256Hex(salt, pw) {
   const data = new TextEncoder().encode(salt + pw);
@@ -41,7 +42,7 @@ export default async function(req) {
       return Response.json({ error: 'invalid request' }, { status: 400 });
     }
     const name = user.username || user.full_name || 'Kullanıcı';
-    const room = await base44.asServiceRole.entities.Room.get(room_id);
+    const room = await base44.asServiceRole.entities.Room.get(room_id).catch(() => null);
     if (!room) return Response.json({ error: 'oda bulunamadı' }, { status: 404 });
     if (room.status === 'closed') return Response.json({ error: 'closed' }, { status: 403 });
 
@@ -59,17 +60,15 @@ export default async function(req) {
     const ghost = isAdmin && !isOwner && !hasVisibleRole;
     const labelOverrides = await getRoleLabelOverrides(base44);
 
+    if ((action === 'join' || action === 'request-join') && !hasActiveMembership(me)) {
+      await logSecurity(base44, 'room_join_denied', user, 'membership inactive', 'warning');
+      return Response.json({ error: 'aktif üyelik gerekli' }, { status: 403 });
+    }
+
     if (action === 'join') {
       // Rate limit: 10 katılım / dakika / kullanıcı
       const rlJoin = await rateLimit(base44, 'room-join:' + user.id, user.id, 10, 60000);
       if (!rlJoin.allowed) return Response.json({ error: 'çok hızlı katılım denemesi' }, { status: 429 });
-      if (me.membership_status !== 'active' && !isMod) {
-        await base44.asServiceRole.entities.SecurityLog.create({
-          action: 'room_join_denied', user_id: user.id, user_email: user.email,
-          detail: 'membership inactive', level: 'warning'
-        });
-        return Response.json({ error: 'üyelik aktif değil' }, { status: 403 });
-      }
       if (!isOwner) {
         const blockedRelations = await base44.asServiceRole.entities.Friendship.filter({
           $or: [

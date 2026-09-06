@@ -16,9 +16,7 @@ import { triggerBanNotice } from '@/lib/banNotice';
 import { useToast } from '@/components/ui/use-toast';
 import MessageRealtimeProvider from '@/components/messages/MessageRealtimeProvider';
 import RoutePreloader from '@/components/layout/RoutePreloader';
-
-// Abonelik gerektirmeyen sayfalar
-const EXEMPT_PATHS = ['/abonelik', '/destek', '/bildirimler', '/odeme', '/güvenlik-protokolü', '/bakim'];
+import { isBasicPath } from '@/lib/access';
 
 export default function AppLayout() {
   const { pathname } = useLocation();
@@ -45,8 +43,7 @@ export default function AppLayout() {
     if (membershipActive(user)) return;
     const paymentAvailable = publicSettings?.payment_available !== false;
     const target = paymentAvailable ? '/abonelik' : '/onay-bekleniyor';
-    const exemptPaths = paymentAvailable ? EXEMPT_PATHS : [...EXEMPT_PATHS, '/onay-bekleniyor'];
-    const isExempt = exemptPaths.some((p) => pathname.startsWith(p)) || pathname.startsWith('/admin') || pathname.startsWith('/kullanici');
+    const isExempt = isBasicPath(pathname) || pathname.startsWith('/admin') || (!paymentAvailable && pathname.startsWith('/onay-bekleniyor'));
     if (!isExempt && pathname !== target) {
       navigate(target, { replace: true });
     }

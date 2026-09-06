@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { sanitizeText, rateLimit, safeErrorResponse, logSecurity } from '../../shared/security.ts';
+import { hasActiveMembership } from '../../shared/membership.ts';
 
 async function sha256Hex(salt, pw) {
   const data = new TextEncoder().encode(salt + pw);
@@ -23,6 +24,7 @@ export default async function(req) {
 
     // Admin rate limit'ten muaf
     const me = await base44.asServiceRole.entities.User.get(user.id).catch(() => null);
+    if (!hasActiveMembership(me)) return Response.json({ error: 'aktif üyelik gerekli' }, { status: 403 });
     const isAdmin = me?.role === 'admin';
     if (!isAdmin) {
       const rl = await rateLimit(base44, 'create-room:' + user.id, user.id, 5, 600000);

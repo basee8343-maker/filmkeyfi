@@ -17,10 +17,10 @@ export default function OpenRooms() {
 
   const fetchOwners = async (rs) => {
     const ids = [...new Set(rs.map((r) => r.owner_id).filter(Boolean))];
-    const profiles = await Promise.all(ids.map((uid) => base44.functions.invoke('user-profile', { user_id: uid }).catch(() => null)));
-    const map = {};
-    profiles.forEach((p, i) => { if (p) map[ids[i]] = p; });
-    setOwners((prev) => ({ ...prev, ...map }));
+    if (!ids.length) return;
+    const response = await base44.functions.invoke('user-profile', { user_ids: ids }).catch(() => null);
+    const profiles = response?.data?.data || response?.data || {};
+    setOwners((prev) => ({ ...prev, ...profiles }));
   };
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export default function OpenRooms() {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-white truncate">{r.name}</p>
           <div className="flex items-center gap-1.5 mt-1">
-            {o?.avatar ? <img src={o.avatar} className="w-4 h-4 rounded-full object-cover" alt="" /> : <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #db2777)' }}>{(r.owner_name || '?')[0]}</span>}
+            {o?.avatar ? <Image src={o.avatar} className="w-4 h-4 rounded-full overflow-hidden" fittingType="fill" alt="" /> : <span className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #db2777)' }}>{(r.owner_name || '?')[0]}</span>}
             <span className="text-xs text-gray-400 truncate">{r.owner_name || o?.username || 'Kullanıcı'}</span>
           </div>
           <div className="flex flex-wrap gap-1.5 mt-2">

@@ -27,6 +27,7 @@ import useRoomLevels from '@/hooks/useRoomLevels';
 import RoomLevelBadge from '@/components/levels/RoomLevelBadge';
 import XpAvatar from '@/components/xp/XpAvatar';
 import UserProfile from '@/pages/UserProfile';
+import SubscriptionPrompt from '@/components/SubscriptionPrompt';
 
 export default function WatchParty() {
   const { id } = useParams();
@@ -87,11 +88,14 @@ export default function WatchParty() {
     navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true });
   };
   const [presenceMap, setPresenceMap] = useState({});
+  const hasMembership = membershipActive(user);
   const isOwner = user?.id === room?.owner_id;
   const isMod = user?.role === 'admin' || user?.role === 'moderator';
   const canMod = isOwner || isMod || (room?.room_moderators || []).includes(user?.id);
 
   useEffect(() => {
+    if (ul || !user) return;
+    if (!hasMembership) { setLoading(false); return; }
     base44.functions.invoke('room-presence', { action: 'get', room_id: id })
       .then((res) => {
         const r = res.data?.room;
@@ -101,7 +105,7 @@ export default function WatchParty() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [id]);
+  }, [id, ul, user?.id, hasMembership]);
 
   // Film değiştiğinde yeni filmi yükle (ilk yükleme dahil)
   useEffect(() => {
@@ -121,7 +125,7 @@ export default function WatchParty() {
   }, [room?.is_personal, room?.movie_id, joinCount, user?.id]);
 
   useEffect(() => {
-    if (!user || !room || joinedRef.current) return;
+    if (!user || !hasMembership || !room || joinedRef.current) return;
     if (room.password && room.owner_id !== user.id && !isModerator(user) && !room.participants?.some((p) => p.user_id === user.id)) {
       setNeedPassword(true);
       return;
@@ -307,7 +311,7 @@ export default function WatchParty() {
     const ids = participantIdsKey.split(',');
     // N+1 önleme: tüm profilleri tek batch çağrısıyla getir
     base44.functions.invoke('user-profile', { user_ids: ids })
-      .then((response) => { const map = response.data || {}; setViewerProfiles(map); })
+      .then((response) => { const map = response.data?.data || response.data || {}; setViewerProfiles(map); })
       .catch(() => { setViewerProfiles({}); });
   }, [participantIdsKey]);
 
@@ -556,9 +560,9 @@ export default function WatchParty() {
   };
 
   if (ul || loading) return <div className="h-screen flex items-center justify-center bg-background"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (!hasMembership) return <SubscriptionPrompt />;
   if (!room) return <div className="p-6">Oda bulunamadı.</div>;
   if (room.status === 'closed') return <div className="p-10 text-center"><p className="text-xl font-bold mb-2">Oda kapatıldı</p><Link to="/" className="text-primary">Ana sayfaya dön</Link></div>;
-  if (!membershipActive(user)) return <div className="p-10 text-center"><p className="mb-4">Watch Party için aktif üyelik gerekli.</p><Link to="/profil" className="text-primary">Üyeliğim</Link></div>;
   if (joinError) return <div className="fixed inset-0 bg-black flex items-center justify-center p-6"><div className="bg-card border border-border rounded-xl p-5 w-full max-w-xs text-center"><h2 className="font-bold mb-2">Odaya katılamadınız</h2><p className="text-sm text-muted-foreground mb-4">{joinError}</p><button onClick={() => navigate(-1)} className="w-full bg-primary text-primary-foreground py-2.5 rounded-lg text-sm font-semibold">Geri Dön</button></div></div>;
 
   if (joinRejected) return (

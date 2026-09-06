@@ -14,6 +14,7 @@ import AppleIcon from "@/components/AppleIcon";
 import LegalLinks from "@/components/auth/LegalLinks";
 import { consumeBanNotice } from "@/lib/banNotice";
 import { detectConnectionType } from "@/lib/connectionType";
+import { isBasicPath } from "@/lib/access";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -59,7 +60,7 @@ export default function Login() {
       const privileged = me.role === 'admin' || me.role === 'moderator';
       const membershipActive = me.membership_status === 'active' && (!me.membership_end || new Date(me.membership_end) > new Date());
       try { const res = await base44.functions.invoke('register-session', { device_session: localStorage.getItem('filmkeyfi_session_' + me.id) || '', connection_type: detectConnectionType() }); if (res?.data?.session_id) localStorage.setItem('filmkeyfi_session_' + me.id, res.data.session_id); } catch {}
-      window.location.href = privileged || membershipActive ? returnTo : '/abonelik';
+      window.location.href = privileged || membershipActive || isBasicPath(returnTo.split('?')[0]) ? returnTo : '/abonelik';
     } catch (err) {
       setError(err.message || "Geçersiz e-posta veya şifre");
     } finally {

@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import LoginRedirect from '@/components/LoginRedirect';
 // Add page imports here
 import AppLayout from '@/components/layout/AppLayout';
 import { ThemeProvider } from '@/lib/ThemeContext';
@@ -93,11 +94,13 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/onay-bekleniyor" element={<PendingApproval />} />
       <Route path="/engellendiniz" element={<BannedScreen />} />
-      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+      <Route element={<ProtectedRoute unauthenticatedElement={<LoginRedirect />} />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/filmler" element={<Browse type="movie" title="Filmler" />} />
           <Route path="/acik-odalar" element={<OpenRooms />} />
+          <Route path="/openrooms" element={<Navigate to="/acik-odalar" replace />} />
+          <Route path="/odalar" element={<Navigate to="/acik-odalar" replace />} />
           <Route path="/kategoriler" element={<Browse type="movie" title="Kategoriler" />} />
           <Route path="/izle/:id" element={<MovieDetail />} />
           <Route path="/video/:id" element={<Watch />} />

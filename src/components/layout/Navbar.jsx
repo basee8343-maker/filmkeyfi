@@ -1,7 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
+import { useState } from 'react';
 import ProfileDropdown from '@/components/layout/ProfileDropdown';
 
 const links = [
@@ -14,8 +13,6 @@ const links = [
 ];
 
 export default function Navbar() {
-  const { user } = useCurrentUser();
-  const isActive = membershipActive(user);
   const navigate = useNavigate();
   const location = useLocation();
   const [q, setQ] = useState('');
@@ -46,8 +43,7 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {isActive && (
-          <nav className="hidden lg:flex items-center gap-1 ml-4">
+        <nav className="hidden lg:flex items-center gap-1 ml-4">
             {links.map((l) => (
               <Link key={l.path} to={l.path}
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -56,15 +52,12 @@ export default function Navbar() {
               </Link>
             ))}
           </nav>
-        )}
 
-        {isActive && (
-          <form onSubmit={submit} className="hidden md:flex items-center ml-auto bg-white/5 rounded-full px-3 py-1.5 w-44 lg:w-64 focus-within:ring-2 focus-within:ring-purple-500/30">
+        <form onSubmit={submit} className="hidden md:flex items-center ml-auto bg-white/5 rounded-full px-3 py-1.5 w-44 lg:w-64 focus-within:ring-2 focus-within:ring-purple-500/30">
             <Search className="w-4 h-4 text-white/40 shrink-0" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Film, dizi ara..."
               className="bg-transparent outline-none px-2 text-sm w-full placeholder:text-white/40 text-white" />
           </form>
-        )}
 
         <div className="flex items-center gap-2 ml-auto md:ml-2">
           <ProfileDropdown />
