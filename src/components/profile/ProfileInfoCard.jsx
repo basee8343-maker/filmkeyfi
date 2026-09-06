@@ -17,7 +17,7 @@ export default function ProfileInfoCard({ user, pkg, editing, form, setForm, onS
     <Field label="Ad Soyad (hesap bilgisi)" value={form.full_name} disabled />
     <p className="-mt-2 text-xs text-muted-foreground">Ad soyad hesap tarafından yönetilir; görünen adınızı Kullanıcı Adı alanından değiştirebilirsiniz.</p>
     <Field label="Telefon" value={form.phone} onChange={(phone) => setForm({ ...form, phone })} />
-    <div className="flex gap-2"><button onClick={onSave} disabled={saving || uploading} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? 'Kaydediliyor...' : 'Kaydet'}</button><button onClick={onCancel} disabled={saving || uploading} className="rounded-lg bg-secondary px-5 py-2.5 text-sm disabled:opacity-50">İptal</button></div>
+    <div className="flex gap-2"><button onClick={onSave} disabled={saving || uploading} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">{saving ? 'Kaydediliyor...' : uploading ? 'Fotoğraf Bekleniyor...' : 'Kaydet'}</button><button onClick={onCancel} disabled={saving || uploading} className="rounded-lg bg-secondary px-5 py-2.5 text-sm disabled:opacity-50">İptal</button></div>
   </section>;
   const rows = [
     [User, 'Kullanıcı Adı', user.username || '-'], [Users, 'Ad Soyad', user.full_name || '-'], [User, 'Üye No', user.member_id || '-'],
