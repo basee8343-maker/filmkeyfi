@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { FRAME_DEFINITIONS } from '@/lib/roles';
-import { clearFrameCaches } from '@/components/xp/frameTransparency';
+import { clearFrameCaches, makePreparedTransparent, makeTransparentFrame } from '@/components/xp/frameTransparency';
 
 const FrameCatalogContext = createContext({ frames: FRAME_DEFINITIONS, refreshFrames: () => {} });
 
@@ -16,6 +16,17 @@ export function FrameCatalogProvider({ children }) {
     }]));
     return { ...FRAME_DEFINITIONS, ...custom };
   }, [specialFrames]);
+
+  // Önceden ısıtma: tüm çerçeveleri arka planda işleyip cache'e al.
+  // Böylece profil/arkadaş sayfaları açıldığında çerçeveler anında görünür.
+  useEffect(() => {
+    Object.values(frames).forEach((info) => {
+      if (!info?.image_url) return;
+      if (info.prepared) makePreparedTransparent(info.image_url, info.opening);
+      else if (info.sprite) makeTransparentFrame(info.image_url, info.sprite);
+    });
+  }, [frames]);
+
   return <FrameCatalogContext.Provider value={{ frames, refreshFrames }}>{children}</FrameCatalogContext.Provider>;
 }
 
