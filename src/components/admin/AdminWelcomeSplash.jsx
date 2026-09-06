@@ -40,7 +40,7 @@ export default function AdminRoomWelcome({ onDone }) {
           <img
             src={SPLASH_IMAGE}
             alt="Admin Hoş Geldin"
-            className="relative w-[82vw] max-w-[380px] h-auto object-contain"
+            className="relative w-[52vw] max-w-[220px] h-auto object-contain"
             style={{ filter: 'drop-shadow(0 0 16px rgba(255,69,0,0.5))', imageRendering: 'auto' }}
             draggable={false}
           />

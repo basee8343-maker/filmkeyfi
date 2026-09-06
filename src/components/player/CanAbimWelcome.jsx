@@ -38,7 +38,7 @@ export default function CanAbimWelcome({ onDone }) {
           <img
             src={SPLASH_IMAGE}
             alt="Can Abim - Kral Turgay"
-            className="relative w-[82vw] max-w-[380px] h-auto object-contain"
+            className="relative w-[52vw] max-w-[220px] h-auto object-contain"
             style={{ filter: 'drop-shadow(0 0 16px rgba(59,130,246,0.5))' }}
             draggable={false}
           />
