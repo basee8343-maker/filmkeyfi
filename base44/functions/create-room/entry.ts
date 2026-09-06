@@ -23,9 +23,8 @@ export default async function(req) {
     if (!name) return Response.json({ error: 'geçersiz oda adı' }, { status: 400 });
 
     // Admin rate limit'ten muaf
-    const me = await base44.entities.User.get(user.id).catch(() => null);
-    if (!hasActiveMembership(me)) return Response.json({ error: 'aktif üyelik gerekli' }, { status: 403 });
-    const isAdmin = me?.role === 'admin';
+    if (!hasActiveMembership(user)) return Response.json({ error: 'Aktif üyelik gerekli.' }, { status: 403 });
+    const isAdmin = user.role === 'admin';
     if (!isAdmin) {
       const rl = await rateLimit(base44, 'create-room:' + user.id, user.id, 5, 600000);
       if (!rl.allowed) return Response.json({ error: 'çok hızlı oda oluşturuyorsunuz, lütfen bekleyin' }, { status: 429 });

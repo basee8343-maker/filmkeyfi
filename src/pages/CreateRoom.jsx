@@ -14,6 +14,7 @@ export default function CreateRoom() {
   const [form, setForm] = useState({ name: '', movie_id: '', password: '', max_users: 10, chat_enabled: true, voice_enabled: false, hidden: false });
   const [nameEdited, setNameEdited] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     base44.entities.Movie.filter({ published: true }, '-views', 100).then(setMovies).catch(() => {});
@@ -21,8 +22,10 @@ export default function CreateRoom() {
 
   const submit = async (e) => {
     e.preventDefault();
+    if (saving) return;
     if (!form.name || !form.movie_id) { toast({ title: 'Oda adı ve içerik seçin', variant: 'destructive' }); return; }
     const movie = movies.find((m) => m.id === form.movie_id);
+    setSaving(true);
     try {
       const res = await base44.functions.invoke('create-room', {
         name: form.name, movie_id: form.movie_id, movie_title: movie?.title || '',
@@ -32,6 +35,7 @@ export default function CreateRoom() {
       toast({ title: 'Oda oluşturuldu' });
       navigate(`/oda/${res.data.id}`);
     } catch (err) { toast({ title: 'Hata', description: err.response?.data?.error || err.message, variant: 'destructive' }); }
+    finally { setSaving(false); }
   };
 
   const openMyRoom = async () => {
@@ -148,8 +152,8 @@ export default function CreateRoom() {
         </div>
 
         {/* Submit */}
-        <button type="submit" className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-white active:scale-95 transition-transform" style={{ background: 'linear-gradient(135deg, #e11d48, #7c3aed)' }}>
-          <Video className="w-5 h-5" /> Odayı Oluştur
+        <button type="submit" disabled={saving || !user} className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-semibold text-white active:scale-95 transition-transform disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #e11d48, #7c3aed)' }}>
+          <Video className="w-5 h-5" /> {saving ? 'Oda oluşturuluyor...' : 'Odayı Oluştur'}
         </button>
       </form>
     </div>

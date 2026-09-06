@@ -19,7 +19,7 @@ export default async function(req) {
       const u = sanitizeText(username, 40);
       if (u) {
         if (u.length < 3) return Response.json({ error: 'Kullanıcı adı en az 3 karakter olmalı.' }, { status: 400 });
-        const existing = await base44.asServiceRole.entities.User.filter({ username: u }, '-created_date', 5).catch(() => []);
+        const existing = await base44.asServiceRole.entities.User.filter({ username: u }, '-created_date', 5);
         if (existing.some((x) => x.id !== user.id)) {
           return Response.json({ error: 'Bu kullanıcı adı zaten kullanımda. Başka bir ad deneyin.' }, { status: 409 });
         }
@@ -40,9 +40,7 @@ export default async function(req) {
     }
     if (profile_frame !== undefined) {
       const frame = String(profile_frame || '');
-      // Sadece çerçeve değişimi gerektiğinde kullanıcı kaydını çek
-      const me = await base44.entities.User.get(user.id).catch(() => null);
-      const unlocked = (me && me.unlocked_profile_frames) || [];
+      const unlocked = user.unlocked_profile_frames || [];
       const frameDef = await resolveProfileFrame(base44, frame);
       if (frame && (!frameDef || !unlocked.includes(frame))) return Response.json({ error: 'Bu çerçeve hesabınızda açık değil.' }, { status: 403 });
       updates.profile_frame = frame;
@@ -65,7 +63,7 @@ export default async function(req) {
     if (Object.keys(updates).length > 0) {
       await base44.asServiceRole.entities.User.update(user.id, updates);
     }
-    return Response.json({ ok: true });
+    return Response.json({ ok: true, profile: { id: user.id, ...updates } });
   } catch (e) {
     console.error('[update-profile error]', e?.message || String(e), e?.stack || '');
     const msg = String(e?.message || '');

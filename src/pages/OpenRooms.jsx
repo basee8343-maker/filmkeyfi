@@ -29,7 +29,7 @@ export default function OpenRooms() {
       try {
         const [r, m] = await Promise.all([
           base44.entities.Room.filter({ status: 'active' }, '-created_date', 200).catch(() => []),
-          base44.entities.Movie.list(500).catch(() => []),
+          base44.entities.Movie.list('-created_date', 500).catch(() => []),
         ]);
         const normal = r.filter((x) => !x.is_personal && (isAdmin || !x.hidden) && (x.participants?.length || 0) > 0);
         const personal = r.filter((x) => x.is_personal && (isAdmin || !x.hidden) && x.status === 'active');
@@ -57,7 +57,11 @@ export default function OpenRooms() {
           setPersonalRooms((p) => isVisible(ev.data) ? p.map((x) => x.id === ev.data.id ? ev.data : x).concat([ev.data]).filter((x, i, arr) => arr.findIndex((y) => y.id === x.id) === i) : p.filter((x) => x.id !== ev.data.id));
           setRooms((p) => p.filter((x) => x.id !== ev.data.id));
         } else {
-          setRooms((p) => p.map((x) => (x.id === ev.data.id ? ev.data : x)).filter((x) => isVisible(x) && !x.is_personal && (x.participants?.length || 0) > 0));
+          setRooms((p) => {
+            const updated = { ...p.find((x) => x.id === ev.id), ...ev.data, id: ev.id };
+            const remaining = p.filter((x) => x.id !== ev.id);
+            return isVisible(updated) && !updated.is_personal && (updated.participants?.length || 0) > 0 ? [updated, ...remaining] : remaining;
+          });
         }
       }
       if (ev.type === 'delete') {
@@ -116,12 +120,12 @@ export default function OpenRooms() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0f] text-white px-4 py-6 max-w-3xl mx-auto">
-      <div className="flex items-start justify-between mb-1">
+      <div className="mb-1 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold">Odalar</h1>
           <p className="text-sm text-gray-400 mt-1">Aktif Watch Party odalarına katıl.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center justify-between gap-2 sm:w-auto">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#16161e] border border-white/5">
             <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: 'rgba(124,58,237,0.2)' }}>
               <DoorOpen className="w-4 h-4 text-purple-400" />
@@ -130,7 +134,7 @@ export default function OpenRooms() {
             <span className="text-xs text-gray-400">Aktif Oda</span>
             <span className="w-2 h-2 rounded-full bg-green-400" />
           </div>
-          <Link to="/oda-kur" className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white active:scale-95 transition-transform" style={{ background: 'linear-gradient(135deg, #7c3aed, #db2777)' }}>
+          <Link to="/oda-kur" className="flex min-h-11 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
             <Plus className="w-4 h-4" /> Oda Kur
           </Link>
         </div>

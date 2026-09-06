@@ -12,7 +12,7 @@ import ProfileSettings from '@/components/profile/ProfileSettings';
 import ProfileTabs from '@/components/profile/ProfileTabs';
 
 export default function Profile() {
-  const { user, reload } = useCurrentUser(); const { toast } = useToast(); const location = useLocation(); const navigate = useNavigate();
+  const { user, reload, setUser } = useCurrentUser(); const { toast } = useToast(); const location = useLocation(); const navigate = useNavigate();
   const [tab, setTab] = useState(() => new URLSearchParams(window.location.search).get('tab') === 'settings' ? 'settings' : 'info'); const [pkg, setPkg] = useState(null); const [historyMovies, setHistoryMovies] = useState([]); const [list, setList] = useState([]); const [favs, setFavs] = useState([]); const [editing, setEditing] = useState(false); const [saving, setSaving] = useState(false); const [uploading, setUploading] = useState(false); const [form, setForm] = useState({ username: '', full_name: '', phone: '', avatar: '' });
   useEffect(() => {
     if (new URLSearchParams(location.search).get('tab') === 'settings') setTab('settings');
@@ -30,8 +30,15 @@ export default function Profile() {
     const [historyItems, listItems, favoriteItems] = await Promise.all([resolve(history), resolve(watchlist), resolve(favorites)]); setHistoryMovies(historyItems); setList(listItems); setFavs(favoriteItems);
   };
   const save = async () => {
+    if (saving || uploading) return;
     setSaving(true);
-    try { await base44.functions.invoke('update-profile', { username: form.username, phone: form.phone, avatar: form.avatar }); await reload(); setEditing(false); toast({ title: 'Profil güncellendi' }); }
+    try {
+      const { data } = await base44.functions.invoke('update-profile', { username: form.username, phone: form.phone, avatar: form.avatar });
+      if (!data?.ok || data.profile?.id !== user.id) throw new Error(data?.error || 'Kayıt doğrulanamadı. Lütfen tekrar deneyin.');
+      setUser((current) => ({ ...current, ...data.profile }));
+      setEditing(false);
+      toast({ title: 'Profil güncellendi' });
+    }
     catch (error) { toast({ title: 'Profil güncellenemedi', description: error.response?.data?.error || error.message, variant: 'destructive' }); }
     finally { setSaving(false); }
   };
@@ -52,7 +59,7 @@ export default function Profile() {
     <ProfileHeader user={user} pkg={pkg} expired={expired} editing={editing} avatar={form.avatar} onAvatar={onAvatar} onUpdated={reload} />
     <MembershipNotice user={user} expired={expired} onRenew={renew} />
     <ProfileTabs active={tab} onChange={(nextTab) => { setTab(nextTab); navigate(nextTab === 'settings' ? '/profil?tab=settings' : '/profil', { replace: true }); }} />
-    {tab === 'info' && <ProfileInfoCard user={user} pkg={pkg} editing={editing} form={form} setForm={setForm} onSave={save} onEdit={() => setEditing(true)} onCancel={() => setEditing(false)} onAvatar={onAvatar} uploading={uploading} saving={saving} />}
+    {tab === 'info' && <ProfileInfoCard user={user} pkg={pkg} editing={editing} form={form} setForm={setForm} onSave={save} onEdit={() => { setForm({ username: user.username || '', full_name: user.full_name || '', phone: user.phone || '', avatar: user.avatar || '' }); setEditing(true); }} onCancel={() => { setForm({ username: user.username || '', full_name: user.full_name || '', phone: user.phone || '', avatar: user.avatar || '' }); setEditing(false); }} onAvatar={onAvatar} uploading={uploading} saving={saving} />}
     {tab === 'history' && <div>{historyMovies.length > 0 && <button onClick={clearHistory} className="mb-3 flex items-center gap-2 rounded-lg bg-destructive px-4 py-2.5 text-sm font-semibold text-destructive-foreground"><Trash2 className="w-4 h-4" />Tümünü Sil</button>}<ProfileMovieGrid movies={historyMovies} empty="Henüz bir şey izlemediniz." /></div>}
     {tab === 'list' && <ProfileMovieGrid movies={list} empty="Henüz listenize film eklemediniz." />}
     {tab === 'favs' && <ProfileMovieGrid movies={favs} empty="Henüz favori yok." />}
