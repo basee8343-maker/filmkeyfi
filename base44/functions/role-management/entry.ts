@@ -142,6 +142,25 @@ export default async function(req) {
       return Response.json({ ok: true });
     }
 
+    if (action === 'remove_unlocked_frame') {
+      const { frame_key } = body;
+      if (!frame_key) return Response.json({ error: 'çerçeve gerekli' }, { status: 400 });
+      const unlocked = (target.unlocked_profile_frames || []).filter((f) => f !== frame_key);
+      const updates: any = { unlocked_profile_frames: unlocked };
+      if (target.profile_frame === frame_key) {
+        updates.profile_frame = '';
+        updates.profile_frame_expires_at = null;
+        updates.profile_frame_entrance_enabled = false;
+      }
+      await base44.asServiceRole.entities.User.update(user_id, updates);
+      await base44.asServiceRole.entities.AdminLog.create({
+        admin_id: me.id, admin_name: adminName,
+        action: 'Çerçeve geri alındı', target: target.email || user_id,
+        details: frame_key
+      }).catch(() => {});
+      return Response.json({ ok: true });
+    }
+
     if (action === 'set_frame_display') {
       const updates: any = {};
       if (body.scale !== undefined) {
