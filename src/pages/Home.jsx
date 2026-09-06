@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useCurrentUser } from '@/lib/useCurrentUser';
 import Hero from '@/components/movie/Hero';
 import ContentRow from '@/components/movie/ContentRow';
 import CategoryRow from '@/components/movie/CategoryRow';
 import { SkeletonRow } from '@/components/movie/EmptyState';
+import AdminQuickWidget from '@/components/admin/AdminQuickWidget';
 
 
 export default function Home() {
+  const { user } = useCurrentUser();
   const [featured, setFeatured] = useState(null);
   const [rows, setRows] = useState({ featured: [], popular: [], new: [], most: [], action: [], scifi: [], comedy: [], horror: [], drama: [], anim: [] });
   const [loading, setLoading] = useState(true);
@@ -54,7 +57,7 @@ export default function Home() {
           </>
         )}
       </div>
-
+      {user?.role === 'admin' && <AdminQuickWidget />}
     </div>
   );
 }

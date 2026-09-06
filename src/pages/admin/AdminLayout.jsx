@@ -1,12 +1,14 @@
 import { useEffect, useState, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, Users, Film, FolderTree, LifeBuoy, CreditCard, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, ChevronDown, ChevronRight, Package as PackageIcon, Home, Flag, MessageCircle, Video, Smartphone, Moon, Target, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Users, Film, FolderTree, LifeBuoy, CreditCard, Bell, Settings, LogOut, Menu, X, ShieldAlert, KeyRound, ChevronDown, ChevronRight, Package as PackageIcon, Flag, MessageCircle, Video, Smartphone, Moon, Target, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { useAdminNotifications, requestNotificationPermission } from '@/hooks/useAdminNotifications';
+import { requestNotificationPermission } from '@/hooks/useAdminNotifications';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 import ThemeToggle from '@/components/ThemeToggle';
 import { useTheme } from '@/lib/ThemeContext';
 import { Image } from '@/components/ui/image';
+import AdminNotifBell from '@/components/admin/AdminNotifBell';
+import AdminQuickWidget from '@/components/admin/AdminQuickWidget';
 
 const SIDEBAR_BG = '#111116';
 const SIDEBAR_TEXT = '#e0e0e0';
@@ -18,7 +20,6 @@ const navGroups = [
   {
     title: null,
     items: [
-      { to: '/', label: 'Ana Sayfa', icon: Home, end: true, external: true },
       { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
     ],
   },
@@ -65,7 +66,6 @@ export default function AdminLayout() {
   const [twofaErr, setTwofaErr] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [notifGranted, setNotifGranted] = useState(() => typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted');
-  const { unreadCount } = useAdminNotifications();
   const { cycleTheme } = useTheme();
   const handleNotif = async () => { const r = await requestNotificationPermission(); setNotifGranted(r === 'granted'); };
 
@@ -187,24 +187,16 @@ export default function AdminLayout() {
       {open && <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setOpen(false)} />}
       <div className="flex-1 min-w-0 overflow-x-hidden"
         onTouchStart={(e) => { touchX.current = e.touches[0].clientX; touchY.current = e.touches[0].clientY; }}
-        onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); const dy = e.changedTouches[0].clientY - (touchY.current ?? 0); if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 80 && (touchX.current ?? 999) < 30) setOpen(true); else if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx < -80) setOpen(false); }}>
+        onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); const dy = e.changedTouches[0].clientY - (touchY.current ?? 0); if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 50 && (touchX.current ?? 999) < 80) setOpen(true); else if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx < -50) setOpen(false); }}>
         <header className="lg:hidden sticky top-0 z-20 border-b border-purple-500/10 min-h-14 flex items-center px-4 pb-2 pt-[max(env(safe-area-inset-top),0.75rem)] bg-[#111116]/95 backdrop-blur"
-          style={{ touchAction: 'pan-y' }}
-          onTouchStart={(e) => { touchX.current = e.touches[0].clientX; touchY.current = e.touches[0].clientY; }}
-          onTouchEnd={(e) => { const dx = e.changedTouches[0].clientX - (touchX.current ?? 0); const dy = e.changedTouches[0].clientY - (touchY.current ?? 0); if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx > 80 && (touchX.current ?? 999) < 30) setOpen(true); else if (Math.abs(dx) > Math.abs(dy) * 1.5 && dx < -80) setOpen(false); }}>
+          style={{ touchAction: 'pan-y' }}>
           <button onClick={() => setOpen(true)}><Menu className="w-6 h-6 text-white" /></button>
           <span className="ml-1 hidden min-[390px]:block font-bold text-white whitespace-nowrap">Admin Panel</span>
           <div className="ml-auto flex min-w-0 items-center gap-1">
             <ThemeToggle />
-            <button onClick={() => navigate('/admin/bildirimler')} className="p-2 rounded-lg hover:bg-white/5 relative shrink-0" title="Bildirimler">
-              <Bell className="w-5 h-5 text-white" />
-              {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
-              {notifGranted && unreadCount === 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
-            </button>
+            <AdminNotifBell notifGranted={notifGranted} />
             <div className="flex shrink-0 items-center gap-1 rounded-lg bg-[#16161e] p-1">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>
-                {(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}
-              </div>
+              {user?.avatar ? <Image src={user.avatar} className="w-7 h-7 rounded-full shrink-0" fittingType="fill" /> : <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>{(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}</div>}
               <div className="hidden min-[430px]:block">
                 <p className="text-xs font-semibold leading-tight text-white">Yönetici</p>
                 <p className="text-[10px] text-gray-400 leading-tight max-w-[90px] truncate">{user.email}</p>
@@ -213,19 +205,12 @@ export default function AdminLayout() {
           </div>
         </header>
         <header className="hidden lg:flex sticky top-0 z-20 border-b border-purple-500/10 h-14 items-center px-6 bg-[#111116]/95 backdrop-blur">
-          <Link to="/" className="p-2 rounded-lg hover:bg-white/5" title="Ana Sayfa"><Home className="w-5 h-5 text-white" /></Link>
-          <span className="ml-2 font-bold text-white">Admin Panel</span>
+          <span className="font-bold text-white">Admin Panel</span>
           <div className="ml-auto flex items-center gap-3">
             <ThemeToggle />
-            <button onClick={() => navigate('/admin/bildirimler')} className="p-2 rounded-lg hover:bg-white/5 relative shrink-0" title="Bildirimler">
-              <Bell className="w-5 h-5 text-white" />
-              {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center">{unreadCount > 9 ? '9+' : unreadCount}</span>}
-              {notifGranted && unreadCount === 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-green-500" />}
-            </button>
+            <AdminNotifBell notifGranted={notifGranted} />
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#16161e]">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>
-                {(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}
-              </div>
+              {user?.avatar ? <Image src={user.avatar} className="w-8 h-8 rounded-full shrink-0" fittingType="fill" /> : <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>{(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}</div>}
               <div>
                 <p className="text-sm font-semibold leading-tight text-white">Yönetici</p>
                 <p className="text-xs text-gray-400 leading-tight max-w-[160px] truncate">{user.email}</p>
@@ -238,6 +223,7 @@ export default function AdminLayout() {
           <Outlet />
         </div>
       </div>
+      <AdminQuickWidget />
     </div>
   );
 }

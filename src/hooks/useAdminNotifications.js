@@ -97,7 +97,16 @@ export function useAdminNotifications() {
     setUnreadCount(0);
   }, [notifications]);
 
-  return { notifications, unreadCount, markRead, markAllRead, reload: load };
+  const deleteAll = useCallback(async () => {
+    const ids = notifications.map((n) => n.id);
+    setNotifications([]);
+    setUnreadCount(0);
+    for (const id of ids) {
+      await base44.entities.Notification.delete(id).catch(() => {});
+    }
+  }, [notifications]);
+
+  return { notifications, unreadCount, markRead, markAllRead, deleteAll, reload: load };
 }
 
 export async function requestNotificationPermission() {
