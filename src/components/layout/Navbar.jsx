@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import ProfileDropdown from '@/components/layout/ProfileDropdown';
 import SearchSuggestions from '@/components/search/SearchSuggestions';
 import LiveChatButton from '@/components/layout/LiveChatButton';
+import SupportNotifBell from '@/components/layout/SupportNotifBell';
 import { useCurrentUser } from '@/lib/useCurrentUser';
 
 const links = [
@@ -69,6 +70,7 @@ export default function Navbar() {
           </form>
 
         <div className="flex items-center gap-2 ml-auto md:ml-2">
+          <SupportNotifBell />
           {user?.role === 'admin' && <LiveChatButton />}
           <ProfileDropdown />
         </div>

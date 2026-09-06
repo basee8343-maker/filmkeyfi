@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, Bell, Headphones, User, Settings, Shield, LogOut } from 'lucide-react';
+import { ChevronDown, ChevronRight, Headphones, User, Settings, Shield, LogOut } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useCurrentUser, membershipActive } from '@/lib/useCurrentUser';
 import { Image } from '@/components/ui/image';
@@ -9,26 +9,7 @@ export default function ProfileDropdown() {
   const { user } = useCurrentUser();
   const isActive = membershipActive(user);
   const [open, setOpen] = useState(false);
-  const [unread, setUnread] = useState(0);
   const ref = useRef(null);
-
-  useEffect(() => {
-    if (!user) return;
-    // DM bildirimlerini profil bildirimlerinden çıkar — sadece Sohbet tab'ında göster
-    base44.entities.Notification.filter({ user_id: user.id, read: false, type: { $ne: 'dm' } }, '-created_date', 50)
-        .then((r) => setUnread(r.length)).catch(() => {});
-    const unsub = base44.entities.Notification.subscribe(() => {
-      base44.entities.Notification.filter({ user_id: user.id, read: false, type: { $ne: 'dm' } }, '-created_date', 50)
-        .then((r) => setUnread(r.length)).catch(() => {});
-    });
-    // social-badges-refresh event'ini dinle — DM geldiğinde anlık güncelle
-    const onBadgesRefresh = () => {
-      base44.entities.Notification.filter({ user_id: user.id, read: false, type: { $ne: 'dm' } }, '-created_date', 50)
-        .then((r) => setUnread(r.length)).catch(() => {});
-    };
-    window.addEventListener('social-badges-refresh', onBadgesRefresh);
-    return () => { unsub(); window.removeEventListener('social-badges-refresh', onBadgesRefresh); };
-  }, [user?.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -95,18 +76,6 @@ export default function ProfileDropdown() {
 
             {/* Menu items */}
             <div className="py-1">
-              <Link to="/bildirimler" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
-                <div className="relative shrink-0">
-                  <Bell className="w-5 h-5 text-white/70" />
-                  {unread > 0 && <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[9px] font-bold flex items-center justify-center">{unread > 9 ? '9+' : unread}</span>}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white">Bildirimler</p>
-                  <p className="text-xs text-white/50">Tüm bildirimlerinizi görüntüleyin</p>
-                </div>
-                <ChevronRight className="w-4 h-4 text-white/30 shrink-0" />
-              </Link>
-
               {user?.role !== 'admin' && (
               <Link to="/destek" onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
                 <Headphones className="w-5 h-5 text-white/70 shrink-0" />
