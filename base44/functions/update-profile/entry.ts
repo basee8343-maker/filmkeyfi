@@ -17,7 +17,14 @@ export default async function(req) {
     const updates = {};
     if (username !== undefined) {
       const u = sanitizeText(username, 40);
-      if (u) updates.username = u;
+      if (u) {
+        if (u.length < 3) return Response.json({ error: 'Kullanıcı adı en az 3 karakter olmalı.' }, { status: 400 });
+        const existing = await base44.entities.User.filter({ username: u }, '-created_date', 5).catch(() => []);
+        if (existing.some((x) => x.id !== user.id)) {
+          return Response.json({ error: 'Bu kullanıcı adı zaten kullanımda. Başka bir ad deneyin.' }, { status: 409 });
+        }
+        updates.username = u;
+      }
     }
     if (phone !== undefined) {
       const p = sanitizeText(phone, 20).replace(/[^\d+\-\s()]/g, '');
@@ -61,6 +68,10 @@ export default async function(req) {
     return Response.json({ ok: true });
   } catch (e) {
     console.error('[update-profile error]', e?.message || String(e), e?.stack || '');
-    return Response.json({ error: e?.message || 'Profil güncellenemedi. Lütfen tekrar deneyin.' }, { status: 500 });
+    const msg = String(e?.message || '');
+    if (/duplicate|already exist|unique/i.test(msg)) {
+      return Response.json({ error: 'Bu bilgi zaten kullanımda. Başka bir değer deneyin.' }, { status: 409 });
+    }
+    return Response.json({ error: 'Profil güncellenemedi. Lütfen tekrar deneyin.' }, { status: 500 });
   }
 }
