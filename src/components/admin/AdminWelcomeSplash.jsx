@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const SPLASH_IMAGE = 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/d347c339e_DC7A03E8-EC9C-41E8-9396-51599FADBA05.png';
+const SPLASH_IMAGE = 'https://media.base44.com/images/public/6a77d66e4da6de214628ee62/a99531a30_generated_image.png';
 
 /**
  * Yönetici odaya girince görünen, etrafında animasyonlu ateşler olan karşılama görseli.
