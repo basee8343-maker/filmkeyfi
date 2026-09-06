@@ -20,7 +20,7 @@ export default function AvatarPositioner({ user, targetUserId, onSaved }) {
   const [panY, setPanY] = useState(user.profile_avatar_y || 0);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const windowRef = useRef(null);
   const drag = useRef({ active: false, startX: 0, startY: 0, origX: 0, origY: 0, width: 1 });
 

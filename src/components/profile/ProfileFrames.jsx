@@ -9,7 +9,7 @@ export default function ProfileFrames({ user, onUpdated }) {
   const { toast } = useToast();
   const { frames } = useFrameCatalog();
   const [saving, setSaving] = useState('');
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const keys = [...new Set([...(user.unlocked_profile_frames || []), user.profile_frame].filter((key) => frames[key]))];
   const choose = async (key) => {
     setSaving(key || 'remove');

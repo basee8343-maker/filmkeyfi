@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 export default function FrameEntranceToggle({ user, onSaved }) {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const automatic = (user.profile_frame || '').startsWith('lvl_');
   const enabled = automatic || !!user.profile_frame_entrance_enabled;
   const toggle = async () => {
