@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { requireFreshAdmin } from '../../shared/adminAuth.ts';
 
 // Kurucu rolü giriş/çıkış AI videolarının yönetimi.
 // Admin-only: sadece adminler çağırabilir.
@@ -34,8 +35,8 @@ export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Yetkisiz' }, { status: 401 });
-    if (user.role !== 'admin') return Response.json({ error: 'Yalnızca admin' }, { status: 403 });
+    const denied = await requireFreshAdmin(base44, req, user);
+    if (denied) return denied;
 
     const body = await req.json().catch(() => ({}));
     const action = body?.action || 'get';

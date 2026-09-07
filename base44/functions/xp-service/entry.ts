@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { getXpSettings, getUserXp, ensureUserXp } from '../../shared/xp.ts';
+import { requireFreshAdmin } from '../../shared/adminAuth.ts';
 
 const num = (value, fallback = 0) => {
   const parsed = Math.floor(Number(value));
@@ -37,8 +38,8 @@ export default async function (req) {
       return Response.json({ user_xp: updated });
     }
 
-    const me = await base44.asServiceRole.entities.User.get(user.id);
-    if (me.role !== 'admin') return Response.json({ error: 'yetkisiz' }, { status: 403 });
+    const denied = await requireFreshAdmin(base44, req, user);
+    if (denied) return denied;
 
     if (action === 'set_xp' || action === 'add_xp') {
       if (!body.user_id) return Response.json({ error: 'kullanıcı gerekli' }, { status: 400 });

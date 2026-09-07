@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { isSiteOwner, ROLE_DEFINITIONS } from '../../shared/roles.ts';
+import { requireFreshAdmin } from '../../shared/adminAuth.ts';
 
 export default async function(req) {
   try {
@@ -20,8 +21,8 @@ export default async function(req) {
     // SAVE: update a single role label (admin only)
     if (action === 'save') {
       const me = await base44.auth.me();
-      if (!me) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-      if (!isSiteOwner(me)) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
+      const denied = await requireFreshAdmin(base44, req, me);
+      if (denied) return denied;
 
       const { role_key, label } = body;
       if (!role_key || !ROLE_DEFINITIONS[role_key]) {

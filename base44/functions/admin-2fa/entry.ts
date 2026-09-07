@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { rateLimit, safeErrorResponse } from '../../shared/security.ts';
+import { getAdminVerificationStatus, markAdminVerified, requireFreshAdmin } from '../../shared/adminAuth.ts';
 
 const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
@@ -56,6 +57,11 @@ export default async function(req) {
     const now = Math.floor(Date.now() / 1000);
 
     if (action === 'setup') {
+      const fresh = await base44.asServiceRole.entities.User.get(user.id);
+      if (fresh.twofa_enabled) {
+        const denied = await requireFreshAdmin(base44, req, user);
+        if (denied) return denied;
+      }
       const secretBytes = crypto.getRandomValues(new Uint8Array(20));
       const secret = base32Encode(secretBytes);
       await base44.asServiceRole.entities.User.update(user.id, { twofa_secret: secret, twofa_enabled: false });
@@ -69,14 +75,14 @@ export default async function(req) {
       const expected = await totp(me.twofa_secret, Math.floor(now / 30));
       if (expected !== String(code)) {
         await base44.asServiceRole.entities.SecurityLog.create({
-          action: '2fa_verify_failed', user_id: user.id, user_email: user.email,
+          action: '2fa_verify_failed', user_id: user.id, user_email: '',
           detail: 'enable', level: 'warning'
         });
         return Response.json({ error: 'hatalı kod' }, { status: 400 });
       }
       await base44.asServiceRole.entities.User.update(user.id, { twofa_enabled: true });
       await base44.asServiceRole.entities.SecurityLog.create({
-        action: '2fa_enabled', user_id: user.id, user_email: user.email, level: 'info'
+        action: '2fa_enabled', user_id: user.id, user_email: '', level: 'info'
       });
       return Response.json({ ok: true });
     }
@@ -91,14 +97,16 @@ export default async function(req) {
       for (let w = -1; w <= 1; w++) {
         const expected = await totp(me.twofa_secret, counter + w);
         if (expected === String(code)) {
+          const marked = await markAdminVerified(base44, req, user);
+          if (!marked) return Response.json({ error: 'Güvenli oturum doğrulanamadı' }, { status: 401 });
           await base44.asServiceRole.entities.SecurityLog.create({
-            action: '2fa_verify_ok', user_id: user.id, user_email: user.email, level: 'info'
+            action: '2fa_verify_ok', user_id: user.id, user_email: '', level: 'info'
           });
           return Response.json({ ok: true, verified: true });
         }
       }
       await base44.asServiceRole.entities.SecurityLog.create({
-        action: '2fa_verify_failed', user_id: user.id, user_email: user.email,
+        action: '2fa_verify_failed', user_id: user.id, user_email: '',
         detail: 'verify', level: 'warning'
       });
       return Response.json({ error: 'hatalı kod', verified: false }, { status: 400 });
@@ -106,13 +114,17 @@ export default async function(req) {
 
     if (action === 'status') {
       const me = await base44.asServiceRole.entities.User.get(user.id);
-      return Response.json({ enabled: !!me.twofa_enabled, hasSecret: !!me.twofa_secret });
+      const status = await getAdminVerificationStatus(base44, req, user);
+      return Response.json({ enabled: !!me.twofa_enabled, hasSecret: !!me.twofa_secret, verified: status.verified });
     }
 
     if (action === 'disable') {
+      const denied = await requireFreshAdmin(base44, req, user);
+      if (denied) return denied;
       await base44.asServiceRole.entities.User.update(user.id, { twofa_secret: '', twofa_enabled: false });
+      await base44.asServiceRole.entities.AdminVerification.deleteMany({ user_id: user.id }).catch(() => {});
       await base44.asServiceRole.entities.SecurityLog.create({
-        action: '2fa_disabled', user_id: user.id, user_email: user.email, level: 'warning'
+        action: '2fa_disabled', user_id: user.id, user_email: '', level: 'warning'
       });
       return Response.json({ ok: true });
     }

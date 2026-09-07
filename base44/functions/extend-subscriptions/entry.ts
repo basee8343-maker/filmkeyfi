@@ -1,12 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { requireFreshAdmin } from '../../shared/adminAuth.ts';
 
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    const me = await base44.asServiceRole.entities.User.get(user.id);
-    if (me?.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
+    const denied = await requireFreshAdmin(base44, req, user);
+    if (denied) return denied;
 
     const body = await req.json();
     const userIds = Array.isArray(body?.user_ids) ? [...new Set(body.user_ids)].slice(0, 500) : [];
