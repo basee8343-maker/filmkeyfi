@@ -43,19 +43,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      let loginEmail = email;
-      if (!email.includes('@')) {
-        try {
-          const res = await base44.functions.invoke('lookup-username', { username: email });
-          loginEmail = res.data?.email || res.email;
-          if (!loginEmail) throw new Error('Kullanıcı bulunamadı');
-        } catch {
-          setError('Kullanıcı bulunamadı');
-          setLoading(false);
-          return;
-        }
-      }
-      await base44.auth.loginViaEmailPassword(loginEmail, password);
+      await base44.auth.loginViaEmailPassword(email.trim(), password);
       const me = await base44.auth.me();
       if (me.is_banned || me.role === 'banned') {
         const reason = me.ban_reason || '';
@@ -168,12 +156,12 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-[#a0a0a0]">E-posta veya kullanıcı adı</Label>
+            <Label htmlFor="email" className="text-[#a0a0a0]">E-posta adresi</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a0a0a0]" aria-hidden="true" />
               <Input
                 id="email"
-                type="text"
+                type="email"
                 autoComplete="email"
                 autoFocus
                 placeholder="ornek@email.com"
