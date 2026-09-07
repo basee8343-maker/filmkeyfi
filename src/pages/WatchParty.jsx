@@ -71,6 +71,7 @@ export default function WatchParty() {
   const playerWrapRef = useRef(null);
   const touchStart = useRef({ x: 0, y: 0 });
   const seenRoomMessagesRef = useRef(new Set());
+  const clearTriggeredRef = useRef('');
   const voice = useVoiceChat({ roomId: id, user, participants: room?.participants, voiceEnabled: !!room?.voice_enabled && voiceReady });
   const { messages: directUnread } = useSocialBadges(user?.id);
   const [countdownText, setCountdownText] = useState('');
@@ -252,7 +253,11 @@ export default function WatchParty() {
     load();
     const unsub = base44.entities.RoomJoinRequest.subscribe((ev) => {
       if (ev.data?.room_id !== id) return;
-      load();
+      setJoinRequests((current) => {
+        if (ev.type === 'delete' || ev.data.status !== 'pending') return current.filter((item) => item.id !== (ev.id || ev.data.id));
+        const exists = current.some((item) => item.id === ev.data.id);
+        return exists ? current.map((item) => item.id === ev.data.id ? ev.data : item) : [ev.data, ...current];
+      });
     });
     return unsub;
   }, [user?.id, room?.id]);
@@ -290,7 +295,7 @@ export default function WatchParty() {
     if (chatOpen) { setUnread(0); return; }
     seenRoomMessagesRef.current = new Set();
     const syncMessages = async (countMissed = false) => {
-      const items = await base44.entities.RoomMessage.filter({ room_id: id }, 'created_date', 500).catch(() => []);
+      const items = await base44.entities.RoomMessage.filter({ room_id: id }, '-created_date', 100).catch(() => []);
       let missed = 0;
       items.forEach((message) => {
         if (countMissed && !seenRoomMessagesRef.current.has(message.id) && message.type !== 'system' && message.user_id !== user?.id) missed += 1;
@@ -459,9 +464,13 @@ export default function WatchParty() {
       const target = new Date(room.chat_auto_delete_at).getTime();
       const remaining = Math.max(0, target - Date.now());
       if (remaining <= 0) {
-        base44.functions.invoke('clear-room-messages', { room_id: id }).catch(() => {});
-        const newTarget = new Date(Date.now() + minutes * 60000).toISOString();
-        base44.entities.Room.update(id, { chat_auto_delete_at: newTarget }).catch(() => {});
+        const triggerKey = `${id}:${room.chat_auto_delete_at}`;
+        if (canMod && clearTriggeredRef.current !== triggerKey) {
+          clearTriggeredRef.current = triggerKey;
+          base44.functions.invoke('clear-room-messages', { room_id: id }).catch(() => {});
+          const newTarget = new Date(Date.now() + minutes * 60000).toISOString();
+          base44.entities.Room.update(id, { chat_auto_delete_at: newTarget }).catch(() => {});
+        }
         setCountdownText('0:00');
       } else {
         const m = Math.floor(remaining / 60000);

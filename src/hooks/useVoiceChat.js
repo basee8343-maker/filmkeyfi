@@ -15,6 +15,7 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
   const audioElementsRef = useRef(new Set());
   const mutedByModeratorRef = useRef(false);
   const deafenedRef = useRef(false);
+  const lastAudioRetryRef = useRef(0);
   const [active, setActive] = useState(false);
   const [requesting, setRequesting] = useState(false);
   const [deafened, setDeafened] = useState(false);
@@ -93,8 +94,10 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
     roomRef.current = room;
 
     const updateSpeakers = (speakers) => {
-      setSpeakingIds(speakers.filter((participant) => participant.identity !== user.id).map((participant) => participant.identity));
-      refreshState();
+      const nextIds = speakers.filter((participant) => participant.identity !== user.id).map((participant) => participant.identity);
+      setSpeakingIds((current) => current.length === nextIds.length && current.every((id, index) => id === nextIds[index]) ? current : nextIds);
+      const publication = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+      setLocalSpeaking(room.localParticipant.isSpeaking && !!publication && !publication.isMuted);
     };
     const onUnsubscribed = (track) => {
       audioElementsRef.current.forEach((element) => {
@@ -149,7 +152,13 @@ export function useVoiceChat({ roomId, user, participants, voiceEnabled }) {
 
     // Mikrofon izninden bağımsız olarak her kullanıcı etkileşiminde uzak sesi hazır tut.
     // Dinleyici kalıcıdır; sonradan yayınlanan sesler de sayfa değiştirmeden başlar.
-    const startAudioOnInteraction = () => { retryAudio(); };
+    const startAudioOnInteraction = () => {
+      if (room.canPlaybackAudio && [...audioElementsRef.current].every((element) => !element.paused)) return;
+      const now = Date.now();
+      if (now - lastAudioRetryRef.current < 1500) return;
+      lastAudioRetryRef.current = now;
+      retryAudio();
+    };
     document.addEventListener('pointerdown', startAudioOnInteraction, { passive: true });
     document.addEventListener('touchend', startAudioOnInteraction, { passive: true });
     document.addEventListener('keydown', startAudioOnInteraction);

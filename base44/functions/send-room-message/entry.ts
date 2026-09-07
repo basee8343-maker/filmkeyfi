@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { waitUntil } from 'base44:runtime';
 import { sanitizeText, rateLimit, safeErrorResponse, logSecurity } from '../../shared/security.ts';
 import { findProfanity } from '../../shared/profanity.ts';
 import { advanceRoomLevel } from '../../shared/roomLevels.ts';
@@ -62,17 +63,18 @@ export default async function(req) {
       room_id, user_id: user.id, user_name: name, user_avatar: user.avatar || '',
       text: clean, type: 'user'
     });
-    // Arka planda XP kazanımı — kullanıcı arayüzünde mesaj sayısı gösterilmez.
-    try { await awardMessageXp(base44, user.id, name, created.id); } catch {}
-    // Tek kalıcı seviye yalnızca özel odalarda ilerler; tüm oda türlerinde aynı değer görünür.
-    if (room.is_personal) {
-      try {
-        const progress = await advanceRoomLevel(base44, user.id, name);
-        if (progress.leveledUp) {
-          await base44.asServiceRole.entities.RoomMessage.create({ room_id, user_id: user.id, user_name: name, text: `🎉 ${name} ${progress.level} lvl oldu! Tebrikler!`, type: 'system' });
-        }
-      } catch {}
-    }
+    // XP ve seviye işlemleri mesaj yanıtını bekletmeden güvenli biçimde tamamlanır.
+    waitUntil((async () => {
+      try { await awardMessageXp(base44, user.id, name, created.id); } catch {}
+      if (room.is_personal) {
+        try {
+          const progress = await advanceRoomLevel(base44, user.id, name);
+          if (progress.leveledUp) {
+            await base44.asServiceRole.entities.RoomMessage.create({ room_id, user_id: user.id, user_name: name, text: `🎉 ${name} ${progress.level} lvl oldu! Tebrikler!`, type: 'system' });
+          }
+        } catch {}
+      }
+    })());
     return Response.json({ ok: true });
   } catch (e) {
     return safeErrorResponse(e);

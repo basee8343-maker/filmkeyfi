@@ -34,7 +34,7 @@ export default async function(req) {
       }
     }
 
-    const movie = await base44.asServiceRole.entities.Movie.get(movie_id);
+    const movie = await base44.asServiceRole.entities.Movie.get(movie_id).catch(() => null);
     if (!movie) return Response.json({ error: 'içerik bulunamadı' }, { status: 404 });
     if (movie.published === false) {
       await logSecurity(base44, 'video_access_denied', user, 'unpublished: ' + movie_id, 'warning');
@@ -43,12 +43,12 @@ export default async function(req) {
 
     let url = '';
     if (episode_id) {
-      const eps = await base44.asServiceRole.entities.Episode.filter({ series_id: movie_id });
-      const ep = eps.find((e) => e.id === episode_id) || eps[0];
-      url = ep?.video_url || ep?.hls_url || '';
+      const ep = await base44.asServiceRole.entities.Episode.get(episode_id).catch(() => null);
+      if (!ep || ep.series_id !== movie_id) return Response.json({ error: 'bölüm bulunamadı' }, { status: 404 });
+      url = ep.video_url || ep.hls_url || '';
     } else if (movie.video_file_uri) {
       const signed = await base44.asServiceRole.integrations.Core.CreateFileSignedUrl({
-        file_uri: movie.video_file_uri, expires_in: 3600
+        file_uri: movie.video_file_uri, expires_in: 21600
       });
       url = signed.signed_url;
     } else {
@@ -67,7 +67,6 @@ export default async function(req) {
       url = valid;
     }
 
-    await logSecurity(base44, 'video_authorized', user, movie_id, 'info');
     return Response.json({ url });
   } catch (e) {
     return safeErrorResponse(e);

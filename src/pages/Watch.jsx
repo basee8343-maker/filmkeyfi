@@ -19,25 +19,22 @@ export default function Watch() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.entities.Movie.filter({ id }, '-created_date', 1).then(async (matches) => {
-      const m = matches[0] || null;
-      setMovie(m);
-      if (!m) { setLoading(false); return; }
-      let ep = null;
-      if (epId) {
-        const eps = await base44.entities.Episode.filter({ series_id: id }, 'season', 100).catch(() => []);
-        ep = eps.find((e) => e.id === epId) || eps[0] || null;
-        setEpisode(ep);
-      }
-      try {
-        const res = await base44.functions.invoke('authorize-video', { movie_id: id, episode_id: ep?.id });
-        setSrc(res.data.url);
-      } catch (e) {
-        if (e.response?.data?.expired) setExpired(true);
-        else setVideoError(e.response?.data?.error || 'Video yüklenemedi');
-      }
+    let cancelled = false;
+    const movieRequest = base44.entities.Movie.get(id);
+    const episodeRequest = epId ? base44.entities.Episode.get(epId).catch(() => null) : Promise.resolve(null);
+    const videoRequest = base44.functions.invoke('authorize-video', { movie_id: id, episode_id: epId || undefined });
+
+    Promise.allSettled([movieRequest, episodeRequest, videoRequest]).then(([movieResult, episodeResult, videoResult]) => {
+      if (cancelled) return;
+      const loadedMovie = movieResult.status === 'fulfilled' ? movieResult.value : null;
+      setMovie(loadedMovie);
+      setEpisode(episodeResult.status === 'fulfilled' && episodeResult.value?.series_id === id ? episodeResult.value : null);
+      if (videoResult.status === 'fulfilled') setSrc(videoResult.value.data.url);
+      else if (videoResult.reason?.response?.data?.expired) setExpired(true);
+      else setVideoError(videoResult.reason?.response?.data?.error || 'Video yüklenemedi');
       setLoading(false);
-    }).catch(() => setLoading(false));
+    });
+    return () => { cancelled = true; };
   }, [id, epId]);
 
   useEffect(() => {
