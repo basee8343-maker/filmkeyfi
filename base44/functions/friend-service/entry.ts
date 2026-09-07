@@ -1,5 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { findProfanity } from '../../shared/profanity.ts';
+import { rateLimit, safeErrorResponse, sanitizeText } from '../../shared/security.ts';
+import { requireFreshAdmin } from '../../shared/adminAuth.ts';
 
 const cleanUser = (user) => ({
   id: user.id,
@@ -17,7 +19,9 @@ export default async function(req) {
     const action = body.action;
 
     if (action === 'admin_clear_all') {
-      if (user.role !== 'admin') return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
+      // Yıkıcı işlem: admin + (varsa) 2FA doğrulaması zorunlu
+      const denied = requireFreshAdmin(user);
+      if (denied) return denied;
       await base44.asServiceRole.entities.DirectMessage.deleteMany({});
       return Response.json({ ok: true });
     }
@@ -25,6 +29,9 @@ export default async function(req) {
     if (action === 'search') {
       const memberId = String(body.member_id || '').trim();
       if (!/^\d{8}$/.test(memberId)) return Response.json({ error: '8 haneli üye numarası girin' }, { status: 400 });
+      // Üye numarası taramasını engelle: 30 arama / 10 dakika
+      const searchLimit = await rateLimit(base44, 'friend-search:' + user.id, user.id, 30, 600000);
+      if (!searchLimit.allowed) return Response.json({ error: 'Çok fazla arama yaptınız, lütfen bekleyin.' }, { status: 429 });
       const matches = await base44.asServiceRole.entities.User.filter({ member_id: memberId }, '-created_date', 2);
       const target = matches.find((item) => item.id !== user.id);
       if (!target) return Response.json({ user: null });
@@ -40,6 +47,9 @@ export default async function(req) {
     if (action === 'request') {
       const targetId = String(body.user_id || '');
       if (!targetId || targetId === user.id) return Response.json({ error: 'Geçersiz kullanıcı' }, { status: 400 });
+      // Spam koruması: 20 arkadaşlık isteği / saat
+      const reqLimit = await rateLimit(base44, 'friend-request:' + user.id, user.id, 20, 3600000);
+      if (!reqLimit.allowed) return Response.json({ error: 'Çok fazla arkadaşlık isteği gönderdiniz, lütfen bekleyin.' }, { status: 429 });
       const target = await base44.asServiceRole.entities.User.get(targetId);
       if (!target) return Response.json({ error: 'Kullanıcı bulunamadı' }, { status: 404 });
       const existing = await base44.asServiceRole.entities.Friendship.filter({
@@ -151,8 +161,10 @@ export default async function(req) {
     }
 
     if (action === 'send') {
-      const text = String(body.text || '').trim();
-      if (!text || text.length > 2000) return Response.json({ error: 'Mesaj 1-2000 karakter olmalıdır' }, { status: 400 });
+      const text = sanitizeText(String(body.text || '').trim(), 2000);
+      if (!text) return Response.json({ error: 'Mesaj 1-2000 karakter olmalıdır' }, { status: 400 });
+      const sendLimit = await rateLimit(base44, 'friend-send:' + user.id, user.id, 30, 60000);
+      if (!sendLimit.allowed) return Response.json({ error: 'Çok hızlı mesaj gönderiyorsunuz, lütfen bekleyin.' }, { status: 429 });
       const friendship = await base44.asServiceRole.entities.Friendship.get(String(body.friendship_id || ''));
       if (!friendship || friendship.status !== 'accepted' || !friendship.members.includes(user.id)) {
         return Response.json({ error: 'Yalnızca arkadaşlarınıza mesaj gönderebilirsiniz' }, { status: 403 });
@@ -190,6 +202,6 @@ export default async function(req) {
 
     return Response.json({ error: 'Geçersiz işlem' }, { status: 400 });
   } catch (error) {
-    return Response.json({ error: error.message || 'İşlem başarısız' }, { status: 500 });
+    return safeErrorResponse(error, 'İşlem başarısız. Lütfen tekrar deneyin.');
   }
 }

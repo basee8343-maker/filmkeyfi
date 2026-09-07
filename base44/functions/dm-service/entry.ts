@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { findProfanity } from '../../shared/profanity.ts';
 import { incrementFriendshipProgression } from '../../shared/friendshipProgression.ts';
+import { rateLimit, safeErrorResponse, sanitizeText } from '../../shared/security.ts';
 
 export default async function(req) {
   try {
@@ -66,9 +67,14 @@ export default async function(req) {
     // send: Mesaj gönder
     if (action === 'send') {
       const conversationId = String(body.conversation_id || '');
-      const content = String(body.content || '').trim();
-      if (!conversationId || !content) return Response.json({ error: 'eksik parametre' }, { status: 400 });
-      if (content.length > 2000) return Response.json({ error: 'Mesaj 1-2000 karakter olmalıdır' }, { status: 400 });
+      const raw = String(body.content || '').trim();
+      if (!conversationId || !raw) return Response.json({ error: 'eksik parametre' }, { status: 400 });
+      if (raw.length > 2000) return Response.json({ error: 'Mesaj 1-2000 karakter olmalıdır' }, { status: 400 });
+      // XSS temizliği + spam koruması (30 mesaj / dakika)
+      const content = sanitizeText(raw, 2000);
+      if (!content) return Response.json({ error: 'Geçersiz mesaj' }, { status: 400 });
+      const sendLimit = await rateLimit(base44, 'dm-send:' + user.id, user.id, 30, 60000);
+      if (!sendLimit.allowed) return Response.json({ error: 'Çok hızlı mesaj gönderiyorsunuz, lütfen bekleyin.' }, { status: 429 });
 
       const conversation = await base44.asServiceRole.entities.Conversation.get(conversationId).catch(() => null);
       if (!conversation) return Response.json({ error: 'Sohbet bulunamadı' }, { status: 404 });
@@ -222,6 +228,6 @@ export default async function(req) {
 
     return Response.json({ error: 'Geçersiz işlem' }, { status: 400 });
   } catch (error) {
-    return Response.json({ error: error.message || 'İşlem başarısız' }, { status: 500 });
+    return safeErrorResponse(error, 'İşlem başarısız. Lütfen tekrar deneyin.');
   }
 }

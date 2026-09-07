@@ -50,6 +50,23 @@ export function validateUploadUrl(url) {
   } catch { return null; }
 }
 
+// İstemci IP adresi — kimlik doğrulaması olmayan uç noktalarda hız limiti için
+export function clientIp(req) {
+  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || req.headers.get('cf-connecting-ip')
+    || 'unknown';
+}
+
+// E-posta maskele — loglarda tam adres göstermemek için
+export function maskEmail(email) {
+  const value = String(email || '');
+  const at = value.indexOf('@');
+  if (at < 1) return '';
+  const name = value.slice(0, at);
+  const domain = value.slice(at);
+  return name.slice(0, 2) + '***' + domain;
+}
+
 // Rate limiting — RateLimit entity kullanarak
 export async function rateLimit(base44, key, userId, max = 10, windowMs = 60000) {
   try {

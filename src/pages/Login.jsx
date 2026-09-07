@@ -45,12 +45,16 @@ export default function Login() {
     try {
       let loginEmail = email;
       if (!email.includes('@')) {
+        // Kullanıcı adı ile giriş: e-posta yalnızca şifre doğrulanınca sunucudan döner
         try {
-          const res = await base44.functions.invoke('lookup-username', { username: email });
+          const res = await base44.functions.invoke('lookup-username', { username: email, password });
           loginEmail = res.data?.email || res.email;
-          if (!loginEmail) throw new Error('Kullanıcı bulunamadı');
-        } catch {
-          setError('Kullanıcı bulunamadı');
+          if (!loginEmail) throw new Error('invalid');
+        } catch (lookupError) {
+          const status = lookupError?.response?.status;
+          setError(status === 429
+            ? 'Çok fazla deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.'
+            : 'Geçersiz kullanıcı adı veya şifre');
           setLoading(false);
           return;
         }
