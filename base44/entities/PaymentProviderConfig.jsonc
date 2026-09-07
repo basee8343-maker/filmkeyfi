@@ -25,22 +25,22 @@
   "rls": {
     "read": {
       "user_condition": {
-        "role": "admin"
+        "role": "_backend_only"
       }
     },
     "create": {
       "user_condition": {
-        "role": "admin"
+        "role": "_backend_only"
       }
     },
     "update": {
       "user_condition": {
-        "role": "admin"
+        "role": "_backend_only"
       }
     },
     "delete": {
       "user_condition": {
-        "role": "admin"
+        "role": "_backend_only"
       }
     }
   }
