@@ -1,4 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { secrets } from 'base44:runtime';
+import { requireFreshAdmin } from '../../shared/adminAuth.ts';
 
 export default async function(req) {
   try {
@@ -108,7 +110,8 @@ export default async function(req) {
 
     // === ÖDEME ONAYLA (admin) ===
     if (action === 'approve_payment') {
-      if (user.role !== 'admin') return Response.json({ error: 'Yetkisiz' }, { status: 403 });
+      const denied = await requireFreshAdmin(base44, req, user);
+      if (denied) return denied;
       const paymentId = String(body.payment_id || '');
       if (!paymentId) return Response.json({ error: 'Ödeme ID gerekli' }, { status: 400 });
 
@@ -154,7 +157,8 @@ export default async function(req) {
 
     // === ÖDEME REDDET (admin) ===
     if (action === 'reject_payment') {
-      if (user.role !== 'admin') return Response.json({ error: 'Yetkisiz' }, { status: 403 });
+      const denied = await requireFreshAdmin(base44, req, user);
+      if (denied) return denied;
       const paymentId = String(body.payment_id || '');
       const reason = String(body.reason || 'Ödeme doğrulanamadı.');
       if (!paymentId) return Response.json({ error: 'Ödeme ID gerekli' }, { status: 400 });
@@ -200,8 +204,8 @@ export default async function(req) {
       // Shopier yapılandırmasını kontrol et
       const configs = await base44.asServiceRole.entities.AppConfig.list(100).catch(() => []);
       const getCfg = (key, fallback = '') => configs.find((c) => c.key === key)?.value ?? fallback;
-      const apiKey = getCfg('shopier_api_key');
-      const secret = getCfg('shopier_secret');
+      const apiKey = secrets.get('SHOPIER_CLIENT_ID');
+      const secret = secrets.get('SHOPIER_CLIENT_SECRET');
       const websiteIndex = getCfg('shopier_website_index', '1');
       if (!apiKey || !secret) {
         return Response.json({ error: 'Shopier ödeme ayarları eksik. Lütfen daha sonra tekrar deneyin.' }, { status: 503 });

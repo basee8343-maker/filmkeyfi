@@ -61,7 +61,9 @@ export default function AdminLayout() {
   const [open, setOpen] = useState(false);
   const touchX = useRef(null);
   const touchY = useRef(null);
-  const [twofaOk, setTwofaOk] = useState(() => sessionStorage.getItem('admin2fa') === 'ok');
+  const [twofaOk, setTwofaOk] = useState(false);
+  const [twofaEnabled, setTwofaEnabled] = useState(false);
+  const [checkingTwofa, setCheckingTwofa] = useState(true);
   const [twofaCode, setTwofaCode] = useState('');
   const [twofaErr, setTwofaErr] = useState('');
   const [verifying, setVerifying] = useState(false);
@@ -71,22 +73,31 @@ export default function AdminLayout() {
 
   useEffect(() => {
     if (!loading && (!user || user.role !== 'admin')) navigate('/');
-  }, [user, loading]);
+    if (!loading && user?.role === 'admin') {
+      base44.functions.invoke('admin-2fa', { action: 'status' })
+        .then((res) => {
+          setTwofaEnabled(!!res.data.enabled);
+          setTwofaOk(!!res.data.verified);
+        })
+        .catch(() => setTwofaOk(false))
+        .finally(() => setCheckingTwofa(false));
+    }
+  }, [user, loading, navigate]);
 
-  if (loading) return <div className="h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading || checkingTwofa) return <div className="h-screen flex items-center justify-center"><div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>;
   if (!user || user.role !== 'admin') return null;
 
   const verify2fa = async () => {
     setVerifying(true); setTwofaErr('');
     try {
       const res = await base44.functions.invoke('admin-2fa', { action: 'verify', code: twofaCode });
-      if (res.data.verified) { sessionStorage.setItem('admin2fa', 'ok'); setTwofaOk(true); }
+      if (res.data.verified) setTwofaOk(true);
       else setTwofaErr('Hatalı kod');
     } catch (e) { setTwofaErr(e.response?.data?.error || 'Hatalı kod'); }
     setVerifying(false);
   };
 
-  if (user.twofa_enabled && !twofaOk) {
+  if (twofaEnabled && !twofaOk) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
         <div className="bg-[#16161e] border border-purple-500/20 rounded-xl p-6 w-full max-w-sm">
@@ -101,7 +112,7 @@ export default function AdminLayout() {
     );
   }
 
-  const logout = () => { sessionStorage.removeItem('admin2fa'); base44.auth.logout('/login'); };
+  const logout = () => base44.auth.logout('/login');
 
   const renderItem = (n, isTree = false) => {
     const Icon = n.icon;
@@ -170,10 +181,10 @@ export default function AdminLayout() {
         </nav>
         <div className="p-3 space-y-2" style={{ borderTop: '1px solid rgba(168,85,247,0.1)' }}>
           <div className="flex items-center gap-2.5 rounded-xl p-2.5" style={{ background: '#16161e' }}>
-            {user?.avatar ? <Image src={user.avatar} className="w-9 h-9 rounded-full object-cover shrink-0" fittingType="fill" /> : <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)', color: '#fff' }}>{(user?.username || user?.full_name || user?.email || 'A')[0].toUpperCase()}</div>}
+            {user?.avatar ? <Image src={user.avatar} className="w-9 h-9 rounded-full object-cover shrink-0" fittingType="fill" /> : <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)', color: '#fff' }}>{(user?.username || user?.full_name || 'A')[0].toUpperCase()}</div>}
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold truncate flex items-center gap-1" style={{ color: SIDEBAR_TEXT }}>👑 {user?.username || user?.full_name || 'Admin'}</p>
-              <p className="text-[10px] truncate" style={{ color: '#6b7280' }}>{user?.email}</p>
+              <p className="text-[10px] truncate" style={{ color: '#6b7280' }}>Yetkili oturum</p>
             </div>
             <button onClick={cycleTheme} className="p-1.5 rounded-lg shrink-0" style={{ color: SIDEBAR_HEADING }} title="Tema değiştir">
               <Moon className="w-4 h-4" />
@@ -200,7 +211,7 @@ export default function AdminLayout() {
               {user?.avatar ? <Image src={user.avatar} className="w-7 h-7 rounded-full shrink-0" fittingType="fill" /> : <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>{(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}</div>}
               <div className="hidden min-[430px]:block">
                 <p className="text-xs font-semibold leading-tight text-white">Yönetici</p>
-                <p className="text-[10px] text-gray-400 leading-tight max-w-[90px] truncate">{user.email}</p>
+                <p className="text-[10px] text-gray-400 leading-tight">Yetkili oturum</p>
               </div>
             </div>
           </div>
@@ -215,7 +226,7 @@ export default function AdminLayout() {
               {user?.avatar ? <Image src={user.avatar} className="w-8 h-8 rounded-full shrink-0" fittingType="fill" /> : <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>{(user.username || user.full_name || user.email || 'A')[0].toUpperCase()}</div>}
               <div>
                 <p className="text-sm font-semibold leading-tight text-white">Yönetici</p>
-                <p className="text-xs text-gray-400 leading-tight max-w-[160px] truncate">{user.email}</p>
+                <p className="text-xs text-gray-400 leading-tight">Yetkili oturum</p>
               </div>
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </div>

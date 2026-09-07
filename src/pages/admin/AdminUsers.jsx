@@ -37,7 +37,8 @@ export default function AdminUsers({ pendingOnly = false }) {
 
   const load = () => {
     base44.entities.User.list('-created_date', 500).then((u) => {
-      setUsers(pendingOnly ? u.filter((x) => x.membership_status === 'pending') : u);
+      const manageableUsers = u.filter((x) => x.role !== 'admin');
+      setUsers(pendingOnly ? manageableUsers.filter((x) => x.membership_status === 'pending') : manageableUsers);
       setLoading(false);
     }).catch((e) => { setLoading(false); toast({ title: 'Liste yüklenemedi', description: e.message, variant: 'destructive' }); });
     // Tamamlanmış ödemeleri yükle — "Onayla" butonunu gizlemek için

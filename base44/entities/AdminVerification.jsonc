@@ -1,24 +1,22 @@
 {
-  "name": "RateLimit",
+  "name": "AdminVerification",
   "type": "object",
   "properties": {
-    "key": {
-      "type": "string"
-    },
     "user_id": {
       "type": "string"
     },
-    "count": {
-      "type": "integer",
-      "default": 0
+    "token_fingerprint": {
+      "type": "string"
     },
-    "window_start": {
+    "expires_at": {
       "type": "string",
       "format": "date-time"
     }
   },
   "required": [
-    "key"
+    "user_id",
+    "token_fingerprint",
+    "expires_at"
   ],
   "rls": {
     "read": {

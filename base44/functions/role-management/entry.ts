@@ -4,6 +4,7 @@ import { isSiteOwner, FRAME_DEFINITIONS, ROLE_DEFINITIONS } from '../../shared/r
 import { upsertNotification } from '../../shared/upsertNotification.ts';
 import { setRoomLevel, validRoomLevel } from '../../shared/roomLevels.ts';
 import { resolveProfileFrame } from '../../shared/profileFrames.ts';
+import { requireFreshAdmin } from '../../shared/adminAuth.ts';
 
 async function removeFromAllRooms(base44, userId, userName) {
   const rooms = await base44.asServiceRole.entities.Room.filter({ status: 'active' }, '-created_date', 200).catch(() => []);
@@ -54,12 +55,12 @@ export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const me = await base44.auth.me();
-    if (!me) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    const denied = await requireFreshAdmin(base44, req, me);
+    if (denied) return denied;
 
     const body = await req.json();
     const { action, user_id } = body || {};
     if (!user_id || !action) return Response.json({ error: 'eksik bilgi' }, { status: 400 });
-    if (!isSiteOwner(me) && !(me.role === 'admin' && action === 'set_room_level')) return Response.json({ error: 'Bu işlem için yetkiniz yok' }, { status: 403 });
 
     const target = await base44.asServiceRole.entities.User.get(user_id);
     if (!target) return Response.json({ error: 'kullanıcı bulunamadı' }, { status: 404 });

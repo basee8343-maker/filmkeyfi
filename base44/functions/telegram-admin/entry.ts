@@ -29,8 +29,8 @@ export default async function (req) {
       const newSettings = {
         enabled: u.enabled ?? current.enabled,
         chat_id: u.chat_id ?? current.chat_id,
-        // Keep existing token unless a new one is explicitly provided
-        bot_token: u.bot_token !== undefined ? (u.bot_token || '') : current.bot_token,
+        // Token is read only from the server secret store.
+        bot_token: current.bot_token,
         events: { ...current.events, ...(u.events || {}) },
         templates: { ...current.templates, ...(u.templates || {}) },
       };

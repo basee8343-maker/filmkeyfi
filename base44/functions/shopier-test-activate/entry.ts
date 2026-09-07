@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { logSecurity, safeErrorResponse } from '../../shared/security.ts';
+import { requireFreshAdmin } from '../../shared/adminAuth.ts';
 
 // TEST MODU — admin tarafından gerçek ödeme yapmadan abonelik aktivasyon akışını test etmek için
 // Gerçek webhook ile aynı aktivasyon mantığını çalıştırır, ancak Payment kaydına "shopier_test" provider'ı yazar
@@ -7,9 +8,8 @@ export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
     const admin = await base44.auth.me();
-    if (!admin || admin.role !== 'admin') {
-      return Response.json({ error: 'Yetkisiz — sadece admin' }, { status: 403 });
-    }
+    const denied = await requireFreshAdmin(base44, req, admin);
+    if (denied) return denied;
 
     const body = await req.json().catch(() => ({}));
     const { payment_id, package_id } = body;
