@@ -65,6 +65,7 @@ export default function AdminLayout() {
   const [twofaEnabled, setTwofaEnabled] = useState(false);
   const [checkingTwofa, setCheckingTwofa] = useState(true);
   const [twofaCode, setTwofaCode] = useState('');
+  const [twofaSetup, setTwofaSetup] = useState(null);
   const [twofaErr, setTwofaErr] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [notifGranted, setNotifGranted] = useState(() => typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted');
@@ -97,13 +98,57 @@ export default function AdminLayout() {
     setVerifying(false);
   };
 
-  if (twofaEnabled && !twofaOk) {
+  const setup2fa = async () => {
+    setVerifying(true); setTwofaErr('');
+    try {
+      const res = await base44.functions.invoke('admin-2fa', { action: 'setup' });
+      setTwofaSetup(res.data);
+    } catch (e) { setTwofaErr(e.response?.data?.error || 'Kurulum başlatılamadı'); }
+    setVerifying(false);
+  };
+
+  const enable2fa = async () => {
+    setVerifying(true); setTwofaErr('');
+    try {
+      const res = await base44.functions.invoke('admin-2fa', { action: 'enable', code: twofaCode });
+      if (res.data.verified) { setTwofaEnabled(true); setTwofaOk(true); }
+    } catch (e) { setTwofaErr(e.response?.data?.error || 'Hatalı kod'); }
+    setVerifying(false);
+  };
+
+  if (!twofaEnabled) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
+        <div className="bg-[#16161e] border border-purple-500/20 rounded-xl p-6 w-full max-w-sm">
+          <h1 className="text-lg font-bold text-white mb-2">2FA Kurulumu Zorunlu</h1>
+          <p className="text-sm text-gray-400 mb-4">Yönetim paneline erişmek için authenticator uygulamanızda iki adımlı doğrulamayı kurun.</p>
+          {!twofaSetup ? (
+            <button onClick={setup2fa} disabled={verifying} className="w-full bg-purple-600 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50">{verifying ? 'Hazırlanıyor...' : 'Kurulumu Başlat'}</button>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-black/30 p-3">
+                <p className="text-xs text-gray-400 mb-1">Authenticator uygulamasına bu anahtarı girin:</p>
+                <p className="font-mono text-sm text-purple-300 break-all select-all">{twofaSetup.secret}</p>
+              </div>
+              <input value={twofaCode} onChange={(e) => setTwofaCode(e.target.value.replace(/\D/g, ''))} maxLength={6} inputMode="numeric" placeholder="6 haneli kod" className="w-full bg-[#0d0d12] rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-purple-500/40 border border-white/5" />
+              {twofaErr && <p className="text-xs text-red-400">{twofaErr}</p>}
+              <button onClick={enable2fa} disabled={verifying || twofaCode.length !== 6} className="w-full bg-purple-600 text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50">{verifying ? 'Doğrulanıyor...' : '2FA’yı Etkinleştir'}</button>
+            </div>
+          )}
+          {!twofaSetup && twofaErr && <p className="text-xs text-red-400 mt-2">{twofaErr}</p>}
+          <button onClick={() => base44.auth.logout('/login')} className="w-full mt-2 text-sm text-gray-400 py-2">Çıkış</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!twofaOk) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
         <div className="bg-[#16161e] border border-purple-500/20 rounded-xl p-6 w-full max-w-sm">
           <div className="flex items-center gap-2 mb-3"><KeyRound className="w-5 h-5 text-purple-400" /><h1 className="text-lg font-bold text-white">Admin 2FA Doğrulama</h1></div>
           <p className="text-sm text-gray-400 mb-4">Admin paneline erişim için authenticator kodunuzu girin.</p>
-          <input value={twofaCode} onChange={(e) => setTwofaCode(e.target.value)} maxLength={6} placeholder="6 haneli kod" className="w-full bg-[#0d0d12] rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-purple-500/40 mb-2 border border-white/5" />
+          <input value={twofaCode} onChange={(e) => setTwofaCode(e.target.value.replace(/\D/g, ''))} maxLength={6} inputMode="numeric" placeholder="6 haneli kod" className="w-full bg-[#0d0d12] rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-purple-500/40 mb-2 border border-white/5" />
           {twofaErr && <p className="text-xs text-red-400 mb-2">{twofaErr}</p>}
           <button onClick={verify2fa} disabled={verifying || twofaCode.length !== 6} className="w-full text-white py-2.5 rounded-lg text-sm font-semibold disabled:opacity-50" style={{ background: 'linear-gradient(135deg, #7c3aed, #6b21a8)' }}>{verifying ? 'Doğrulanıyor...' : 'Doğrula'}</button>
           <button onClick={() => base44.auth.logout('/login')} className="w-full mt-2 text-sm text-gray-400 py-2">Çıkış</button>

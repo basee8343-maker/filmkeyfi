@@ -80,11 +80,13 @@ export default async function(req) {
         });
         return Response.json({ error: 'hatalı kod' }, { status: 400 });
       }
-      await base44.asServiceRole.entities.User.update(user.id, { twofa_enabled: true });
+      await base44.asServiceRole.entities.User.update(user.id, { twofa_enabled: true, twofa_temp_secret: '' });
+      const marked = await markAdminVerified(base44, req, user);
+      if (!marked) return Response.json({ error: 'Güvenli oturum doğrulanamadı' }, { status: 401 });
       await base44.asServiceRole.entities.SecurityLog.create({
         action: '2fa_enabled', user_id: user.id, user_email: '', level: 'info'
       });
-      return Response.json({ ok: true });
+      return Response.json({ ok: true, enabled: true, verified: true });
     }
 
     if (action === 'verify') {

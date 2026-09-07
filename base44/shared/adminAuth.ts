@@ -10,7 +10,7 @@ async function tokenFingerprint(req) {
 export async function getAdminVerificationStatus(base44, req, user) {
   if (!user || user.role !== 'admin') return { enabled: false, verified: false };
   const freshUser = await base44.asServiceRole.entities.User.get(user.id);
-  if (!freshUser.twofa_enabled) return { enabled: false, verified: true };
+  if (!freshUser.twofa_enabled) return { enabled: false, verified: false };
   const fingerprint = await tokenFingerprint(req);
   if (!fingerprint) return { enabled: true, verified: false };
   const rows = await base44.asServiceRole.entities.AdminVerification.filter({ user_id: user.id, token_fingerprint: fingerprint }, '-expires_at', 1).catch(() => []);
